@@ -11,7 +11,6 @@ import (
 type Fleet struct {
 	Id             int64
 	Name           string
-	Commander      FleetMember
 	Members        []FleetMember
 	System         string
 	SystemNickname string
@@ -54,10 +53,6 @@ func (fleet Fleet) AddLoss(loss float64) {
 
 func (fleet Fleet) TickSitesFinished() {
 	fleet.SitesFinished += 1
-}
-
-func (fleet Fleet) AddCommander(player Player) {
-	fleet.Commander = NewFleetMember(-1, fleet.Id, player, FleetRoleFleetCommander)
 }
 
 func (fleet Fleet) HasMember(player string) bool {
