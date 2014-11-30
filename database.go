@@ -47,51 +47,38 @@ func InitialiseDatabase(host string, port int, user string, password string, dat
 	}
 
 	logger.Debugln("Successfully pinged database, initialisation completed!")
-
-	players, err := database.LoadAllPlayers()
-	if err != nil {
-		logger.Fatalf("Failed to load all players from database: [%v]", err)
-		return
-	}
-
-	logger.Printf("%#+v", players)
 }
 
-func (db *Database) LoadAllPlayers() ([]models.Player, error) {
-	players := make([]models.Player, 0)
+func (db *Database) LoadCorporation(id int64) (models.Corporation, error) {
+	row := db.db.QueryRow("SELECT c.id as cid, c.corporation_id AS corporation_id, c.name as corporation_name, c.ticker AS corporation_ticker FROM corporations AS c WHERE c.active = 'Y' AND c.id = ?", id)
 
-	rows, err := db.db.Query("SELECT p.id AS id, p.player_id AS player_id, p.name AS player_name, p.access AS player_access, c.id AS corporation_id, c.corp_id AS corp_id, c.name AS corporation_name FROM players AS p INNER JOIN corporations AS c ON c.id = p.corporation_id WHERE p.active = 'Y'")
+	var cid, corporationId int64
+	var corporationName, corporationTicker string
+
+	err := row.Scan(&cid, &corporationId, &corporationName, &corporationTicker)
 	if err != nil {
-		return players, err
+		return models.Corporation{}, err
 	}
 
-	for rows.Next() {
-		var id, playerId, corporationId, corpId int64
-		var access int
-		var playerName, corporationName string
-
-		err := rows.Scan(&id, &playerId, &playerName, &access, &corporationId, &corpId, &corporationName)
-		if err != nil {
-			return players, err
-		}
-
-		players = append(players, models.NewPlayer(id, playerId, playerName, models.NewCorporation(corporationId, corpId, corporationName), models.AccessMask(access)))
-	}
-
-	return players, nil
+	return models.NewCorporation(cid, corporationId, corporationName, corporationTicker), nil
 }
 
 func (db *Database) LoadPlayer(name string) (models.Player, error) {
-	row := db.db.QueryRow("SELECT p.id AS id, p.player_id AS player_id, p.name AS player_name, p.access AS player_access, c.id AS corporation_id, c.corp_id AS corp_id, c.name AS corporation_name FROM players AS p INNER JOIN corporations AS c ON c.id = p.corporation_id WHERE p.active = 'Y' AND p.name LIKE ?", name)
+	row := db.db.QueryRow("SELECT p.id AS pid, p.player_id AS player_id, p.name AS player_name, p.corporation_id AS cid, p.access AS player_access FROM players AS p WHERE p.active = 'Y' AND p.name LIKE ?", name)
 
-	var id, playerId, corporationId, corpId int64
-	var access int
-	var playerName, corporationName string
+	var pid, playerId, cid int64
+	var playerAccess int
+	var playerName string
 
-	err := row.Scan(&id, &playerId, &playerName, &access, &corporationId, &corpId, &corporationName)
+	err := row.Scan(&pid, &playerId, &playerName, &cid, &playerAccess)
 	if err != nil {
 		return models.Player{}, err
 	}
 
-	return models.NewPlayer(id, playerId, playerName, models.NewCorporation(corporationId, corpId, corporationName), models.AccessMask(access)), nil
+	corp, err := db.LoadCorporation(cid)
+	if err != nil {
+		return models.Player{}, err
+	}
+
+	return models.NewPlayer(pid, playerId, playerName, corp, models.AccessMask(playerAccess)), nil
 }
