@@ -18,13 +18,13 @@ USE `lootsheeter`;
 -- Dumping structure for table lootsheeter.corporations
 CREATE TABLE IF NOT EXISTS `corporations` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `corp_id` bigint(20) NOT NULL,
+  `corporation_id` bigint(20) NOT NULL,
   `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `ticker` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL,
   `active` enum('Y','N') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'Y',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
-  UNIQUE KEY `corp_id` (`corp_id`)
+  UNIQUE KEY `corp_id` (`corporation_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
@@ -55,16 +55,13 @@ CREATE TABLE IF NOT EXISTS `fleets` (
   `name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `system` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `system_nickname` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `commander_id` bigint(255) NOT NULL,
   `profit` double NOT NULL DEFAULT '0',
   `losses` double NOT NULL DEFAULT '0',
   `sites_finished` int(10) NOT NULL DEFAULT '0',
   `start` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `end` timestamp NULL DEFAULT NULL,
   `active` enum('Y','N') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'Y',
-  PRIMARY KEY (`id`),
-  KEY `fk_fleets_commander` (`commander_id`),
-  CONSTRAINT `fk_fleets_commander` FOREIGN KEY (`commander_id`) REFERENCES `fleetmembers` (`id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
