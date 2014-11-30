@@ -24,9 +24,9 @@ type Fleet struct {
 	fleetMembersMutex sync.RWMutex
 }
 
-func NewFleet(name string, system string, systemNick string) Fleet {
+func NewFleet(id int64, name string, system string, systemNick string) Fleet {
 	fleet := Fleet{
-		Id:             -1,
+		Id:             id,
 		Name:           name,
 		Members:        make([]FleetMember, 0),
 		System:         system,
@@ -57,7 +57,7 @@ func (fleet Fleet) TickSitesFinished() {
 }
 
 func (fleet Fleet) AddCommander(player Player) {
-	fleet.Commander = NewFleetMember(fleet.Id, player, FleetRoleFleetCommander)
+	fleet.Commander = NewFleetMember(-1, fleet.Id, player, FleetRoleFleetCommander)
 }
 
 func (fleet Fleet) HasMember(player string) bool {
@@ -81,7 +81,7 @@ func (fleet Fleet) AddMember(player Player, role FleetRole) error {
 	fleet.fleetMembersMutex.Lock()
 	defer fleet.fleetMembersMutex.Unlock()
 
-	fleet.Members = append(fleet.Members, NewFleetMember(fleet.Id, player, role))
+	fleet.Members = append(fleet.Members, NewFleetMember(-1, fleet.Id, player, role))
 
 	return nil
 }

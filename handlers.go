@@ -1,16 +1,7 @@
 // handlers
 package main
 
-import (
-	"net"
-	"net/http"
-	"strconv"
-)
-
-func HandleRequests(host string, port int) {
-	http.Handle("/", router)
-	http.ListenAndServe(net.JoinHostPort(host, strconv.Itoa(port)), nil)
-}
+import "net/http"
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 

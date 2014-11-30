@@ -23,10 +23,7 @@ func main() {
 
 	SetupLogger()
 
-	err := InitialiseDatabase(*mysqlHostFlag, *mysqlPortFlag, *mysqlUserFlag, *mysqlPasswordFlag, *mysqlDatabaseFlag)
-	if err != nil {
-		logger.Fatalf("Received error while initialising database: [%v]", err)
-	}
+	InitialiseDatabase(*mysqlHostFlag, *mysqlPortFlag, *mysqlUserFlag, *mysqlPasswordFlag, *mysqlDatabaseFlag)
 
 	SetupRouter(true)
 

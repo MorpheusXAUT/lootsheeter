@@ -1,22 +1,18 @@
 // player
 package models
 
-import (
-	"time"
-)
-
 type Player struct {
-	Id   int64
-	Name string
+	Id       int64
+	PlayerId int64
+	Name     string
 	Corporation
 	AccessMask
-	CreatedAt time.Time
-	UpdatedAt time.Time
 }
 
-func NewPlayer(name string, corp Corporation, access AccessMask) Player {
+func NewPlayer(id int64, playerId int64, name string, corp Corporation, access AccessMask) Player {
 	player := Player{
-		Id:          -1,
+		Id:          id,
+		PlayerId:    playerId,
 		Name:        name,
 		Corporation: corp,
 		AccessMask:  access,

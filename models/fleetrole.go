@@ -30,6 +30,6 @@ func (role FleetRole) String() string {
 	case FleetRoleFleetCommander:
 		return "fleetcommander"
 	default:
-		return ""
+		return "invalid"
 	}
 }

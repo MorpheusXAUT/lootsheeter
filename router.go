@@ -2,7 +2,9 @@
 package main
 
 import (
+	"net"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -12,6 +14,8 @@ var (
 )
 
 func SetupRouter(strictSlash bool) {
+	logger.Debugf("Setting up new routers (StrictSlash: %v)...", strictSlash)
+
 	r := mux.NewRouter().StrictSlash(strictSlash)
 
 	for _, route := range routes {
@@ -26,4 +30,15 @@ func SetupRouter(strictSlash bool) {
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./web/assets")))
 
 	router = r
+
+	logger.Debugf("Successfully set up new router!")
+}
+
+func HandleRequests(host string, port int) {
+	logger.Debugf("Listening for requests on %q...", net.JoinHostPort(host, strconv.Itoa(port)))
+
+	http.Handle("/", router)
+	err := http.ListenAndServe(net.JoinHostPort(host, strconv.Itoa(port)), nil)
+
+	logger.Fatalf("Received error while listening for requests: [%v]", err)
 }
