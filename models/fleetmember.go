@@ -10,14 +10,14 @@ type FleetMember struct {
 	PaymentModifier float64
 }
 
-func NewFleetMember(id int64, fleetId int64, player Player, role FleetRole) FleetMember {
+func NewFleetMember(id int64, fleetId int64, player Player, role FleetRole, site int, payment float64) FleetMember {
 	member := FleetMember{
 		Id:              id,
 		FleetId:         fleetId,
 		Player:          player,
 		Role:            role,
-		SiteModifier:    0,
-		PaymentModifier: 0,
+		SiteModifier:    site,
+		PaymentModifier: payment,
 	}
 
 	return member

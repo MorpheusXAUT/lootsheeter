@@ -23,17 +23,18 @@ type Fleet struct {
 	fleetMembersMutex sync.RWMutex
 }
 
-func NewFleet(id int64, name string, system string, systemNick string) Fleet {
+func NewFleet(id int64, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time) Fleet {
 	fleet := Fleet{
 		Id:             id,
 		Name:           name,
 		Members:        make([]FleetMember, 0),
 		System:         system,
 		SystemNickname: systemNick,
-		StartTime:      time.Now(),
-		Profit:         0.0,
-		Losses:         0.0,
-		SitesFinished:  0,
+		Profit:         profit,
+		Losses:         losses,
+		SitesFinished:  sites,
+		StartTime:      start,
+		EndTime:        end,
 	}
 
 	return fleet
@@ -68,15 +69,15 @@ func (fleet Fleet) HasMember(player string) bool {
 	return false
 }
 
-func (fleet Fleet) AddMember(player Player, role FleetRole) error {
-	if fleet.HasMember(player.Name) {
+func (fleet Fleet) AddMember(member FleetMember) error {
+	if fleet.HasMember(member.Player.Name) {
 		return fmt.Errorf("Member %q already exists in fleet, cannot add twice")
 	}
 
 	fleet.fleetMembersMutex.Lock()
 	defer fleet.fleetMembersMutex.Unlock()
 
-	fleet.Members = append(fleet.Members, NewFleetMember(-1, fleet.Id, player, role))
+	fleet.Members = append(fleet.Members, member)
 
 	return nil
 }
