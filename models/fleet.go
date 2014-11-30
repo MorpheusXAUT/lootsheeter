@@ -11,7 +11,7 @@ import (
 type Fleet struct {
 	Id             int64
 	Name           string
-	Members        []FleetMember
+	Members        []*FleetMember
 	System         string
 	SystemNickname string
 	StartTime      time.Time
@@ -23,11 +23,11 @@ type Fleet struct {
 	fleetMembersMutex sync.RWMutex
 }
 
-func NewFleet(id int64, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time) Fleet {
-	fleet := Fleet{
+func NewFleet(id int64, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time) *Fleet {
+	fleet := &Fleet{
 		Id:             id,
 		Name:           name,
-		Members:        make([]FleetMember, 0),
+		Members:        make([]*FleetMember, 0),
 		System:         system,
 		SystemNickname: systemNick,
 		Profit:         profit,
@@ -40,23 +40,23 @@ func NewFleet(id int64, name string, system string, systemNick string, profit fl
 	return fleet
 }
 
-func (fleet Fleet) FinishFleet() {
+func (fleet *Fleet) FinishFleet() {
 	fleet.EndTime = time.Now()
 }
 
-func (fleet Fleet) AddProfit(profit float64) {
+func (fleet *Fleet) AddProfit(profit float64) {
 	fleet.Profit += profit
 }
 
-func (fleet Fleet) AddLoss(loss float64) {
+func (fleet *Fleet) AddLoss(loss float64) {
 	fleet.Losses += loss
 }
 
-func (fleet Fleet) TickSitesFinished() {
+func (fleet *Fleet) TickSitesFinished() {
 	fleet.SitesFinished += 1
 }
 
-func (fleet Fleet) HasMember(player string) bool {
+func (fleet *Fleet) HasMember(player string) bool {
 	fleet.fleetMembersMutex.RLock()
 	defer fleet.fleetMembersMutex.RUnlock()
 
@@ -69,7 +69,7 @@ func (fleet Fleet) HasMember(player string) bool {
 	return false
 }
 
-func (fleet Fleet) AddMember(member FleetMember) error {
+func (fleet *Fleet) AddMember(member *FleetMember) error {
 	if fleet.HasMember(member.Player.Name) {
 		return fmt.Errorf("Member %q already exists in fleet, cannot add twice")
 	}
@@ -82,7 +82,7 @@ func (fleet Fleet) AddMember(member FleetMember) error {
 	return nil
 }
 
-func (fleet Fleet) RemoveMember(player string) error {
+func (fleet *Fleet) RemoveMember(player string) error {
 	if !fleet.HasMember(player) {
 		return fmt.Errorf("Member %q does not exists in fleet, cannot remove")
 	}
@@ -104,7 +104,7 @@ func (fleet Fleet) RemoveMember(player string) error {
 	return nil
 }
 
-func (fleet Fleet) TickMemberSiteModifier(player string) error {
+func (fleet *Fleet) TickMemberSiteModifier(player string) error {
 	if !fleet.HasMember(player) {
 		return fmt.Errorf("Member %q does not exists in fleet, cannot tick modifier")
 	}
@@ -121,7 +121,7 @@ func (fleet Fleet) TickMemberSiteModifier(player string) error {
 	return nil
 }
 
-func (fleet Fleet) GetMemberSiteModifier(player string) (int, error) {
+func (fleet *Fleet) GetMemberSiteModifier(player string) (int, error) {
 	if !fleet.HasMember(player) {
 		return 0, fmt.Errorf("Member %q does not exists in fleet, cannot get modifier")
 	}
@@ -137,7 +137,7 @@ func (fleet Fleet) GetMemberSiteModifier(player string) (int, error) {
 	return modifier, nil
 }
 
-func (fleet Fleet) GetMemberSitesFinished(player string) (int, error) {
+func (fleet *Fleet) GetMemberSitesFinished(player string) (int, error) {
 	if !fleet.HasMember(player) {
 		return 0, fmt.Errorf("Member %q does not exists in fleet, cannot get sites finished")
 	}

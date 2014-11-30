@@ -8,8 +8,8 @@ type Corporation struct {
 	Ticker string
 }
 
-func NewCorporation(id int64, corpId int64, name string, ticker string) Corporation {
-	corp := Corporation{
+func NewCorporation(id int64, corpId int64, name string, ticker string) *Corporation {
+	corp := &Corporation{
 		Id:     id,
 		CorpId: corpId,
 		Name:   name,

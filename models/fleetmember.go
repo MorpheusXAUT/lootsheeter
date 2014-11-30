@@ -4,14 +4,14 @@ package models
 type FleetMember struct {
 	Id      int64
 	FleetId int64
-	Player
+	*Player
 	Role            FleetRole
 	SiteModifier    int
 	PaymentModifier float64
 }
 
-func NewFleetMember(id int64, fleetId int64, player Player, role FleetRole, site int, payment float64) FleetMember {
-	member := FleetMember{
+func NewFleetMember(id int64, fleetId int64, player *Player, role FleetRole, site int, payment float64) *FleetMember {
+	member := &FleetMember{
 		Id:              id,
 		FleetId:         fleetId,
 		Player:          player,
@@ -23,6 +23,6 @@ func NewFleetMember(id int64, fleetId int64, player Player, role FleetRole, site
 	return member
 }
 
-func (member FleetMember) TickSiteModifier() {
+func (member *FleetMember) TickSiteModifier() {
 	member.SiteModifier -= 1
 }

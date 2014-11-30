@@ -5,12 +5,12 @@ type Player struct {
 	Id       int64
 	PlayerId int64
 	Name     string
-	Corporation
+	*Corporation
 	AccessMask
 }
 
-func NewPlayer(id int64, playerId int64, name string, corp Corporation, access AccessMask) Player {
-	player := Player{
+func NewPlayer(id int64, playerId int64, name string, corp *Corporation, access AccessMask) *Player {
+	player := &Player{
 		Id:          id,
 		PlayerId:    playerId,
 		Name:        name,
