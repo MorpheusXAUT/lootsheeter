@@ -77,7 +77,7 @@ func (db *Database) LoadPlayer(id int64) (*models.Player, error) {
 
 	err := row.Scan(&pid, &playerId, &playerName, &cid, &playerAccess)
 	if err != nil {
-		return &models.Player{}, fmt.Errorf("Received error while scanning corporation row: [%v]", err)
+		return &models.Player{}, fmt.Errorf("Received error while scanning player row: [%v]", err)
 	}
 
 	corp, err := db.LoadCorporation(cid)
@@ -86,6 +86,37 @@ func (db *Database) LoadPlayer(id int64) (*models.Player, error) {
 	}
 
 	return models.NewPlayer(pid, playerId, playerName, corp, models.AccessMask(playerAccess)), nil
+}
+
+func (db *Database) LoadAllPlayers() ([]*models.Player, error) {
+	logger.Debugf("Querying database for all players...")
+
+	players := make([]*models.Player, 0)
+
+	rows, err := db.db.Query("SELECT p.id AS pid, p.player_id AS player_id, p.name AS player_name, p.corporation_id AS cid, p.access AS player_access FROM players AS p WHERE p.active = 'Y'")
+	if err != nil {
+		return players, fmt.Errorf("Received error while querying for all players: [%v]", err)
+	}
+
+	for rows.Next() {
+		var pid, playerId, cid int64
+		var playerAccess int
+		var playerName string
+
+		err := rows.Scan(&pid, &playerId, &playerName, &cid, &playerAccess)
+		if err != nil {
+			return players, fmt.Errorf("Received error while scanning player rows: [%v]", err)
+		}
+
+		corp, err := db.LoadCorporation(cid)
+		if err != nil {
+			return players, err
+		}
+
+		players = append(players, models.NewPlayer(pid, playerId, playerName, corp, models.AccessMask(playerAccess)))
+	}
+
+	return players, nil
 }
 
 func (db *Database) LoadFleetMembers(id int64) ([]*models.FleetMember, error) {
@@ -105,7 +136,7 @@ func (db *Database) LoadFleetMembers(id int64) ([]*models.FleetMember, error) {
 
 		err = rows.Scan(&fmid, &fid, &pid, &fleetmemberRole, &fleetmemberSiteModifier, &fleetmemberPaymentModifier)
 		if err != nil {
-			return fleetMembers, fmt.Errorf("Received error while scanning corporation row: [%v]", err)
+			return fleetMembers, fmt.Errorf("Received error while scanning fleet member row: [%v]", err)
 		}
 
 		player, err := db.LoadPlayer(pid)
@@ -132,7 +163,7 @@ func (db *Database) LoadFleet(id int64) (*models.Fleet, error) {
 
 	err := row.Scan(&fid, &fleetName, &fleetSystem, &fleetSystemNickname, &fleetProfit, &fleetLosses, &fleetSitesFinished, &fleetStart, &fleetEnd)
 	if err != nil {
-		return &models.Fleet{}, fmt.Errorf("Received error while scanning corporation row: [%v]", err)
+		return &models.Fleet{}, fmt.Errorf("Received error while scanning fleet row: [%v]", err)
 	}
 
 	if fleetEnd == nil {
@@ -154,4 +185,50 @@ func (db *Database) LoadFleet(id int64) (*models.Fleet, error) {
 	}
 
 	return fleet, nil
+}
+
+func (db *Database) LoadAllFleets() ([]*models.Fleet, error) {
+	logger.Debugf("Querying database for all fleets...")
+
+	fleets := make([]*models.Fleet, 0)
+
+	rows, err := db.db.Query("SELECT f.id AS fid, f.name as fleet_name, f.system AS fleet_system, f.system_nickname AS fleet_system_nickname, f.profit AS fleet_profit, f.losses AS fleet_losses, f.sites_finished AS fleet_sites_finished, f.`start` AS fleet_start, f.`end` AS fleet_end FROM fleets AS f WHERE f.active = 'Y'")
+	if err != nil {
+		return fleets, fmt.Errorf("Received error while querying for all fleets: [%v]", err)
+	}
+
+	for rows.Next() {
+		var fid int64
+		var fleetName, fleetSystem, fleetSystemNickname string
+		var fleetProfit, fleetLosses float64
+		var fleetSitesFinished int
+		var fleetStart, fleetEnd *time.Time
+
+		err := rows.Scan(&fid, &fleetName, &fleetSystem, &fleetSystemNickname, &fleetProfit, &fleetLosses, &fleetSitesFinished, &fleetStart, &fleetEnd)
+		if err != nil {
+			return fleets, fmt.Errorf("Received error while scanning fleet rows: [%v]", err)
+		}
+
+		if fleetEnd == nil {
+			fleetEnd = &time.Time{}
+		}
+
+		fleetMembers, err := db.LoadFleetMembers(fid)
+		if err != nil {
+			return fleets, err
+		}
+
+		fleet := models.NewFleet(fid, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd)
+
+		for _, member := range fleetMembers {
+			err = fleet.AddMember(member)
+			if err != nil {
+				return fleets, err
+			}
+		}
+
+		fleets = append(fleets, fleet)
+	}
+
+	return fleets, nil
 }
