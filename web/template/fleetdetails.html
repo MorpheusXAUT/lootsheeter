@@ -1,0 +1,29 @@
+{{ define "fleetdetails" }}
+	{{ template "header" }}
+	{{ template "navigation" }}
+
+	<h2>Details for fleet #{{ .Fleet.Id }}</h2>
+
+	<div class="fleetdetails">
+		<b>Fleet name:</b> {{ .Fleet.Name }}<br />
+		<b>Fleet system:</b> {{ .Fleet.System }} ({{ .Fleet.SystemNickname }})<br />
+		<b>Profit:</b> {{ .Fleet.Profit }}<br />
+		<b>Losses:</b> {{ .Fleet.Losses }}<br />
+		<b>Sites finished:</b> {{ .Fleet.SitesFinished }}<br />
+		<b>Start time:</b> {{ .Fleet.StartTime }}<br />
+		<b>End time:</b> {{ .Fleet.EndTime }}<br /><br />
+		
+		<h3>Fleet members:</h3><br />
+		
+		{{ range $member := .Fleet.Members }}
+		<div class="fleetmember">
+			<b>Name:</b> {{ $member.Name }}<br />
+			<b>Role:</b> {{ $member.Role }}<br />
+			<b>Site modifier:</b> {{ $member.SiteModifier }}<br />
+			<b>Payout modifier:</b> {{ $member.PaymentModifier }}<br /><br />
+		</div>		
+		{{ end }}
+	</div>
+
+	{{ template "footer" }}	
+{{ end }}

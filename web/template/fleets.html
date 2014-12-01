@@ -1,0 +1,18 @@
+{{ define "fleets" }}
+	{{ template "header" }}
+	{{ template "navigation" }}
+	
+	<h2>Overview of fleets</h2>
+	
+	<div class="fleetoverview">
+	
+	{{ range $fleet := .Fleets }}
+	<div class="fleet">
+		<a href="/fleet/{{ $fleet.Id }}">#{{ $fleet.Id }} {{ $fleet.Name }}</a> ({{ $fleet.System }}) - {{ $fleet.StartTime }}
+	</div>
+	{{ end }}
+	
+	</div>
+	
+	{{ template "footer" }}	
+{{ end }}

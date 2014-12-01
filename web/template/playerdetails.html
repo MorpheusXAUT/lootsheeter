@@ -1,0 +1,15 @@
+{{ define "playerdetails" }}
+	{{ template "header" }}
+	{{ template "navigation" }}
+
+	<h2>Details for player #{{ .Player.Id }}</h2>
+
+	<div class="playerdetails">
+		<b>Player name:</b> {{ .Player.Name }}<br />
+		<b>Player ID:</b> {{ .Player.PlayerId }}<br />
+		<b>Corporation:</b> {{ .Player.Corporation.Name }} [{{ .Player.Corporation.Ticker }}]<br />
+		<b>Access:</b> {{ .Player.AccessMask }}<br />
+	</div>
+
+	{{ template "footer" }}	
+{{ end }}

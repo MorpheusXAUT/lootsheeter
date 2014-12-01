@@ -1,0 +1,18 @@
+{{ define "players" }}
+	{{ template "header" }}
+	{{ template "navigation" }}
+	
+	<h2>Overview of players</h2>
+	
+	<div class="playeroverview">
+	
+	{{ range $player := .Players }}
+	<div class="player">
+		<a href="/player/{{ $player.Id }}">#{{ $player.Id }} {{ $player.Name }}</a> ({{ $player.Corporation.Name }})
+	</div>
+	{{ end }}
+	
+	</div>
+	
+	{{ template "footer" }}	
+{{ end }}
