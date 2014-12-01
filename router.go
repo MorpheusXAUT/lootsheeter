@@ -14,7 +14,7 @@ var (
 )
 
 func SetupRouter(strictSlash bool) {
-	logger.Debugf("Setting up new routers (StrictSlash: %v)...", strictSlash)
+	logger.Infof("Setting up new routers (StrictSlash: %v)...", strictSlash)
 
 	router = mux.NewRouter().StrictSlash(strictSlash)
 
@@ -29,11 +29,11 @@ func SetupRouter(strictSlash bool) {
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./web/assets")))
 
-	logger.Debugf("Successfully set up new router!")
+	logger.Infof("Successfully set up new router!")
 }
 
 func HandleRequests(host string, port int) {
-	logger.Debugf("Listening for requests on %q...", net.JoinHostPort(host, strconv.Itoa(port)))
+	logger.Infof("Listening for requests on %q...", net.JoinHostPort(host, strconv.Itoa(port)))
 
 	http.Handle("/", router)
 	err := http.ListenAndServe(net.JoinHostPort(host, strconv.Itoa(port)), nil)

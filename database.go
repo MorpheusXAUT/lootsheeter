@@ -29,7 +29,7 @@ func NewDatabase(d *sql.DB) *Database {
 }
 
 func InitialiseDatabase(host string, port int, user string, password string, data string) {
-	logger.Debugf("Trying to connect to MySQL database at %q...", net.JoinHostPort(host, strconv.Itoa(port)))
+	logger.Infof("Trying to connect to MySQL database at %q...", net.JoinHostPort(host, strconv.Itoa(port)))
 
 	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=true", user, password, net.JoinHostPort(host, strconv.Itoa(port)), data))
 	if err != nil {
@@ -39,7 +39,7 @@ func InitialiseDatabase(host string, port int, user string, password string, dat
 
 	database = NewDatabase(db)
 
-	logger.Debugln("Successfully connected to database, trying to ping...")
+	logger.Infof("Successfully connected to database, trying to ping...")
 
 	err = database.db.Ping()
 	if err != nil {
@@ -47,11 +47,11 @@ func InitialiseDatabase(host string, port int, user string, password string, dat
 		return
 	}
 
-	logger.Debugln("Successfully pinged database, initialisation completed!")
+	logger.Infof("Successfully pinged database, initialisation completed!")
 }
 
 func (db *Database) LoadCorporation(id int64) (*models.Corporation, error) {
-	logger.Debugf("Querying database for corporation with cid = %d...", id)
+	logger.Tracef("Querying database for corporation with cid = %d...", id)
 
 	row := db.db.QueryRow("SELECT c.id as cid, c.corporation_id AS corporation_id, c.name as corporation_name, c.ticker AS corporation_ticker FROM corporations AS c WHERE c.active = 'Y' AND c.id = ?", id)
 
@@ -67,7 +67,7 @@ func (db *Database) LoadCorporation(id int64) (*models.Corporation, error) {
 }
 
 func (db *Database) LoadPlayer(id int64) (*models.Player, error) {
-	logger.Debugf("Querying database for player with pid = %d...", id)
+	logger.Tracef("Querying database for player with pid = %d...", id)
 
 	row := db.db.QueryRow("SELECT p.id AS pid, p.player_id AS player_id, p.name AS player_name, p.corporation_id AS cid, p.access AS player_access FROM players AS p WHERE p.active = 'Y' AND p.id = ?", id)
 
@@ -89,7 +89,7 @@ func (db *Database) LoadPlayer(id int64) (*models.Player, error) {
 }
 
 func (db *Database) LoadAllPlayers() ([]*models.Player, error) {
-	logger.Debugf("Querying database for all players...")
+	logger.Tracef("Querying database for all players...")
 
 	players := make([]*models.Player, 0)
 
@@ -120,7 +120,7 @@ func (db *Database) LoadAllPlayers() ([]*models.Player, error) {
 }
 
 func (db *Database) LoadFleetMembers(id int64) ([]*models.FleetMember, error) {
-	logger.Debugf("Querying database for fleet members with fid = %d...", id)
+	logger.Tracef("Querying database for fleet members with fid = %d...", id)
 
 	fleetMembers := make([]*models.FleetMember, 0)
 
@@ -151,7 +151,7 @@ func (db *Database) LoadFleetMembers(id int64) ([]*models.FleetMember, error) {
 }
 
 func (db *Database) LoadFleet(id int64) (*models.Fleet, error) {
-	logger.Debugf("Querying database for fleet with fid = %d...", id)
+	logger.Tracef("Querying database for fleet with fid = %d...", id)
 
 	row := db.db.QueryRow("SELECT f.id AS fid, f.name as fleet_name, f.system AS fleet_system, f.system_nickname AS fleet_system_nickname, f.profit AS fleet_profit, f.losses AS fleet_losses, f.sites_finished AS fleet_sites_finished, f.`start` AS fleet_start, f.`end` AS fleet_end FROM fleets AS f WHERE f.active = 'Y' AND f.id = ?", id)
 
@@ -188,7 +188,7 @@ func (db *Database) LoadFleet(id int64) (*models.Fleet, error) {
 }
 
 func (db *Database) LoadAllFleets() ([]*models.Fleet, error) {
-	logger.Debugf("Querying database for all fleets...")
+	logger.Tracef("Querying database for all fleets...")
 
 	fleets := make([]*models.Fleet, 0)
 

@@ -23,6 +23,6 @@ func WebLogger(inner http.Handler, name string) http.Handler {
 
 		inner.ServeHTTP(w, r)
 
-		logger.Tracef("WebLogger: [%s] %q {%s} - %s ", r.Method, r.RequestURI, name, time.Since(start))
+		logger.Debugf("WebLogger: [%s] %q {%s} - %s ", r.Method, r.RequestURI, name, time.Since(start))
 	})
 }
