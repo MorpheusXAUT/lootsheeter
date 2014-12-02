@@ -181,3 +181,64 @@ func (fleet *Fleet) GetMemberSitesFinished(player string) (int, error) {
 
 	return (fleet.SitesFinished - modifier), nil
 }
+
+func (fleet *Fleet) GetMemberPaymentModifier(player string) (float64, error) {
+	if !fleet.HasMember(player) {
+		return 0, fmt.Errorf("Member %q does not exists in fleet, cannot get payment modifier")
+	}
+
+	var modifier float64
+
+	for _, member := range fleet.Members {
+		if strings.EqualFold(member.Name, player) {
+			modifier = member.PaymentModifier
+		}
+	}
+
+	return modifier, nil
+}
+
+func (fleet *Fleet) CalculatePayments() map[string]float64 {
+	payments := make(map[string]float64)
+	var totalPoints float64
+	var corpPayment float64
+	var payout float64
+
+	totalPoints = 0
+	corpPayment = (fleet.Profit - fleet.Losses) * 0.28
+	payout = fleet.Profit - corpPayment - fleet.Losses
+
+	payments["CORPORATION"] = corpPayment
+
+	for _, member := range fleet.Members {
+		var points float64
+		if member.PaymentModifier != 1 {
+			points = float64((fleet.SitesFinished + member.SiteModifier)) * member.PaymentModifier
+		} else {
+			points = float64((fleet.SitesFinished + member.SiteModifier)) * member.Role.PaymentRate()
+		}
+
+		totalPoints += points
+	}
+
+	for _, member := range fleet.Members {
+		var points float64
+		var isk float64
+
+		if member.PaymentModifier != 1 {
+			points = float64((fleet.SitesFinished + member.SiteModifier)) * member.PaymentModifier
+		} else {
+			points = float64((fleet.SitesFinished + member.SiteModifier)) * member.Role.PaymentRate()
+		}
+
+		if totalPoints > 0 {
+			isk = payout * (points / totalPoints)
+		} else {
+			isk = 0
+		}
+
+		payments[member.Name] = isk
+	}
+
+	return payments
+}
