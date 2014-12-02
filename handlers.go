@@ -182,5 +182,13 @@ func PlayerDeleteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func AdminMenuHandler(w http.ResponseWriter, r *http.Request) {
+	data := make(map[string]interface{})
 
+	data["PageTitle"] = "Admin Menu"
+	data["PageType"] = 4
+
+	err := templates.ExecuteTemplate(w, "adminmenu", data)
+	if err != nil {
+		logger.Errorf("Failed to execute template in AdminMenuHandler: [%v]", err)
+	}
 }
