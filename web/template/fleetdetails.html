@@ -2,6 +2,8 @@
 	{{ template "header" . }}
 	{{ template "navigation" . }}
 
+	{{ $payments := .Fleet.CalculatePayments }}
+
 	<div class="container" role="main">
 		<div class="page-header">
 			<h1>Details for fleet #{{ .Fleet.Id }}</h1>
@@ -21,6 +23,7 @@
 									<th>Profit</th>
 									<th>Losses</th>
 									<th>Surplus</th>
+									<th>Corp Cut</th>
 									<th>Sites Finished</th>
 									<th>Start Time</th>
 									<th>End Time</th>
@@ -30,9 +33,10 @@
 								<tr>
 									<td>{{ .Fleet.Name }}</td>
 									<td>{{ .Fleet.System }} {{ if gt (len .Fleet.SystemNickname) 0 }}({{ .Fleet.SystemNickname }}){{ end }}</td>
-									{{ if .Fleet.HasProfit }}<td class="success">{{ .Fleet.GetProfitString }} ISK</td>{{ else }}<td>{{ .Fleet.GetProfitString }} ISK</td>{{ end }}
-									{{ if .Fleet.HasLosses }}<td class="error">{{ .Fleet.GetLossesString }} ISK</td>{{ else }}<td>{{ .Fleet.GetLossesString }} ISK</td>{{ end }}
-									{{ if .Fleet.HasPositiveSurplus }}<td class="success">{{ .Fleet.GetSurplusString }} ISK</td>{{ else }}<td class="error">{{ .Fleet.GetSurplusString }} ISK</td>{{ end }}
+									<td {{ if .Fleet.HasProfit }} class="success" {{ end }}>{{ printf "%.3f ISK" .Fleet.Profit }}</td>
+									<td {{ if .Fleet.HasLosses }} class="error" {{ end }}>{{ printf "%.3f ISK" .Fleet.Losses }}</td>
+									<td {{ if .Fleet.HasPositiveSurplus }} class="success" {{ else }} class="error" {{ end }}>{{ printf "%.3f ISK" .Fleet.GetSurplus }}</td>
+									<td>{{ printf "%.3f ISK" (index $payments "CORPORATION")}}
 									<td>{{ .Fleet.SitesFinished }}</td>
 									<td>{{ .Fleet.StartTime }}</td>
 									<td>{{ .Fleet.EndTime }}</td>
@@ -51,7 +55,8 @@
 									<th>Name</th>
 									<th>Role</th>
 									<th>Site modifier</th>
-									<th>Payout modifier</th>
+									<th>Payment modifier</th>
+									<th>Payout</th>
 									<th>Action</th>
 								</tr>
 							</thead>
@@ -62,7 +67,8 @@
 									<td>{{ $member.Name }}</td>
 									<td><h4><span class="label {{ $member.Role.LabelType }}">{{ $member.Role }}</span></h4></td>
 									<td>{{ $member.SiteModifier }}</td>
-									<td>{{ $member.PaymentModifier }}</td>
+									<td>{{ if eq $member.PaymentModifier 1.0 }} Standard {{ else }} {{ $member.PaymentModifier }} {{ end }}</td>
+									<td>{{ printf "%.3f ISK" (index $payments $member.Name) }}</td>
 									<td><a href="#" class="btn btn-primary">Edit</a>&nbsp;<a href="#" class="btn btn-danger">Remove</a></td>
 								</tr>
 								{{ end }}
