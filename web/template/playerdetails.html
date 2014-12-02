@@ -1,15 +1,45 @@
 {{ define "playerdetails" }}
-	{{ template "header" }}
-	{{ template "navigation" }}
+	{{ template "header" . }}
+	{{ template "navigation" . }}
 
-	<h2>Details for player #{{ .Player.Id }}</h2>
-
-	<div class="playerdetails">
-		<b>Player name:</b> {{ .Player.Name }}<br />
-		<b>Player ID:</b> {{ .Player.PlayerId }}<br />
-		<b>Corporation:</b> {{ .Player.Corporation.Name }} [{{ .Player.Corporation.Ticker }}]<br />
-		<b>Access:</b> {{ .Player.AccessMask }}<br />
+	<div class="container" role="main">
+		<div class="page-header">
+			<h1>Details for player #{{ .Player.Id }}</h1>
+		</div>
+		<div class="row">
+			<div class="col-md">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3>Player</h3>
+					</div>
+					<div class="panel-body">
+						<table class="table table-bordered">
+							<thead>
+								<tr>
+									<th>Player Name</th>
+									<th>Player ID</th>
+									<th>Access</th>
+									<th>Corporation Name</th>
+									<th>Corporation ID</th>
+									<th>Corporation Ticker</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>{{ .Player.Name }}</td>
+									<td>{{ .Player.PlayerId }}</td>
+									<td>{{ .Player.AccessMask }}</td>
+									<td>{{ .Player.Corporation.Name }}</td>
+									<td>{{ .Player.Corporation.CorpId }}</td>
+									<td>{{ .Player.Corporation.Ticker }}</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 
-	{{ template "footer" }}	
+	{{ template "footer" . }}	
 {{ end }}

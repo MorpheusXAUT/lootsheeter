@@ -1,11 +1,13 @@
 {{ define "index" }}
-	{{ template "header" }}
-	{{ template "navigation" }}
+	{{ template "header" . }}
+	{{ template "navigation" . }}
 	
-	<h1>lootsheeter - Lootsheet management awesomeshit</h1>
+	<div class="container" role="main">
+		<div class="jumbotron">
+			<h1>lootsheeter</h1>
+			<p>lootsheeter allows your corporation to track lootsheets and manage fleets.</p>
+		</div>
+	</div>
 	
-	<div><a href="/fleets">Fleet Overview</a></div>
-	<div><a href="/players">Player Overview</a></div>
-	
-	{{ template "footer" }}
+	{{ template "footer" . }}
 {{ end }}

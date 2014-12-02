@@ -2,28 +2,36 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/morpheusxaut/lootsheeter/models"
 )
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	data := struct {
-	}{}
+	data := make(map[string]interface{})
+
+	data["PageTitle"] = "Index"
+	data["PageType"] = 1
 
 	templates.ExecuteTemplate(w, "index", data)
 }
 
 func TrustRequestHandler(w http.ResponseWriter, r *http.Request) {
+	data := make(map[string]interface{})
 
+	data["PageTitle"] = "Trust requested"
+	data["PageType"] = 1
+
+	templates.ExecuteTemplate(w, "index", data)
 }
 
 func FleetListHandler(w http.ResponseWriter, r *http.Request) {
-	data := struct {
-		Fleets []*models.Fleet
-	}{}
+	data := make(map[string]interface{})
+
+	data["PageTitle"] = "Fleets"
+	data["PageType"] = 2
 
 	fleets, err := database.LoadAllFleets()
 	if err != nil {
@@ -33,7 +41,7 @@ func FleetListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data.Fleets = fleets
+	data["Fleets"] = fleets
 
 	err = templates.ExecuteTemplate(w, "fleets", data)
 	if err != nil {
@@ -55,9 +63,10 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := struct {
-		Fleet *models.Fleet
-	}{}
+	data := make(map[string]interface{})
+
+	data["PageTitle"] = fmt.Sprintf("Details Fleet #%d", fleetId)
+	data["PageType"] = 2
 
 	fleet, err := database.LoadFleet(fleetId)
 	if err != nil {
@@ -67,7 +76,7 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data.Fleet = fleet
+	data["Fleet"] = fleet
 
 	err = templates.ExecuteTemplate(w, "fleetdetails", data)
 	if err != nil {
@@ -84,9 +93,10 @@ func FleetDeleteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func PlayerListHandler(w http.ResponseWriter, r *http.Request) {
-	data := struct {
-		Players []*models.Player
-	}{}
+	data := make(map[string]interface{})
+
+	data["PageTitle"] = "Players"
+	data["PageType"] = 3
 
 	players, err := database.LoadAllPlayers()
 	if err != nil {
@@ -96,7 +106,7 @@ func PlayerListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data.Players = players
+	data["Players"] = players
 
 	err = templates.ExecuteTemplate(w, "players", data)
 	if err != nil {
@@ -118,9 +128,10 @@ func PlayerDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := struct {
-		Player *models.Player
-	}{}
+	data := make(map[string]interface{})
+
+	data["PageTitle"] = fmt.Sprintf("Details Player #%d", playerId)
+	data["PageType"] = 3
 
 	player, err := database.LoadPlayer(playerId)
 	if err != nil {
@@ -130,7 +141,7 @@ func PlayerDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data.Player = player
+	data["Player"] = player
 
 	err = templates.ExecuteTemplate(w, "playerdetails", data)
 	if err != nil {

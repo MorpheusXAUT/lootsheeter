@@ -2,6 +2,7 @@
 package main
 
 import (
+	"html/template"
 	"net/http"
 	"os"
 	"time"
@@ -20,6 +21,10 @@ func SetupLogger() {
 func WebLogger(inner http.Handler, name string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+
+		if *debugLevelFlag == 1 {
+			templates = template.Must(template.New("").ParseGlob("web/template/*"))
+		}
 
 		inner.ServeHTTP(w, r)
 

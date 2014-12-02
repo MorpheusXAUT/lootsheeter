@@ -1,18 +1,38 @@
 {{ define "fleets" }}
-	{{ template "header" }}
-	{{ template "navigation" }}
+	{{ template "header" . }}
+	{{ template "navigation" . }}
 	
-	<h2>Overview of fleets</h2>
-	
-	<div class="fleetoverview">
-	
-	{{ range $fleet := .Fleets }}
-	<div class="fleet">
-		<a href="/fleet/{{ $fleet.Id }}">#{{ $fleet.Id }} {{ $fleet.Name }}</a> ({{ $fleet.System }}) - {{ $fleet.StartTime }}
+	<div class="container" role="main">
+		<div class="page-header">
+			<h1>Currently active fleets</h1>
+		</div>
+		<div class="row">
+			<div class="col-md">
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Name</th>
+							<th>System</th>
+							<th>Start Time</th>
+							<th>Action</th>
+						</tr>
+					</thead>
+					<tbody>
+						{{ range $fleet := .Fleets }}
+						<tr>
+							<td><a href="/fleet/{{ $fleet.Id }}">{{ $fleet.Id }}</a></td>
+							<td>{{ $fleet.Name }}</td>
+							<td>{{ $fleet.System }}{{ if gt (len $fleet.SystemNickname) 0}} ({{ $fleet.SystemNickname }}){{ end }}</td>
+							<td>{{ $fleet.StartTime }}</td>
+							<td><a href="/fleet/{{ $fleet.Id }}" class="btn btn-default">View</a>&nbsp;<a href="/fleet/{{ $fleet.Id }}/edit" class="btn btn-primary">Edit</a>&nbsp;<a href="/fleet/{{ $fleet.Id }}/delete" class="btn btn-danger">Delete</a></td>
+						</tr>
+						{{ end }}
+					</tbody>
+				</table>
+			</div>
+		</div>
 	</div>
-	{{ end }}
 	
-	</div>
-	
-	{{ template "footer" }}	
+	{{ template "footer" . }}	
 {{ end }}

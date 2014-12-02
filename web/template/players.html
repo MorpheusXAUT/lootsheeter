@@ -1,18 +1,36 @@
 {{ define "players" }}
-	{{ template "header" }}
-	{{ template "navigation" }}
+	{{ template "header" . }}
+	{{ template "navigation" . }}
 	
-	<h2>Overview of players</h2>
-	
-	<div class="playeroverview">
-	
-	{{ range $player := .Players }}
-	<div class="player">
-		<a href="/player/{{ $player.Id }}">#{{ $player.Id }} {{ $player.Name }}</a> ({{ $player.Corporation.Name }})
+	<div class="container" role="main">
+		<div class="page-header">
+			<h1>Currently active players</h1>
+		</div>
+		<div class="row">
+			<div class="col-md">
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Name</th>
+							<th>Corporation</th>
+							<th>Action</th>
+						</tr>
+					</thead>
+					<tbody>
+						{{ range $player := .Players }}
+						<tr>
+							<td><a href="/player/{{ $player.Id }}">{{ $player.Id }}</a></td>
+							<td>{{ $player.Name }}</td>
+							<td>{{ $player.Corporation.Name }}</td>
+							<td><a href="/player/{{ $player.Id }}" class="btn btn-default">View</a>&nbsp;<a href="/player/{{ $player.Id }}/edit" class="btn btn-primary">Edit</a>&nbsp;<a href="/player/{{ $player.Id }}/delete" class="btn btn-danger">Delete</a></td>
+						</tr>
+						{{ end }}
+					</tbody>
+				</table>
+			</div>
+		</div>
 	</div>
-	{{ end }}
 	
-	</div>
-	
-	{{ template "footer" }}	
+	{{ template "footer" . }}	
 {{ end }}
