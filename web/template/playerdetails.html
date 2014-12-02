@@ -18,20 +18,20 @@
 								<tr>
 									<th>Player Name</th>
 									<th>Player ID</th>
-									<th>Access</th>
 									<th>Corporation Name</th>
 									<th>Corporation ID</th>
 									<th>Corporation Ticker</th>
+									<th>Access</th>
 								</tr>
 							</thead>
 							<tbody>
 								<tr>
 									<td>{{ .Player.Name }}</td>
 									<td>{{ .Player.PlayerId }}</td>
-									<td>{{ .Player.AccessMask }}</td>
 									<td>{{ .Player.Corporation.Name }}</td>
 									<td>{{ .Player.Corporation.CorpId }}</td>
 									<td>{{ .Player.Corporation.Ticker }}</td>
+									<td>{{ .Player.AccessMask }}</td>
 								</tr>
 							</tbody>
 						</table>

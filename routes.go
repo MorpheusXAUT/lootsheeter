@@ -32,6 +32,12 @@ var routes = []Route{
 		HandlerFunc: FleetListHandler,
 	},
 	Route{
+		Name:        "FleetListAll",
+		Methods:     []string{"GET"},
+		Pattern:     "/fleets/all",
+		HandlerFunc: FleetListAllHandler,
+	},
+	Route{
 		Name:        "FleetCreate",
 		Methods:     []string{"GET", "POST"},
 		Pattern:     "/fleets/create",
@@ -84,5 +90,11 @@ var routes = []Route{
 		Methods:     []string{"GET", "POST"},
 		Pattern:     "/player/{playerid:[0-9]+}/delete",
 		HandlerFunc: PlayerDeleteHandler,
+	},
+	Route{
+		Name:        "AdminMenu",
+		Methods:     []string{"GET"},
+		Pattern:     "/admin",
+		HandlerFunc: AdminMenuHandler,
 	},
 }

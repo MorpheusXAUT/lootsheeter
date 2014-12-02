@@ -30,7 +30,7 @@ func TrustRequestHandler(w http.ResponseWriter, r *http.Request) {
 func FleetListHandler(w http.ResponseWriter, r *http.Request) {
 	data := make(map[string]interface{})
 
-	data["PageTitle"] = "Fleets"
+	data["PageTitle"] = "Active Fleets"
 	data["PageType"] = 2
 
 	fleets, err := database.LoadAllFleets()
@@ -42,10 +42,34 @@ func FleetListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data["Fleets"] = fleets
+	data["ShowAll"] = false
 
 	err = templates.ExecuteTemplate(w, "fleets", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in FleetListHandler: [%v]", err)
+	}
+}
+
+func FleetListAllHandler(w http.ResponseWriter, r *http.Request) {
+	data := make(map[string]interface{})
+
+	data["PageTitle"] = "All Fleets"
+	data["PageType"] = 2
+
+	fleets, err := database.LoadAllFleets()
+	if err != nil {
+		logger.Errorf("Failed to load all fleets in FleetListAllHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data["Fleets"] = fleets
+	data["ShowAll"] = true
+
+	err = templates.ExecuteTemplate(w, "fleets", data)
+	if err != nil {
+		logger.Errorf("Failed to execute template in FleetListAllHandler: [%v]", err)
 	}
 }
 
@@ -154,5 +178,9 @@ func PlayerEditHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func PlayerDeleteHandler(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func AdminMenuHandler(w http.ResponseWriter, r *http.Request) {
 
 }

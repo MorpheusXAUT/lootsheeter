@@ -1,6 +1,11 @@
 // fleetmember
 package models
 
+import (
+	"fmt"
+	"strings"
+)
+
 type FleetMember struct {
 	Id      int64
 	FleetId int64
@@ -21,6 +26,10 @@ func NewFleetMember(id int64, fleetId int64, player *Player, role FleetRole, sit
 	}
 
 	return member
+}
+
+func (member *FleetMember) HasRole(role string) bool {
+	return strings.EqualFold(role, fmt.Sprintf("%s", member.Role))
 }
 
 func (member *FleetMember) TickSiteModifier() {

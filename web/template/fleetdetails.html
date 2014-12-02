@@ -20,6 +20,7 @@
 									<th>Fleet System</th>
 									<th>Profit</th>
 									<th>Losses</th>
+									<th>Surplus</th>
 									<th>Sites Finished</th>
 									<th>Start Time</th>
 									<th>End Time</th>
@@ -29,8 +30,9 @@
 								<tr>
 									<td>{{ .Fleet.Name }}</td>
 									<td>{{ .Fleet.System }} {{ if gt (len .Fleet.SystemNickname) 0 }}({{ .Fleet.SystemNickname }}){{ end }}</td>
-									<td>{{ printf "%.3f" .Fleet.Profit }}</td>
-									<td>{{ printf "%.3f" .Fleet.Losses }}</td>
+									{{ if .Fleet.HasProfit }}<td class="success">{{ .Fleet.GetProfitString }} ISK</td>{{ else }}<td>{{ .Fleet.GetProfitString }} ISK</td>{{ end }}
+									{{ if .Fleet.HasLosses }}<td class="error">{{ .Fleet.GetLossesString }} ISK</td>{{ else }}<td>{{ .Fleet.GetLossesString }} ISK</td>{{ end }}
+									{{ if .Fleet.HasPositiveSurplus }}<td class="success">{{ .Fleet.GetSurplusString }} ISK</td>{{ else }}<td class="error">{{ .Fleet.GetSurplusString }} ISK</td>{{ end }}
 									<td>{{ .Fleet.SitesFinished }}</td>
 									<td>{{ .Fleet.StartTime }}</td>
 									<td>{{ .Fleet.EndTime }}</td>
@@ -58,14 +60,17 @@
 								<tr>
 									<td>{{ $member.Id }}</a></td>
 									<td>{{ $member.Name }}</td>
-									<td>{{ $member.Role }}</td>
+									<td><h4><span class="label {{ $member.Role.LabelType }}">{{ $member.Role }}</span></h4></td>
 									<td>{{ $member.SiteModifier }}</td>
 									<td>{{ $member.PaymentModifier }}</td>
-									<td><a href="#" class="btn btn-primary">Edit</a></td>
+									<td><a href="#" class="btn btn-primary">Edit</a>&nbsp;<a href="#" class="btn btn-danger">Remove</a></td>
 								</tr>
 								{{ end }}
 							</tbody>
 						</table>
+						<p align="center">
+							<a href="#" class="btn btn-success">Add Member</a>
+						</p>
 					</div>
 				</div>
 			</div>

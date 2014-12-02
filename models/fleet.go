@@ -40,6 +40,10 @@ func NewFleet(id int64, name string, system string, systemNick string, profit fl
 	return fleet
 }
 
+func (fleet *Fleet) IsFleetFinished() bool {
+	return !fleet.EndTime.IsZero()
+}
+
 func (fleet *Fleet) FinishFleet() {
 	fleet.EndTime = time.Now()
 }
@@ -50,6 +54,34 @@ func (fleet *Fleet) AddProfit(profit float64) {
 
 func (fleet *Fleet) AddLoss(loss float64) {
 	fleet.Losses += loss
+}
+
+func (fleet *Fleet) HasProfit() bool {
+	return fleet.Profit > 0
+}
+
+func (fleet *Fleet) HasLosses() bool {
+	return fleet.Losses > 0
+}
+
+func (fleet *Fleet) GetProfitString() string {
+	return FormatFloat(fleet.Profit)
+}
+
+func (fleet *Fleet) GetLossesString() string {
+	return FormatFloat(fleet.Losses)
+}
+
+func (fleet *Fleet) HasPositiveSurplus() bool {
+	return (fleet.Profit - fleet.Losses) > 0
+}
+
+func (fleet *Fleet) GetSurplus() float64 {
+	return fleet.Profit - fleet.Losses
+}
+
+func (fleet *Fleet) GetSurplusString() string {
+	return FormatFloat(fleet.Profit - fleet.Losses)
 }
 
 func (fleet *Fleet) TickSitesFinished() {

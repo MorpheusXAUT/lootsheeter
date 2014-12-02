@@ -4,7 +4,12 @@
 	
 	<div class="container" role="main">
 		<div class="page-header">
+			{{ $ShowAll := .ShowAll}}
+			{{ if $ShowAll }}
+			<h1>All fleets</h1>
+			{{ else }}
 			<h1>Currently active fleets</h1>
+			{{ end }}
 		</div>
 		<div class="row">
 			<div class="col-md">
@@ -20,6 +25,7 @@
 					</thead>
 					<tbody>
 						{{ range $fleet := .Fleets }}
+						{{ if or $ShowAll (not $fleet.IsFleetFinished) }}
 						<tr>
 							<td><a href="/fleet/{{ $fleet.Id }}">{{ $fleet.Id }}</a></td>
 							<td>{{ $fleet.Name }}</td>
@@ -27,6 +33,7 @@
 							<td>{{ $fleet.StartTime }}</td>
 							<td><a href="/fleet/{{ $fleet.Id }}" class="btn btn-default">View</a>&nbsp;<a href="/fleet/{{ $fleet.Id }}/edit" class="btn btn-primary">Edit</a>&nbsp;<a href="/fleet/{{ $fleet.Id }}/delete" class="btn btn-danger">Delete</a></td>
 						</tr>
+						{{ end }}
 						{{ end }}
 					</tbody>
 				</table>

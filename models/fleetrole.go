@@ -16,20 +16,41 @@ const (
 func (role FleetRole) String() string {
 	switch role {
 	case FleetRoleUnknown:
-		return "unknown"
+		return "Unknown"
 	case FleetRoleNone:
-		return "none"
+		return "None"
 	case FleetRoleScout:
-		return "scout"
+		return "Scout"
 	case FleetRoleSalvage:
-		return "salvage"
+		return "Salvage"
 	case FleetRoleLogistics:
-		return "logistics"
+		return "Logistics"
 	case FleetRoleDPS:
-		return "dps"
+		return "DPS"
 	case FleetRoleFleetCommander:
-		return "fleetcommander"
+		return "Fleetcommander"
 	default:
-		return "invalid"
+		return "Invalid"
+	}
+}
+
+func (role FleetRole) LabelType() string {
+	switch role {
+	case FleetRoleUnknown:
+		return ""
+	case FleetRoleNone:
+		return ""
+	case FleetRoleScout:
+		return "label-default"
+	case FleetRoleSalvage:
+		return "label-info"
+	case FleetRoleLogistics:
+		return "label-success"
+	case FleetRoleDPS:
+		return "label-primary"
+	case FleetRoleFleetCommander:
+		return "label-warning"
+	default:
+		return "label-danger"
 	}
 }
