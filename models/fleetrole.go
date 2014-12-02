@@ -54,3 +54,24 @@ func (role FleetRole) LabelType() string {
 		return "label-danger"
 	}
 }
+
+func (role FleetRole) PaymentRate() float64 {
+	switch role {
+	case FleetRoleUnknown:
+		return 0
+	case FleetRoleNone:
+		return 0
+	case FleetRoleScout:
+		return 1
+	case FleetRoleSalvage:
+		return 1
+	case FleetRoleLogistics:
+		return 1
+	case FleetRoleDPS:
+		return 1
+	case FleetRoleFleetCommander:
+		return 1.25
+	default:
+		return 0
+	}
+}
