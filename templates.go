@@ -30,8 +30,8 @@ func FormatFloat(f float64) string {
 		}
 
 		digitsAfterPoint := len(fString) - strings.Index(fString, ".")
-		if digitsAfterPoint > 4 {
-			digitsAfterPoint = 4
+		if digitsAfterPoint > 3 {
+			digitsAfterPoint = 3
 		}
 
 		formattedFloat = fmt.Sprintf("%s%s", humanize.Comma(fInt), fString[strings.Index(fString, "."):strings.Index(fString, ".")+digitsAfterPoint])
@@ -41,7 +41,7 @@ func FormatFloat(f float64) string {
 			return fString
 		}
 
-		formattedFloat = humanize.Comma(fInt)
+		formattedFloat = fmt.Sprintf("%s.00", humanize.Comma(fInt))
 	}
 
 	return formattedFloat
