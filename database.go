@@ -380,3 +380,73 @@ func (db *Database) SaveFleetMember(fleetId int64, member *models.FleetMember) (
 
 	return member, nil
 }
+
+func (db *Database) SavePlayer(player *models.Player) (*models.Player, error) {
+	logger.Tracef("Saving player #%d to database...", player.Id)
+
+	_, err := db.LoadPlayer(player.Id)
+	if err != nil {
+		result, err := db.db.Exec("INSERT INTO players(player_id, name, corporation_id, access) VALUES (?, ?, ?, ?)", player.PlayerId, player.Name, player.Corporation.Id, player.AccessMask)
+		if err != nil {
+			return player, err
+		}
+
+		id, err := result.LastInsertId()
+		if err != nil {
+			return player, err
+		}
+
+		player.Id = id
+	} else {
+		result, err := db.db.Exec("UPDATE players SET player_id=?, name=?, corporation_id=?, access=? WHERE id=?", player.PlayerId, player.Name, player.Corporation.Id, player.AccessMask, player.Id)
+		if err != nil {
+			return player, err
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return player, err
+		}
+
+		if rowsAffected != 1 {
+			return player, fmt.Errorf("Failed to update player #%d in database, no rows affected", player.Id)
+		}
+	}
+
+	return player, nil
+}
+
+func (db *Database) SaveCorporation(corporation *models.Corporation) (*models.Corporation, error) {
+	logger.Tracef("Saving corporation #%d to database...", corporation.Id)
+
+	_, err := db.LoadCorporation(corporation.Id)
+	if err != nil {
+		result, err := db.db.Exec("INSERT INTO corporations(corporation_id, name, ticker) VALUES (?, ?, ?)", corporation.CorpId, corporation.Name, corporation.Ticker)
+		if err != nil {
+			return corporation, err
+		}
+
+		id, err := result.LastInsertId()
+		if err != nil {
+			return corporation, err
+		}
+
+		corporation.Id = id
+	} else {
+		result, err := db.db.Exec("UPDATE corporations SET corporation_id=?, name=?, ticker=? WHERE id=?", corporation.CorpId, corporation.Name, corporation.Ticker, corporation.Id)
+		if err != nil {
+			return corporation, err
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return corporation, err
+		}
+
+		if rowsAffected != 1 {
+			return corporation, fmt.Errorf("Failed to update corporation #%d in database, no rows affected", corporation.Id)
+		}
+	}
+
+	return corporation, nil
+}
