@@ -9,34 +9,36 @@ import (
 )
 
 type Fleet struct {
-	Id             int64
-	Name           string
-	Members        []*FleetMember
-	System         string
-	SystemNickname string
-	StartTime      time.Time
-	EndTime        time.Time
-	Profit         float64
-	Losses         float64
-	SitesFinished  int
-	PayoutComplete bool
+	Id                int64
+	Name              string
+	Members           []*FleetMember
+	System            string
+	SystemNickname    string
+	StartTime         time.Time
+	EndTime           time.Time
+	Profit            float64
+	Losses            float64
+	SitesFinished     int
+	CorporationPayout float64
+	PayoutComplete    bool
 
 	fleetMembersMutex sync.RWMutex
 }
 
-func NewFleet(id int64, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time, complete bool) *Fleet {
+func NewFleet(id int64, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time, payout float64, complete bool) *Fleet {
 	fleet := &Fleet{
-		Id:             id,
-		Name:           name,
-		Members:        make([]*FleetMember, 0),
-		System:         system,
-		SystemNickname: systemNick,
-		Profit:         profit,
-		Losses:         losses,
-		SitesFinished:  sites,
-		StartTime:      start,
-		EndTime:        end,
-		PayoutComplete: complete,
+		Id:                id,
+		Name:              name,
+		Members:           make([]*FleetMember, 0),
+		System:            system,
+		SystemNickname:    systemNick,
+		Profit:            profit,
+		Losses:            losses,
+		SitesFinished:     sites,
+		StartTime:         start,
+		EndTime:           end,
+		CorporationPayout: payout,
+		PayoutComplete:    complete,
 	}
 
 	return fleet
@@ -48,6 +50,7 @@ func (fleet *Fleet) IsFleetFinished() bool {
 
 func (fleet *Fleet) FinishFleet() {
 	fleet.EndTime = time.Now()
+	fleet.CalculatePayouts()
 }
 
 func (fleet *Fleet) AddProfit(profit float64) {
@@ -176,8 +179,7 @@ func (fleet *Fleet) GetMemberPaymentModifier(player string) (float64, error) {
 	return modifier, nil
 }
 
-func (fleet *Fleet) CalculatePayments() map[string]float64 {
-	payments := make(map[string]float64)
+func (fleet *Fleet) CalculatePayouts() {
 	var totalPoints float64
 	var corpPayment float64
 	var payout float64
@@ -186,7 +188,7 @@ func (fleet *Fleet) CalculatePayments() map[string]float64 {
 	corpPayment = (fleet.Profit - fleet.Losses) * 0.28
 	payout = fleet.Profit - corpPayment - fleet.Losses
 
-	payments["CORPORATION"] = corpPayment
+	fleet.CorporationPayout = corpPayment
 
 	for _, member := range fleet.Members {
 		var points float64
@@ -215,8 +217,6 @@ func (fleet *Fleet) CalculatePayments() map[string]float64 {
 			isk = 0
 		}
 
-		payments[member.Name] = isk
+		member.Payout = isk
 	}
-
-	return payments
 }
