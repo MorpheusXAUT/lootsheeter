@@ -20,31 +20,31 @@ const (
 )
 
 func (mask AccessMask) String() string {
-	str := "unknown|"
+	str := ""
 
 	if mask&AccessMaskNone == AccessMaskNone {
-		str += "none|"
+		str += "None|"
 	}
 	if mask&AccessMaskMember == AccessMaskMember {
-		str += "member|"
+		str += "Member|"
 	}
 	if mask&AccessMaskJuniorFleetCommander == AccessMaskJuniorFleetCommander {
-		str += "juniorfleetcommander|"
+		str += "Junior Fleetcommander|"
 	}
 	if mask&AccessMaskSeniorFleetCommander == AccessMaskSeniorFleetCommander {
-		str += "seniorfleetcommander|"
+		str += "Senior Fleetcommander|"
 	}
 	if mask&AccessMaskOfficer == AccessMaskOfficer {
-		str += "officer|"
+		str += "Officer|"
 	}
 	if mask&AccessMaskDirector == AccessMaskDirector {
-		str += "director|"
+		str += "Director|"
 	}
 	if mask&AccessMaskCEO == AccessMaskCEO {
-		str += "ceo|"
+		str += "CEO|"
 	}
 	if mask&AccessMaskAdmin == AccessMaskAdmin {
-		str += "admin|"
+		str += "Admin|"
 	}
 
 	str = strings.TrimRight(str, "|")
