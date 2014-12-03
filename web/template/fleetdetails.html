@@ -33,10 +33,10 @@
 								<tr>
 									<td>{{ .Fleet.Name }}</td>
 									<td>{{ .Fleet.System }} {{ if gt (len .Fleet.SystemNickname) 0 }}({{ .Fleet.SystemNickname }}){{ end }}</td>
-									<td {{ if .Fleet.HasProfit }} class="success" {{ end }}>{{ printf "%.3f ISK" .Fleet.Profit }}</td>
-									<td {{ if .Fleet.HasLosses }} class="error" {{ end }}>{{ printf "%.3f ISK" .Fleet.Losses }}</td>
-									<td {{ if .Fleet.HasPositiveSurplus }} class="success" {{ else }} class="error" {{ end }}>{{ printf "%.3f ISK" .Fleet.GetSurplus }}</td>
-									<td>{{ printf "%.3f ISK" (index $payments "CORPORATION")}}
+									<td {{ if IsPositiveFloat .Fleet.Profit }} class="success" {{ end }}>{{ FormatFloat .Fleet.Profit }} ISK</td>
+									<td {{ if IsPositiveFloat .Fleet.Losses  }} class="error" {{ end }}>{{ FormatFloat .Fleet.Losses }} ISK</td>
+									<td {{ if IsPositiveFloat .Fleet.GetSurplus  }} class="success" {{ else }} class="error" {{ end }}>{{ FormatFloat .Fleet.GetSurplus }} ISK</td>
+									<td>{{ FormatFloat (index $payments "CORPORATION") }} ISK</td>
 									<td>{{ .Fleet.SitesFinished }}</td>
 									<td>{{ .Fleet.StartTime }}</td>
 									<td>{{ .Fleet.EndTime }}</td>
@@ -68,7 +68,7 @@
 									<td><h4><span class="label {{ $member.Role.LabelType }}">{{ $member.Role }}</span></h4></td>
 									<td>{{ $member.SiteModifier }}</td>
 									<td>{{ if eq $member.PaymentModifier 1.0 }} Standard {{ else }} {{ $member.PaymentModifier }} {{ end }}</td>
-									<td>{{ printf "%.3f ISK" (index $payments $member.Name) }}</td>
+									<td>{{ FormatFloat (index $payments $member.Name) }} ISK</td>
 									<td><a href="#" class="btn btn-primary">Edit</a>&nbsp;<a href="#" class="btn btn-danger">Remove</a></td>
 								</tr>
 								{{ end }}
