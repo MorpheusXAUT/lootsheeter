@@ -2,8 +2,6 @@
 	{{ template "header" . }}
 	{{ template "navigation" . }}
 
-	{{ $payments := .Fleet.CalculatePayments }}
-
 	<div class="container" role="main">
 		<div class="page-header">
 			<h1>Details for fleet #{{ .Fleet.Id }}</h1>
@@ -38,8 +36,8 @@
 								<tr>
 									<th>Start Time</th>
 									<td>{{ .Fleet.StartTime }}</td>
-									<th>Corp Cut</th>
-									<td class="text-right">{{ FormatFloat (index $payments "CORPORATION") }} ISK</td>
+									<th>Corporation Payout</th>
+									<td class="text-right">{{ FormatFloat .Fleet.CorporationPayout }} ISK</td>
 								</tr>
 								<tr>
 									<th>End Time</th>
@@ -49,6 +47,10 @@
 								</tr>
 							</tbody>
 						</table>
+						<p align="center">
+							<a href="#" class="btn btn-primary">Edit</a>
+							{{ if not .Fleet.IsFleetFinished }}<a href="/fleet/{{ .Fleet.Id }}/finish" class="btn btn-danger">Finish Fleet</a>{{ end }}
+						</p>
 					</div>
 					<div class="panel-heading">
 						<h3>Fleet Members</h3>
@@ -63,6 +65,7 @@
 									<th>Site modifier</th>
 									<th>Payment modifier</th>
 									<th>Payout</th>
+									<th>Payout Complete</th>
 									<th>Action</th>
 								</tr>
 							</thead>
@@ -74,7 +77,8 @@
 									<td><h4><span class="label {{ $member.Role.LabelType }}">{{ $member.Role }}</span></h4></td>
 									<td>{{ $member.SiteModifier }}</td>
 									<td>{{ if eq $member.PaymentModifier 1.0 }} {{ $member.Role.PaymentRate }} {{ else }} {{ $member.PaymentModifier }} {{ end }}</td>
-									<td class="text-right">{{ FormatFloat (index $payments $member.Name) }} ISK</td>
+									<td class="text-right">{{ FormatFloat $member.Payout }} ISK</td>
+									<td class="{{ if $member.PayoutComplete }} success {{ else }} danger {{ end }}">{{ if $member.PayoutComplete }} Done {{ else }} Outstanding {{ end }}</td>
 									<td><a href="#" class="btn btn-primary">Edit</a>&nbsp;<a href="#" class="btn btn-danger">Remove</a></td>
 								</tr>
 								{{ end }}

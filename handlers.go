@@ -112,6 +112,37 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func FleetFinishHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse fleet ID %q in FleetFinishHandler: [%v]", vars["fleetid"], err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fleet, err := database.LoadFleet(fleetId)
+	if err != nil {
+		logger.Errorf("Failed to load fleet in FleetFinishHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fleet.FinishFleet()
+
+	fleet, err = database.SaveFleet(fleet)
+	if err != nil {
+		logger.Errorf("Failed to save fleet in FleetFinishHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
+}
+
 func FleetDeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 }
