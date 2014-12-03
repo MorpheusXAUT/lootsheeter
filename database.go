@@ -374,7 +374,7 @@ func (db *Database) SaveFleetMember(fleetId int64, member *models.FleetMember) (
 		}
 
 		if rowsAffected != 1 {
-			return member, fmt.Errorf("Failed to update member #%d in database, no rows affected", member.Id)
+			return member, fmt.Errorf("Failed to update fleet member #%d in database, no rows affected", member.Id)
 		}
 	}
 
