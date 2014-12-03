@@ -16,30 +16,36 @@
 					</div>
 					<div class="panel-body">
 						<table class="table table-bordered">
-							<thead>
-								<tr>
-									<th>Fleet Name</th>
-									<th>Fleet System</th>
-									<th>Profit</th>
-									<th>Losses</th>
-									<th>Surplus</th>
-									<th>Corp Cut</th>
-									<th>Sites Finished</th>
-									<th>Start Time</th>
-									<th>End Time</th>
-								</tr>
-							</thead>
 							<tbody>
 								<tr>
+									<th>Fleet Name</th>
 									<td>{{ .Fleet.Name }}</td>
-									<td>{{ .Fleet.System }} {{ if gt (len .Fleet.SystemNickname) 0 }}({{ .Fleet.SystemNickname }}){{ end }}</td>
+									<th>Profit</th>
 									<td {{ if IsPositiveFloat .Fleet.Profit }} class="success" {{ end }}>{{ FormatFloat .Fleet.Profit }} ISK</td>
+								</tr>
+								<tr>
+									<th>Fleet System</th>
+									<td>{{ .Fleet.System }} {{ if gt (len .Fleet.SystemNickname) 0 }}({{ .Fleet.SystemNickname }}){{ end }}</td>
+									<th>Losses</th>
 									<td {{ if IsPositiveFloat .Fleet.Losses  }} class="error" {{ end }}>{{ FormatFloat .Fleet.Losses }} ISK</td>
+								</tr>
+								<tr>
+									<th>Member Count</th>
+									<td>{{ len .Fleet.Members }}</td>
+									<th>Surplus</th>
 									<td {{ if IsPositiveFloat .Fleet.GetSurplus  }} class="success" {{ else }} class="error" {{ end }}>{{ FormatFloat .Fleet.GetSurplus }} ISK</td>
-									<td>{{ FormatFloat (index $payments "CORPORATION") }} ISK</td>
-									<td>{{ .Fleet.SitesFinished }}</td>
+								</tr>
+								<tr>
+									<th>Start Time</th>
 									<td>{{ .Fleet.StartTime }}</td>
-									<td>{{ .Fleet.EndTime }}</td>
+									<th>Corp Cut</th>
+									<td>{{ FormatFloat (index $payments "CORPORATION") }} ISK</td>
+								</tr>
+								<tr>
+									<th>End Time</th>
+									<td>{{ if .Fleet.IsFleetFinished }} {{ .Fleet.EndTime }} {{ else }} --- {{ end }}</td>
+									<th>Sites Finished</th>
+									<td>{{ .Fleet.SitesFinished }}</td>
 								</tr>
 							</tbody>
 						</table>
@@ -67,7 +73,7 @@
 									<td>{{ $member.Name }}</td>
 									<td><h4><span class="label {{ $member.Role.LabelType }}">{{ $member.Role }}</span></h4></td>
 									<td>{{ $member.SiteModifier }}</td>
-									<td>{{ if eq $member.PaymentModifier 1.0 }} Standard {{ else }} {{ $member.PaymentModifier }} {{ end }}</td>
+									<td>{{ if eq $member.PaymentModifier 1.0 }} {{ $member.Role.PaymentRate }} {{ else }} {{ $member.PaymentModifier }} {{ end }}</td>
 									<td>{{ FormatFloat (index $payments $member.Name) }} ISK</td>
 									<td><a href="#" class="btn btn-primary">Edit</a>&nbsp;<a href="#" class="btn btn-danger">Remove</a></td>
 								</tr>
