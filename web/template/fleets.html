@@ -20,6 +20,7 @@
 							<th>Name</th>
 							<th>System</th>
 							<th>Start Time</th>
+							<th>End Time</th>
 							<th>Action</th>
 						</tr>
 					</thead>
@@ -31,6 +32,7 @@
 							<td>{{ $fleet.Name }}</td>
 							<td>{{ $fleet.System }}{{ if gt (len $fleet.SystemNickname) 0}} ({{ $fleet.SystemNickname }}){{ end }}</td>
 							<td>{{ $fleet.StartTime }}</td>
+							<td>{{ if $fleet.IsFleetFinished }} {{ $fleet.EndTime }} {{ else }} --- {{ end }}</td>
 							<td><a href="/fleet/{{ $fleet.Id }}" class="btn btn-default">View</a>&nbsp;<a href="/fleet/{{ $fleet.Id }}/edit" class="btn btn-primary">Edit</a>&nbsp;<a href="/fleet/{{ $fleet.Id }}/delete" class="btn btn-danger">Delete</a></td>
 						</tr>
 						{{ end }}
