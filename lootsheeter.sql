@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS `fleetmembers` (
   `role` int(10) NOT NULL DEFAULT '0',
   `site_modifier` int(10) NOT NULL DEFAULT '0',
   `payment_modifier` double NOT NULL DEFAULT '1',
+  `payout` double NOT NULL DEFAULT '0',
+  `payout_complete` enum('Y','N') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'N',
   PRIMARY KEY (`id`),
   UNIQUE KEY `fleet_id_player_id` (`fleet_id`,`player_id`),
   KEY `fk_fleetmembers_player` (`player_id`),
@@ -60,6 +62,7 @@ CREATE TABLE IF NOT EXISTS `fleets` (
   `sites_finished` int(10) NOT NULL DEFAULT '0',
   `start` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `end` timestamp NULL DEFAULT NULL,
+  `payout_complete` enum('Y','N') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'N',
   `active` enum('Y','N') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'Y',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;

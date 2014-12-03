@@ -19,11 +19,12 @@ type Fleet struct {
 	Profit         float64
 	Losses         float64
 	SitesFinished  int
+	PayoutComplete bool
 
 	fleetMembersMutex sync.RWMutex
 }
 
-func NewFleet(id int64, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time) *Fleet {
+func NewFleet(id int64, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time, complete bool) *Fleet {
 	fleet := &Fleet{
 		Id:             id,
 		Name:           name,
@@ -35,6 +36,7 @@ func NewFleet(id int64, name string, system string, systemNick string, profit fl
 		SitesFinished:  sites,
 		StartTime:      start,
 		EndTime:        end,
+		PayoutComplete: complete,
 	}
 
 	return fleet
