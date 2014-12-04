@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -38,7 +39,6 @@ func FleetListHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to load all fleets in FleetListHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	data["Fleets"] = fleets
@@ -61,7 +61,6 @@ func FleetListAllHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to load all fleets in FleetListAllHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	data["Fleets"] = fleets
@@ -84,7 +83,6 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to parse fleet ID %q in FleetDetailsHandler: [%v]", vars["fleetid"], err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	data := make(map[string]interface{})
@@ -97,7 +95,6 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to load details for fleet #%d in FleetDetailsHandler: [%v]", fleetId, err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	data["Fleet"] = fleet
@@ -119,7 +116,6 @@ func FleetFinishHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to parse fleet ID %q in FleetFinishHandler: [%v]", vars["fleetid"], err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	fleet, err := database.LoadFleet(fleetId)
@@ -127,7 +123,6 @@ func FleetFinishHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to load fleet in FleetFinishHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	fleet.FinishFleet()
@@ -137,10 +132,101 @@ func FleetFinishHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to save fleet in FleetFinishHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
+}
+
+func FleetAddProfitHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse fleet ID %q in FleetAddProfitHandler: [%v]", vars["fleetid"], err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/fleet/%d", fleetId)) {
+		logger.Warnf("Received request to FleetAddProfitHandler without proper referrer: %q", r.Referer())
+
+		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
+	}
+
+	fleet, err := database.LoadFleet(fleetId)
+	if err != nil {
+		logger.Errorf("Failed to load fleet in FleetAddProfitHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		logger.Errorf("Failed to parse POST form in FleetAddProfitHandler: [%v]", vars["fleetid"], err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	rawProfit := r.FormValue("addprofit_textarea")
+	if len(rawProfit) == 0 {
+		logger.Warnf("Content of POST form in FleetAddProfitHandler was empty...")
+
+		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
+	}
+
+	var profit float64
+
+	profit = 0
+
+	if strings.Contains(strings.ToLower(rawProfit), "evepraisal") {
+		rowSplit := strings.Split(rawProfit, "\r\n")
+
+		for _, row := range rowSplit {
+			p, err := GetEvepraisalValue(row)
+			if err != nil {
+				logger.Errorf("Failed to parse evepraisal row in FleetAddProfitHandler: [%v]", err)
+
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+
+			profit += p
+		}
+	} else {
+		p, err := GetPasteValue(rawProfit)
+		if err != nil {
+			logger.Errorf("Failed to parse paste in FleetAddProfitHandler: [%v]", err)
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		profit = p
+	}
+
+	fleet.AddProfit(profit)
+
+	_, err = database.SaveFleet(fleet)
+	if err != nil {
+		logger.Errorf("Failed to save fleet in FleetAddProfitHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
+}
+
+func FleetAddLossHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse fleet ID %q in FleetAddLossHandler: [%v]", vars["fleetid"], err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/fleet/%d", fleetId)) {
+		logger.Warnf("Received request to FleetAddProfitHandler without proper referrer: %q", r.Referer())
+
+		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
+	}
 }
 
 func FleetDeleteHandler(w http.ResponseWriter, r *http.Request) {
@@ -158,7 +244,6 @@ func PlayerListHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to load all players in PlayerListHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	data["Players"] = players
@@ -180,7 +265,6 @@ func PlayerDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to parse player ID %q in PlayerDetailsHandler: [%v]", vars["playerid"], err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	data := make(map[string]interface{})
@@ -193,7 +277,6 @@ func PlayerDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to load details for player #%d in PlayerDetailsHandler: [%v]", playerId, err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	data["Player"] = player
