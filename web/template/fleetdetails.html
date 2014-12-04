@@ -49,8 +49,30 @@
 						</table>
 						<p align="center">
 							<a href="#" class="btn btn-primary">Edit</a>
-							{{ if not .Fleet.IsFleetFinished }}<a href="/fleet/{{ .Fleet.Id }}/finish" class="btn btn-danger">Finish Fleet</a>{{ end }}
+							{{ if not .Fleet.IsFleetFinished }}
+							<a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#form_addprofit">Add Profit</a>
+							<a class="btn btn-warning collapse-data-btn" data-toggle="collapse" href="#form_addloss">Add Loss</a>
+							<a href="/fleet/{{ .Fleet.Id }}/finish" class="btn btn-danger">Finish Fleet</a>
+							{{ end }}
 						</p>
+						<form role="form-horizontal" id="form_addprofit" align="center" action="/fleet/{{ .Fleet.Id }}/addprofit" method="POST" class="collapse">
+							<div class="form-group">
+								<label class="control-label" for="addprofit_textarea">Profit Overview</label>
+								<textarea class="form-control" id="addprofit_textarea" name="addprofit_textarea" rows="5" placeholder="Paste loot overview or Evepraisal link here"></textarea>
+							</div>
+							<div class="form-group">
+								<button type="submit" class="btn btn-success">Submit</button>
+							</div>
+						</form>
+						<form role="form-horizontal" id="form_addloss" align="center" action="/fleet/{{ .Fleet.Id }}/addloss" method="POST" class="collapse">
+							<div class="form-group">
+								<label class="control-label" for="addloss_textarea">Loss Overview</label>
+								<textarea class="form-control" id="addloss_textarea" name="addloss_textarea" rows="5" placeholder="Paste loss overview or zKillboard link here"></textarea>
+							</div>
+							<div class="form-group">
+								<button type="submit" class="btn btn-success">Submit</button>
+							</div>
+						</form>
 					</div>
 					<div class="panel-heading">
 						<h3>Fleet Members</h3>
