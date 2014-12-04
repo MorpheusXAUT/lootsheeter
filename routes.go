@@ -62,6 +62,18 @@ var routes = []Route{
 		HandlerFunc: FleetFinishHandler,
 	},
 	Route{
+		Name:        "FleetAddProfit",
+		Methods:     []string{"POST"},
+		Pattern:     "/fleet/{fleetid:[0-9]+}/addprofit",
+		HandlerFunc: FleetAddProfitHandler,
+	},
+	Route{
+		Name:        "FleetAddLoss",
+		Methods:     []string{"POST"},
+		Pattern:     "/fleet/{fleetid:[0-9]+}/addloss",
+		HandlerFunc: FleetAddLossHandler,
+	},
+	Route{
 		Name:        "FleetDelete",
 		Methods:     []string{"GET", "POST"},
 		Pattern:     "/fleet/{fleetid:[0-9]+}/delete",
