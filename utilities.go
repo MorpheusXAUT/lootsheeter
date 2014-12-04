@@ -62,6 +62,63 @@ func GetEvepraisalValue(raw string) (float64, error) {
 	return 0, fmt.Errorf("Failed to parse JSON response from evepraisal")
 }
 
+func GetzKillboardValue(raw string) (float64, error) {
+	url := strings.TrimRight(strings.ToLower(raw), "/")
+
+	if strings.HasPrefix(url, "https://zkillboard.com/kill/") {
+		killId := url[strings.LastIndex(url, "/")+1 : len(url)]
+
+		resp, err := http.Get(fmt.Sprintf("https://zkillboard.com/api/killID/%s", killId))
+		if err != nil {
+			return 0, err
+		}
+
+		defer resp.Body.Close()
+
+		jsonContent, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return 0, err
+		}
+
+		var jsonInterface interface{}
+		err = json.Unmarshal(jsonContent, &jsonInterface)
+		if err != nil {
+			return 0, err
+		}
+
+		jsonArray, ok := jsonInterface.([]interface{})
+		if ok {
+			jsonMap, ok := jsonArray[0].(map[string]interface{})
+			if ok {
+				jsonZkb, ok := jsonMap["zkb"].(map[string]interface{})
+				if ok {
+					jsonTotalValue, ok := jsonZkb["totalValue"].(string)
+					if ok {
+						value, err := strconv.ParseFloat(jsonTotalValue, 64)
+						if err != nil {
+							return 0, err
+						}
+
+						return value, nil
+					} else {
+						return 0, fmt.Errorf("Failed to convert JSON into jsonTotalValue for zKillboard")
+					}
+				} else {
+					return 0, fmt.Errorf("Failed to convert JSON into jsonZkb for zKillboard")
+				}
+			} else {
+				return 0, fmt.Errorf("Failed to convert JSON into jsonMap for zKillboard")
+			}
+		} else {
+			return 0, fmt.Errorf("Failed to convert JSON into jsonArray for zKillboard")
+		}
+	} else {
+		return 0, fmt.Errorf("Invalid zKillboard link, cannot parse")
+	}
+
+	return 0, nil
+}
+
 func GetPasteValue(raw string) (float64, error) {
 	data := url.Values{}
 	data.Set("raw_paste", raw)

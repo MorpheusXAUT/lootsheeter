@@ -299,8 +299,6 @@ func (db *Database) SaveFleet(fleet *models.Fleet) (*models.Fleet, error) {
 
 	_, err := db.LoadFleet(fleet.Id)
 	if err != nil {
-		logger.Print("1")
-
 		result, err := db.db.Exec("INSERT INTO fleets(name, system, system_nickname, profit, losses, sites_finished, start, end, corporation_payout, payout_complete) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fleet.Name, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleet.EndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString)
 		if err != nil {
 			return fleet, err
@@ -313,8 +311,6 @@ func (db *Database) SaveFleet(fleet *models.Fleet) (*models.Fleet, error) {
 
 		fleet.Id = id
 	} else {
-		logger.Print("2")
-
 		_, err := db.db.Exec("UPDATE fleets SET name=?, system=?, system_nickname=?, profit=?, losses=?, sites_finished=?, start=?, end=?, corporation_payout=?, payout_complete=? WHERE id=?", fleet.Name, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleet.EndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString, fleet.Id)
 		if err != nil {
 			return fleet, err
