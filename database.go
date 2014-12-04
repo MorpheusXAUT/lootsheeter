@@ -299,6 +299,8 @@ func (db *Database) SaveFleet(fleet *models.Fleet) (*models.Fleet, error) {
 
 	_, err := db.LoadFleet(fleet.Id)
 	if err != nil {
+		logger.Print("1")
+
 		result, err := db.db.Exec("INSERT INTO fleets(name, system, system_nickname, profit, losses, sites_finished, start, end, corporation_payout, payout_complete) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fleet.Name, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleet.EndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString)
 		if err != nil {
 			return fleet, err
@@ -311,18 +313,11 @@ func (db *Database) SaveFleet(fleet *models.Fleet) (*models.Fleet, error) {
 
 		fleet.Id = id
 	} else {
-		result, err := db.db.Exec("UPDATE fleets SET name=?, system=?, system_nickname=?, profit=?, losses=?, sites_finished=?, start=?, end=?, corporation_payout=?, payout_complete=? WHERE id=?", fleet.Name, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleet.EndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString, fleet.Id)
+		logger.Print("2")
+
+		_, err := db.db.Exec("UPDATE fleets SET name=?, system=?, system_nickname=?, profit=?, losses=?, sites_finished=?, start=?, end=?, corporation_payout=?, payout_complete=? WHERE id=?", fleet.Name, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleet.EndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString, fleet.Id)
 		if err != nil {
 			return fleet, err
-		}
-
-		rowsAffected, err := result.RowsAffected()
-		if err != nil {
-			return fleet, err
-		}
-
-		if rowsAffected != 1 {
-			return fleet, fmt.Errorf("Failed to update fleet #%d in database, no rows affected", fleet.Id)
 		}
 	}
 
@@ -363,18 +358,9 @@ func (db *Database) SaveFleetMember(fleetId int64, member *models.FleetMember) (
 
 		member.Id = id
 	} else {
-		result, err := db.db.Exec("UPDATE fleetmembers SET fleet_id=?, player_id=?, role=?, site_modifier=?, payment_modifier=?, payout=?, payout_complete=? WHERE id=?", fleetId, member.Player.Id, member.Role, member.SiteModifier, member.PaymentModifier, member.Payout, fleetmemberPayoutCompleteEnum, member.Id)
+		_, err := db.db.Exec("UPDATE fleetmembers SET fleet_id=?, player_id=?, role=?, site_modifier=?, payment_modifier=?, payout=?, payout_complete=? WHERE id=?", fleetId, member.Player.Id, member.Role, member.SiteModifier, member.PaymentModifier, member.Payout, fleetmemberPayoutCompleteEnum, member.Id)
 		if err != nil {
 			return member, err
-		}
-
-		rowsAffected, err := result.RowsAffected()
-		if err != nil {
-			return member, err
-		}
-
-		if rowsAffected != 1 {
-			return member, fmt.Errorf("Failed to update fleet member #%d in database, no rows affected", member.Id)
 		}
 	}
 
@@ -398,18 +384,9 @@ func (db *Database) SavePlayer(player *models.Player) (*models.Player, error) {
 
 		player.Id = id
 	} else {
-		result, err := db.db.Exec("UPDATE players SET player_id=?, name=?, corporation_id=?, access=? WHERE id=?", player.PlayerId, player.Name, player.Corporation.Id, player.AccessMask, player.Id)
+		_, err := db.db.Exec("UPDATE players SET player_id=?, name=?, corporation_id=?, access=? WHERE id=?", player.PlayerId, player.Name, player.Corporation.Id, player.AccessMask, player.Id)
 		if err != nil {
 			return player, err
-		}
-
-		rowsAffected, err := result.RowsAffected()
-		if err != nil {
-			return player, err
-		}
-
-		if rowsAffected != 1 {
-			return player, fmt.Errorf("Failed to update player #%d in database, no rows affected", player.Id)
 		}
 	}
 
@@ -433,18 +410,9 @@ func (db *Database) SaveCorporation(corporation *models.Corporation) (*models.Co
 
 		corporation.Id = id
 	} else {
-		result, err := db.db.Exec("UPDATE corporations SET corporation_id=?, name=?, ticker=? WHERE id=?", corporation.CorpId, corporation.Name, corporation.Ticker, corporation.Id)
+		_, err := db.db.Exec("UPDATE corporations SET corporation_id=?, name=?, ticker=? WHERE id=?", corporation.CorpId, corporation.Name, corporation.Ticker, corporation.Id)
 		if err != nil {
 			return corporation, err
-		}
-
-		rowsAffected, err := result.RowsAffected()
-		if err != nil {
-			return corporation, err
-		}
-
-		if rowsAffected != 1 {
-			return corporation, fmt.Errorf("Failed to update corporation #%d in database, no rows affected", corporation.Id)
 		}
 	}
 
