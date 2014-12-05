@@ -15,9 +15,10 @@ type FleetMember struct {
 	PaymentModifier float64
 	Payout          float64
 	PayoutComplete  bool
+	ReportId        int64
 }
 
-func NewFleetMember(id int64, fleetId int64, player *Player, role FleetRole, site int, payment float64, payout float64, complete bool) *FleetMember {
+func NewFleetMember(id int64, fleetId int64, player *Player, role FleetRole, site int, payment float64, payout float64, complete bool, report int64) *FleetMember {
 	member := &FleetMember{
 		Id:              id,
 		FleetId:         fleetId,
@@ -27,6 +28,7 @@ func NewFleetMember(id int64, fleetId int64, player *Player, role FleetRole, sit
 		PaymentModifier: payment,
 		Payout:          payout,
 		PayoutComplete:  complete,
+		ReportId:        report,
 	}
 
 	return member
@@ -34,8 +36,4 @@ func NewFleetMember(id int64, fleetId int64, player *Player, role FleetRole, sit
 
 func (member *FleetMember) HasRole(role string) bool {
 	return strings.EqualFold(role, fmt.Sprintf("%s", member.Role))
-}
-
-func (member *FleetMember) TickSiteModifier() {
-	member.SiteModifier -= 1
 }
