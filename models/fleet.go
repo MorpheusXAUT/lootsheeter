@@ -3,15 +3,13 @@ package models
 
 import (
 	"fmt"
-	"strings"
-	"sync"
 	"time"
 )
 
 type Fleet struct {
 	Id                int64
 	Name              string
-	Members           []*FleetMember
+	Members           map[string]*FleetMember
 	System            string
 	SystemNickname    string
 	StartTime         time.Time
@@ -21,15 +19,14 @@ type Fleet struct {
 	SitesFinished     int
 	CorporationPayout float64
 	PayoutComplete    bool
-
-	fleetMembersMutex sync.RWMutex
+	ReportId          int64
 }
 
-func NewFleet(id int64, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time, payout float64, complete bool) *Fleet {
+func NewFleet(id int64, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time, payout float64, complete bool, report int64) *Fleet {
 	fleet := &Fleet{
 		Id:                id,
 		Name:              name,
-		Members:           make([]*FleetMember, 0),
+		Members:           make(map[string]*FleetMember),
 		System:            system,
 		SystemNickname:    systemNick,
 		Profit:            profit,
@@ -39,6 +36,7 @@ func NewFleet(id int64, name string, system string, systemNick string, profit fl
 		EndTime:           end,
 		CorporationPayout: payout,
 		PayoutComplete:    complete,
+		ReportId:          report,
 	}
 
 	return fleet
@@ -65,21 +63,10 @@ func (fleet *Fleet) GetSurplus() float64 {
 	return fleet.Profit - fleet.Losses
 }
 
-func (fleet *Fleet) TickSitesFinished() {
-	fleet.SitesFinished += 1
-}
-
 func (fleet *Fleet) HasMember(player string) bool {
-	fleet.fleetMembersMutex.RLock()
-	defer fleet.fleetMembersMutex.RUnlock()
+	_, ok := fleet.Members[player]
 
-	for _, member := range fleet.Members {
-		if strings.EqualFold(member.Name, player) {
-			return true
-		}
-	}
-
-	return false
+	return ok
 }
 
 func (fleet *Fleet) AddMember(member *FleetMember) error {
@@ -87,10 +74,7 @@ func (fleet *Fleet) AddMember(member *FleetMember) error {
 		return fmt.Errorf("Member %q already exists in fleet, cannot add twice")
 	}
 
-	fleet.fleetMembersMutex.Lock()
-	defer fleet.fleetMembersMutex.Unlock()
-
-	fleet.Members = append(fleet.Members, member)
+	fleet.Members[member.Name] = member
 
 	return nil
 }
@@ -100,54 +84,27 @@ func (fleet *Fleet) RemoveMember(player string) error {
 		return fmt.Errorf("Member %q does not exists in fleet, cannot remove")
 	}
 
-	fleet.fleetMembersMutex.Lock()
-	defer fleet.fleetMembersMutex.Unlock()
-
-	var index int
-
-	for idx, member := range fleet.Members {
-		if strings.EqualFold(member.Name, player) {
-			index = idx
-			break
-		}
-	}
-
-	fleet.Members[index], fleet.Members = fleet.Members[len(fleet.Members)-1], fleet.Members[:len(fleet.Members)-1]
+	delete(fleet.Members, player)
 
 	return nil
 }
 
-func (fleet *Fleet) TickMemberSiteModifier(player string) error {
+func (fleet *Fleet) SetMemberSiteModifier(player string, modifier int) error {
 	if !fleet.HasMember(player) {
-		return fmt.Errorf("Member %q does not exists in fleet, cannot tick modifier")
+		return fmt.Errorf("Member %q does not exists in fleet, cannot set site modifier")
 	}
 
-	fleet.fleetMembersMutex.RLock()
-	defer fleet.fleetMembersMutex.RUnlock()
-
-	for _, member := range fleet.Members {
-		if strings.EqualFold(member.Name, player) {
-			member.TickSiteModifier()
-		}
-	}
+	fleet.Members[player].SiteModifier = modifier
 
 	return nil
 }
 
 func (fleet *Fleet) GetMemberSiteModifier(player string) (int, error) {
 	if !fleet.HasMember(player) {
-		return 0, fmt.Errorf("Member %q does not exists in fleet, cannot get modifier")
+		return 0, fmt.Errorf("Member %q does not exists in fleet, cannot get site modifier")
 	}
 
-	var modifier int
-
-	for _, member := range fleet.Members {
-		if strings.EqualFold(member.Name, player) {
-			modifier = member.SiteModifier
-		}
-	}
-
-	return modifier, nil
+	return fleet.Members[player].SiteModifier, nil
 }
 
 func (fleet *Fleet) GetMemberSitesFinished(player string) (int, error) {
@@ -168,15 +125,7 @@ func (fleet *Fleet) GetMemberPaymentModifier(player string) (float64, error) {
 		return 0, fmt.Errorf("Member %q does not exists in fleet, cannot get payment modifier")
 	}
 
-	var modifier float64
-
-	for _, member := range fleet.Members {
-		if strings.EqualFold(member.Name, player) {
-			modifier = member.PaymentModifier
-		}
-	}
-
-	return modifier, nil
+	return fleet.Members[player].PaymentModifier, nil
 }
 
 func (fleet *Fleet) CalculatePayouts() {
