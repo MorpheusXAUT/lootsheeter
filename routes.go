@@ -110,6 +110,18 @@ var routes = []Route{
 		HandlerFunc: PlayerDeleteHandler,
 	},
 	Route{
+		Name:        "ReportList",
+		Methods:     []string{"GET"},
+		Pattern:     "/reports",
+		HandlerFunc: ReportListHandler,
+	},
+	Route{
+		Name:        "ReportDetails",
+		Methods:     []string{"GET"},
+		Pattern:     "/report/{reportid:[0-9]+}",
+		HandlerFunc: ReportDetailsHandler,
+	},
+	Route{
 		Name:        "AdminMenu",
 		Methods:     []string{"GET"},
 		Pattern:     "/admin",

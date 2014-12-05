@@ -396,11 +396,64 @@ func PlayerDeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func ReportListHandler(w http.ResponseWriter, r *http.Request) {
+	data := make(map[string]interface{})
+
+	data["PageTitle"] = "Reports"
+	data["PageType"] = 4
+
+	reports, err := database.LoadAllReports()
+	if err != nil {
+		logger.Errorf("Failed to load all reports in ReportListHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data["Reports"] = reports
+
+	err = templates.ExecuteTemplate(w, "reports", data)
+	if err != nil {
+		logger.Errorf("Failed to execute template in ReportListHandler: [%v]", err)
+	}
+}
+
+func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	reportId, err := strconv.ParseInt(vars["reportid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse report ID %q in ReportDetailsHandler: [%v]", vars["reportid"], err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := make(map[string]interface{})
+
+	data["PageTitle"] = fmt.Sprintf("Report #%d", reportId)
+	data["PageType"] = 4
+
+	report, err := database.LoadReport(reportId)
+	if err != nil {
+		logger.Errorf("Failed to load details for report #%d in ReportDetailsHandler: [%v]", reportId, err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data["Report"] = report
+
+	err = templates.ExecuteTemplate(w, "reportdetails", data)
+	if err != nil {
+		logger.Errorf("Failed to execute template in ReportDetailsHandler: [%v]", err)
+	}
+}
+
 func AdminMenuHandler(w http.ResponseWriter, r *http.Request) {
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = "Admin Menu"
-	data["PageType"] = 4
+	data["PageType"] = 5
 
 	err := templates.ExecuteTemplate(w, "adminmenu", data)
 	if err != nil {

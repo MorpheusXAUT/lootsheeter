@@ -1,0 +1,74 @@
+{{ define "reportdetails" }}
+	{{ template "header" . }}
+	{{ template "navigation" . }}
+	
+	<div class="container" role="main">
+		<div class="page-header">
+			<h1>Details for report #{{ .Report.Id }}</h1>
+		</div>
+		<div class="row">
+			<div class="col-md">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3>Report</h3>
+					</div>
+					<div class="panel-body">
+						<table class="table table-bordered">
+							<thead>
+								<th>Created By</th>
+								<th>Total Payout</th>
+								<th>Fleets Involved</th>
+								<th>Start Range</th>
+								<th>End Range</th>
+								<th>Payout Complete</th>
+							</thead>
+							<tbody>
+								<tr>
+									<td>{{ .Report.CreatedBy.Name }}</td>
+									<td>{{ FormatFloat .Report.TotalPayout }} ISK</td>
+									<td>{{ len .Report.Fleets }}</td>
+									<td>{{ .Report.StartRange }}</td>
+									<td>{{ .Report.EndRange }}</td>
+									<td class="{{ if .Report.PayoutComplete }} success {{ else }} danger {{ end }}">{{ if .Report.PayoutComplete }} Done {{ else }} Outstanding {{ end }}</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<div class="panel-heading">
+						<h3>Report Fleets</h3>
+					</div>
+					<div class="panel-body">
+						<table class="table table-striped">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>Name</th>
+									<th>System</th>
+									<th>Start Time</th>
+									<th>End Time</th>
+									<th>Surplus</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody>
+								{{ range $fleet := .Report.Fleets }}
+								<tr>
+									<td>{{ $fleet.Id }}</td>
+									<td>{{ $fleet.Name }}</td>
+									<td>{{ $fleet.System }}</td>
+									<td>{{ $fleet.StartTime }}</td>
+									<td>{{ $fleet.EndTime }}</td>
+									<td>{{ FormatFloat $fleet.GetSurplus }} ISK</td>
+									<td><a href="/fleet/{{ $fleet.Id }}" class="btn btn-default">View</a></td>
+								</tr>
+								{{ end }}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	{{ template "footer" . }}
+{{ end }}

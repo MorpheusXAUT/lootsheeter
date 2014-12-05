@@ -1,0 +1,38 @@
+{{ define "reports" }}
+	{{ template "header" . }}
+	{{ template "navigation" . }}
+	
+	<div class="container" role="main">
+		<div class="page-header">
+			<h1>Payout Reports</h1>
+		</div>
+		<div class="row">
+			<div class="col-md">
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Start Range</th>
+							<th>End Range</th>
+							<th>Fleets Involved</th>
+							<th>Action</th>
+						</tr>
+					</thead>
+					<tbody>
+						{{ range $report := .Reports }}
+						<tr>
+							<td><a href="/report/{{ $report.Id }}">{{ $report.Id }}</a></td>
+							<td>{{ $report.StartRange }}</td>
+							<td>{{ $report.EndRange }}</td>
+							<td>{{ $report.FleetsInvolved }}</td>
+							<td><a href="/report/{{ $report.Id }}" class="btn btn-default">View</a>&nbsp;<a href="/report/{{ $report.Id }}/edit" class="btn btn-primary">Edit</a>&nbsp;<a href="/report/{{ $report.Id }}/delete" class="btn btn-danger">Delete</a></td>
+						</tr>
+						{{ end }}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	
+	{{ template "footer" . }}	
+{{ end }}

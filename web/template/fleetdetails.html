@@ -2,6 +2,8 @@
 	{{ template "header" . }}
 	{{ template "navigation" . }}
 
+	{{ $FleetID := .Fleet.Id}}
+	
 	<div class="container" role="main">
 		<div class="page-header">
 			<h1>Details for fleet #{{ .Fleet.Id }}</h1>
@@ -44,6 +46,12 @@
 									<td>{{ if .Fleet.IsFleetFinished }} {{ .Fleet.EndTime }} {{ else }} --- {{ end }}</td>
 									<th>Sites Finished</th>
 									<td>{{ .Fleet.SitesFinished }}</td>
+								</tr>
+								<tr>
+									<th>Payout Report</th>
+									<td>{{ if gt .Fleet.ReportId 0 }}<a href="/report/{{ .Fleet.ReportId }}">#{{ .Fleet.ReportId }}</a>{{ else }} --- {{ end }}</td>
+									<th>Payout Complete</th>
+									<td class="{{ if .Fleet.PayoutComplete }} success {{ else }} danger {{ end }}">{{ if .Fleet.PayoutComplete }} Done {{ else }} Outstanding {{ end }}</td>
 								</tr>
 							</tbody>
 						</table>
@@ -92,16 +100,18 @@
 								</tr>
 							</thead>
 							<tbody>
-								{{ range $member := .Fleet.Members }}
+								{{ range $index, $member := .Fleet.Members }}
 								<tr>
-									<td>{{ $member.Id }}</a></td>
-									<td>{{ $member.Name }}</td>
-									<td><h4><span class="label {{ $member.Role.LabelType }}">{{ $member.Role }}</span></h4></td>
-									<td>{{ $member.SiteModifier }}</td>
-									<td>{{ if eq $member.PaymentModifier 1.0 }} {{ $member.Role.PaymentRate }} {{ else }} {{ $member.PaymentModifier }} {{ end }}</td>
-									<td class="text-right">{{ FormatFloat $member.Payout }} ISK</td>
-									<td class="{{ if $member.PayoutComplete }} success {{ else }} danger {{ end }}">{{ if $member.PayoutComplete }} Done {{ else }} Outstanding {{ end }}</td>
-									<td><a href="#" class="btn btn-primary">Edit</a>&nbsp;<a href="#" class="btn btn-danger">Remove</a></td>
+									<form role="form-horizontal" action="/fleet/{{ $FleetID }}/addprofit" method="POST">
+										<td>{{ $member.Id }}</td>
+										<td>{{ $member.Name }}</td>
+										<td><div id="form_fleetmember_role_{{ $index }}"><h4><span class="label {{ $member.Role.LabelType }}">{{ $member.Role }}</span></h4></div><div id="form_fleetmember_role_edit_{{ $index }}" class="hide">Test</div></td>
+										<td><div id="form_fleetmember_sitemodifier_{{ $index }}">{{ $member.SiteModifier }}</div><div id="form_fleetmember_sitemodifier_edit_{{ $index }}" class="hide">Test</div></td>
+										<td><div id="form_fleetmember_paymentmodifier_{{ $index }}">{{ if eq $member.PaymentModifier 1.0 }} {{ $member.Role.PaymentRate }} {{ else }} {{ $member.PaymentModifier }} {{ end }}</div><div id="form_fleetmember_paymentmodifier_edit_{{ $index }}" class="hide">Test</div></td>
+										<td class="text-right"><div id="form_fleetmember_payout_{{ $index }}">{{ FormatFloat $member.Payout }} ISK</div><div id="form_fleetmember_payout_edit_{{ $index }}" class="hide">Test</div></td>
+										<td class="{{ if $member.PayoutComplete }} success {{ else }} danger {{ end }}"><div id="form_fleetmember_payoutcomplete_{{ $index }}">{{ if $member.PayoutComplete }} Done {{ else }} Outstanding {{ end }}</div><div id="form_fleetmember_payoutcomplete_edit_{{ $index }}" class="hide">Test</div></td>
+										<td><a onclick="toggleFleetmemberEdit({{ $index }}, true);" class="btn btn-primary" id="form_fleetmember_action_{{ $index }}">Edit</a><a href="#" class="btn btn-success hide" id="form_fleetmember_action_edit_{{ $index }}">Save</a>&nbsp;<a href="#" class="btn btn-danger" id="form_fleetmember_action_cancel_{{ $index }}">Remove</a><a onclick="toggleFleetmemberEdit({{ $index }}, false);" class="btn btn-danger hide" id="form_fleetmember_action_cancel_edit_{{ $index }}">Cancel</a></td>
+									</form>
 								</tr>
 								{{ end }}
 							</tbody>
