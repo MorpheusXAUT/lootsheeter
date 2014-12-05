@@ -24,7 +24,7 @@
 							<td><a href="/report/{{ $report.Id }}">{{ $report.Id }}</a></td>
 							<td>{{ $report.StartRange }}</td>
 							<td>{{ $report.EndRange }}</td>
-							<td>{{ $report.FleetsInvolved }}</td>
+							<td>{{ len $report.Fleets }}</td>
 							<td><a href="/report/{{ $report.Id }}" class="btn btn-default">View</a>&nbsp;<a href="/report/{{ $report.Id }}/edit" class="btn btn-primary">Edit</a>&nbsp;<a href="/report/{{ $report.Id }}/delete" class="btn btn-danger">Delete</a></td>
 						</tr>
 						{{ end }}
