@@ -69,6 +69,16 @@ func (fleet *Fleet) HasMember(player string) bool {
 	return ok
 }
 
+func (fleet *Fleet) FleetCommander() *FleetMember {
+	for _, member := range fleet.Members {
+		if member.Role == FleetRoleFleetCommander {
+			return member
+		}
+	}
+
+	return nil
+}
+
 func (fleet *Fleet) AddMember(member *FleetMember) error {
 	if fleet.HasMember(member.Player.Name) {
 		return fmt.Errorf("Member %q already exists in fleet, cannot add twice")
