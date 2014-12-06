@@ -89,6 +89,28 @@ func (db *Database) LoadPlayer(id int64) (*models.Player, error) {
 	return models.NewPlayer(pid, playerId, playerName, corp, models.AccessMask(playerAccess)), nil
 }
 
+func (db *Database) LoadPlayerFromName(name string) (*models.Player, error) {
+	logger.Tracef("Querying database for player with player_name = %q...", name)
+
+	row := db.db.QueryRow("SELECT p.id AS pid, p.player_id AS player_id, p.name AS player_name, p.corporation_id AS cid, p.access AS player_access FROM players AS p WHERE p.active = 'Y' AND p.player_name LIKE '?'", name)
+
+	var pid, playerId, cid int64
+	var playerAccess int
+	var playerName string
+
+	err := row.Scan(&pid, &playerId, &playerName, &cid, &playerAccess)
+	if err != nil {
+		return &models.Player{}, fmt.Errorf("Received error while scanning player name row: [%v]", err)
+	}
+
+	corp, err := db.LoadCorporation(cid)
+	if err != nil {
+		return &models.Player{}, err
+	}
+
+	return models.NewPlayer(pid, playerId, playerName, corp, models.AccessMask(playerAccess)), nil
+}
+
 func (db *Database) LoadAllPlayers() ([]*models.Player, error) {
 	logger.Tracef("Querying database for all players...")
 
