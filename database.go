@@ -244,9 +244,9 @@ func (db *Database) LoadAllFleetMembers(fleetId int64) ([]*models.FleetMember, e
 func (db *Database) LoadFleet(id int64) (*models.Fleet, error) {
 	logger.Tracef("Querying database for fleet with fid = %d...", id)
 
-	row := db.db.QueryRow("SELECT f.id AS fid, f.name as fleet_name, f.system AS fleet_system, f.system_nickname AS fleet_system_nickname, f.profit AS fleet_profit, f.losses AS fleet_losses, f.sites_finished AS fleet_sites_finished, f.`start` AS fleet_start, f.`end` AS fleet_end, f.corporation_payout AS fleet_corporation_payout, f.payout_complete AS fleet_payout_complete, f.report_id AS rid FROM fleets AS f WHERE f.active = 'Y' AND f.id = ?", id)
+	row := db.db.QueryRow("SELECT f.id AS fid, f.corporation_id AS cid, f.name as fleet_name, f.system AS fleet_system, f.system_nickname AS fleet_system_nickname, f.profit AS fleet_profit, f.losses AS fleet_losses, f.sites_finished AS fleet_sites_finished, f.`start` AS fleet_start, f.`end` AS fleet_end, f.corporation_payout AS fleet_corporation_payout, f.payout_complete AS fleet_payout_complete, f.report_id AS rid FROM fleets AS f WHERE f.active = 'Y' AND f.id = ?", id)
 
-	var fid, rid int64
+	var fid, cid, rid int64
 	var sqlRid sql.NullInt64
 	var fleetName, fleetSystem, fleetSystemNickname, fleetPayoutCompleteEnumString string
 	var fleetProfit, fleetLosses, fleetCorporationPayout float64
@@ -254,7 +254,7 @@ func (db *Database) LoadFleet(id int64) (*models.Fleet, error) {
 	var fleetStart, fleetEnd *time.Time
 	var fleetPayoutComplete bool
 
-	err := row.Scan(&fid, &fleetName, &fleetSystem, &fleetSystemNickname, &fleetProfit, &fleetLosses, &fleetSitesFinished, &fleetStart, &fleetEnd, &fleetCorporationPayout, &fleetPayoutCompleteEnumString, &sqlRid)
+	err := row.Scan(&fid, &cid, &fleetName, &fleetSystem, &fleetSystemNickname, &fleetProfit, &fleetLosses, &fleetSitesFinished, &fleetStart, &fleetEnd, &fleetCorporationPayout, &fleetPayoutCompleteEnumString, &sqlRid)
 	if err != nil {
 		return &models.Fleet{}, fmt.Errorf("Received error while scanning fleet row: [%v]", err)
 	}
@@ -280,7 +280,7 @@ func (db *Database) LoadFleet(id int64) (*models.Fleet, error) {
 		return &models.Fleet{}, err
 	}
 
-	fleet := models.NewFleet(fid, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
+	fleet := models.NewFleet(fid, cid, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
 
 	for _, member := range fleetMembers {
 		err = fleet.AddMember(member)
@@ -297,13 +297,13 @@ func (db *Database) LoadAllFleets() ([]*models.Fleet, error) {
 
 	fleets := make([]*models.Fleet, 0)
 
-	rows, err := db.db.Query("SELECT f.id AS fid, f.name as fleet_name, f.system AS fleet_system, f.system_nickname AS fleet_system_nickname, f.profit AS fleet_profit, f.losses AS fleet_losses, f.sites_finished AS fleet_sites_finished, f.`start` AS fleet_start, f.`end` AS fleet_end, f.corporation_payout AS fleet_corporation_payout, f.payout_complete AS fleet_payout_complete, f.report_id AS rid FROM fleets AS f WHERE f.active = 'Y'")
+	rows, err := db.db.Query("SELECT f.id AS fid, f.corporation_id AS cid, f.name as fleet_name, f.system AS fleet_system, f.system_nickname AS fleet_system_nickname, f.profit AS fleet_profit, f.losses AS fleet_losses, f.sites_finished AS fleet_sites_finished, f.`start` AS fleet_start, f.`end` AS fleet_end, f.corporation_payout AS fleet_corporation_payout, f.payout_complete AS fleet_payout_complete, f.report_id AS rid FROM fleets AS f WHERE f.active = 'Y'")
 	if err != nil {
 		return fleets, fmt.Errorf("Received error while querying for all fleets: [%v]", err)
 	}
 
 	for rows.Next() {
-		var fid, rid int64
+		var fid, cid, rid int64
 		var sqlRid sql.NullInt64
 		var fleetName, fleetSystem, fleetSystemNickname, fleetPayoutCompleteEnumString string
 		var fleetProfit, fleetLosses, fleetCorporationPayout float64
@@ -311,7 +311,7 @@ func (db *Database) LoadAllFleets() ([]*models.Fleet, error) {
 		var fleetStart, fleetEnd *time.Time
 		var fleetPayoutComplete bool
 
-		err := rows.Scan(&fid, &fleetName, &fleetSystem, &fleetSystemNickname, &fleetProfit, &fleetLosses, &fleetSitesFinished, &fleetStart, &fleetEnd, &fleetCorporationPayout, &fleetPayoutCompleteEnumString, &sqlRid)
+		err := rows.Scan(&fid, &cid, &fleetName, &fleetSystem, &fleetSystemNickname, &fleetProfit, &fleetLosses, &fleetSitesFinished, &fleetStart, &fleetEnd, &fleetCorporationPayout, &fleetPayoutCompleteEnumString, &sqlRid)
 		if err != nil {
 			return fleets, fmt.Errorf("Received error while scanning fleet rows: [%v]", err)
 		}
@@ -337,7 +337,67 @@ func (db *Database) LoadAllFleets() ([]*models.Fleet, error) {
 			return fleets, err
 		}
 
-		fleet := models.NewFleet(fid, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
+		fleet := models.NewFleet(fid, cid, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
+
+		for _, member := range fleetMembers {
+			err = fleet.AddMember(member)
+			if err != nil {
+				return fleets, err
+			}
+		}
+
+		fleets = append(fleets, fleet)
+	}
+
+	return fleets, nil
+}
+
+func (db *Database) LoadAllFleetsFromCorpId(corporationId int64) ([]*models.Fleet, error) {
+	logger.Tracef("Querying database for all fleets with cid = %d...", corporationId)
+
+	fleets := make([]*models.Fleet, 0)
+
+	rows, err := db.db.Query("SELECT f.id AS fid, f.corporation_id AS cid, f.name as fleet_name, f.system AS fleet_system, f.system_nickname AS fleet_system_nickname, f.profit AS fleet_profit, f.losses AS fleet_losses, f.sites_finished AS fleet_sites_finished, f.`start` AS fleet_start, f.`end` AS fleet_end, f.corporation_payout AS fleet_corporation_payout, f.payout_complete AS fleet_payout_complete, f.report_id AS rid FROM fleets AS f WHERE f.active = 'Y' AND f.corporation_id = ?", corporationId)
+	if err != nil {
+		return fleets, fmt.Errorf("Received error while querying for all corporation fleets: [%v]", err)
+	}
+
+	for rows.Next() {
+		var fid, cid, rid int64
+		var sqlRid sql.NullInt64
+		var fleetName, fleetSystem, fleetSystemNickname, fleetPayoutCompleteEnumString string
+		var fleetProfit, fleetLosses, fleetCorporationPayout float64
+		var fleetSitesFinished int
+		var fleetStart, fleetEnd *time.Time
+		var fleetPayoutComplete bool
+
+		err := rows.Scan(&fid, &cid, &fleetName, &fleetSystem, &fleetSystemNickname, &fleetProfit, &fleetLosses, &fleetSitesFinished, &fleetStart, &fleetEnd, &fleetCorporationPayout, &fleetPayoutCompleteEnumString, &sqlRid)
+		if err != nil {
+			return fleets, fmt.Errorf("Received error while scanning corporation fleet rows: [%v]", err)
+		}
+
+		if fleetEnd == nil {
+			fleetEnd = &time.Time{}
+		}
+
+		if sqlRid.Valid {
+			rid = sqlRid.Int64
+		} else {
+			rid = -1
+		}
+
+		if strings.EqualFold(fleetPayoutCompleteEnumString, "y") {
+			fleetPayoutComplete = true
+		} else {
+			fleetPayoutComplete = false
+		}
+
+		fleetMembers, err := db.LoadAllFleetMembers(fid)
+		if err != nil {
+			return fleets, err
+		}
+
+		fleet := models.NewFleet(fid, cid, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
 
 		for _, member := range fleetMembers {
 			err = fleet.AddMember(member)
@@ -357,13 +417,13 @@ func (db *Database) LoadAllReportFleets(recordId int64) ([]*models.Fleet, error)
 
 	fleets := make([]*models.Fleet, 0)
 
-	rows, err := db.db.Query("SELECT f.id AS fid, f.name as fleet_name, f.system AS fleet_system, f.system_nickname AS fleet_system_nickname, f.profit AS fleet_profit, f.losses AS fleet_losses, f.sites_finished AS fleet_sites_finished, f.`start` AS fleet_start, f.`end` AS fleet_end, f.corporation_payout AS fleet_corporation_payout, f.payout_complete AS fleet_payout_complete, f.report_id AS rid FROM fleets AS f WHERE f.report_id = ? AND f.active = 'Y'", recordId)
+	rows, err := db.db.Query("SELECT f.id AS fid, f.corporation_id AS cid, f.name as fleet_name, f.system AS fleet_system, f.system_nickname AS fleet_system_nickname, f.profit AS fleet_profit, f.losses AS fleet_losses, f.sites_finished AS fleet_sites_finished, f.`start` AS fleet_start, f.`end` AS fleet_end, f.corporation_payout AS fleet_corporation_payout, f.payout_complete AS fleet_payout_complete, f.report_id AS rid FROM fleets AS f WHERE f.report_id = ? AND f.active = 'Y'", recordId)
 	if err != nil {
 		return fleets, fmt.Errorf("Received error while querying for all report fleets: [%v]", err)
 	}
 
 	for rows.Next() {
-		var fid, rid int64
+		var fid, cid, rid int64
 		var sqlRid sql.NullInt64
 		var fleetName, fleetSystem, fleetSystemNickname, fleetPayoutCompleteEnumString string
 		var fleetProfit, fleetLosses, fleetCorporationPayout float64
@@ -371,7 +431,7 @@ func (db *Database) LoadAllReportFleets(recordId int64) ([]*models.Fleet, error)
 		var fleetStart, fleetEnd *time.Time
 		var fleetPayoutComplete bool
 
-		err := rows.Scan(&fid, &fleetName, &fleetSystem, &fleetSystemNickname, &fleetProfit, &fleetLosses, &fleetSitesFinished, &fleetStart, &fleetEnd, &fleetCorporationPayout, &fleetPayoutCompleteEnumString, &sqlRid)
+		err := rows.Scan(&fid, &cid, &fleetName, &fleetSystem, &fleetSystemNickname, &fleetProfit, &fleetLosses, &fleetSitesFinished, &fleetStart, &fleetEnd, &fleetCorporationPayout, &fleetPayoutCompleteEnumString, &sqlRid)
 		if err != nil {
 			return fleets, fmt.Errorf("Received error while scanning report fleet rows: [%v]", err)
 		}
@@ -397,7 +457,7 @@ func (db *Database) LoadAllReportFleets(recordId int64) ([]*models.Fleet, error)
 			return fleets, err
 		}
 
-		fleet := models.NewFleet(fid, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
+		fleet := models.NewFleet(fid, cid, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
 
 		for _, member := range fleetMembers {
 			err = fleet.AddMember(member)
@@ -508,7 +568,7 @@ func (db *Database) SaveFleet(fleet *models.Fleet) (*models.Fleet, error) {
 
 	_, err := db.LoadFleet(fleet.Id)
 	if err != nil {
-		result, err := db.db.Exec("INSERT INTO fleets(name, system, system_nickname, profit, losses, sites_finished, start, end, corporation_payout, payout_complete) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fleet.Name, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleet.EndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString)
+		result, err := db.db.Exec("INSERT INTO fleets(name, corporation_id, system, system_nickname, profit, losses, sites_finished, start, end, corporation_payout, payout_complete) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fleet.Name, fleet.CorporationId, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleet.EndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString)
 		if err != nil {
 			return fleet, err
 		}
@@ -520,7 +580,7 @@ func (db *Database) SaveFleet(fleet *models.Fleet) (*models.Fleet, error) {
 
 		fleet.Id = id
 	} else {
-		_, err := db.db.Exec("UPDATE fleets SET name=?, system=?, system_nickname=?, profit=?, losses=?, sites_finished=?, start=?, end=?, corporation_payout=?, payout_complete=? WHERE id=?", fleet.Name, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleet.EndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString, fleet.Id)
+		_, err := db.db.Exec("UPDATE fleets SET name=?, corporation_id = ?, system=?, system_nickname=?, profit=?, losses=?, sites_finished=?, start=?, end=?, corporation_payout=?, payout_complete=? WHERE id=?", fleet.Name, fleet.CorporationId, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleet.EndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString, fleet.Id)
 		if err != nil {
 			return fleet, err
 		}
