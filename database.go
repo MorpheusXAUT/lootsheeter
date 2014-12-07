@@ -92,7 +92,7 @@ func (db *Database) LoadPlayer(id int64) (*models.Player, error) {
 func (db *Database) LoadPlayerFromName(name string) (*models.Player, error) {
 	logger.Tracef("Querying database for player with player_name = %q...", name)
 
-	row := db.db.QueryRow("SELECT p.id AS pid, p.player_id AS player_id, p.name AS player_name, p.corporation_id AS cid, p.access AS player_access FROM players AS p WHERE p.active = 'Y' AND p.player_name LIKE '?'", name)
+	row := db.db.QueryRow("SELECT p.id AS pid, p.player_id AS player_id, p.name AS player_name, p.corporation_id AS cid, p.access AS player_access FROM players AS p WHERE p.active = 'Y' AND p.name LIKE ?", name)
 
 	var pid, playerId, cid int64
 	var playerAccess int
