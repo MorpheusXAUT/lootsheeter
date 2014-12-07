@@ -67,6 +67,22 @@ func (db *Database) LoadCorporation(id int64) (*models.Corporation, error) {
 	return models.NewCorporation(cid, corporationId, corporationName, corporationTicker), nil
 }
 
+func (db *Database) LoadCorporationFromName(name string) (*models.Corporation, error) {
+	logger.Tracef("Querying database for corporation with name = %s...", name)
+
+	row := db.db.QueryRow("SELECT c.id as cid, c.corporation_id AS corporation_id, c.name as corporation_name, c.ticker AS corporation_ticker FROM corporations AS c WHERE c.active = 'Y' AND c.name LIKE ?", name)
+
+	var cid, corporationId int64
+	var corporationName, corporationTicker string
+
+	err := row.Scan(&cid, &corporationId, &corporationName, &corporationTicker)
+	if err != nil {
+		return &models.Corporation{}, fmt.Errorf("Received error while scanning corporation name row: [%v]", err)
+	}
+
+	return models.NewCorporation(cid, corporationId, corporationName, corporationTicker), nil
+}
+
 func (db *Database) LoadPlayer(id int64) (*models.Player, error) {
 	logger.Tracef("Querying database for player with pid = %d...", id)
 
