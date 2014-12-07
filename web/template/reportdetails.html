@@ -33,6 +33,12 @@
 								</tr>
 							</tbody>
 						</table>
+						<p align="center">
+							<a href="#" class="btn btn-primary">Edit</a>
+							{{ if not .Report.PayoutComplete }}
+							<a href="/report/{{ .Report.Id }}/finish" class="btn btn-danger">Finish Report</a>
+							{{ end }}
+						</p>
 					</div>
 					<div class="panel-heading">
 						<h3>Report Fleets</h3>
@@ -53,7 +59,7 @@
 							<tbody>
 								{{ range $fleet := .Report.Fleets }}
 								<tr>
-									<td>{{ $fleet.Id }}</td>
+									<td><a href="/fleet/{{ $fleet.Id }}">{{ $fleet.Id }}</a></td>
 									<td>{{ $fleet.Name }}</td>
 									<td>{{ $fleet.System }}</td>
 									<td>{{ $fleet.StartTime }}</td>
@@ -61,6 +67,37 @@
 									<td>{{ FormatFloat $fleet.GetSurplus }} ISK</td>
 									<td><a href="/fleet/{{ $fleet.Id }}" class="btn btn-default">View</a></td>
 								</tr>
+								{{ end }}
+							</tbody>
+						</table>
+					</div>
+					<div class="panel-heading">
+						<h3>Report Players</h3>
+					</div>
+					<div class="panel-body">
+						<table class="table table-striped">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th># Fleet</th>
+									<th>Name</th>
+									<th>Payout</th>
+									<th>Payout Complete</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody>
+								{{ range $fleet := .Report.Fleets }}
+								{{ range $member := $fleet.Members }}
+								<tr>
+									<td>{{ $member.Id }}</td>
+									<td><a href="/fleet/{{ $fleet.Id }}">{{ $fleet.Id }}</a></td>
+									<td>{{ $member.Name }}</td>
+									<td>{{ FormatFloat $member.Payout }} ISK</td>
+									<td class="{{ if $member.PayoutComplete }} success {{ else }} danger {{ end }}">{{ if $member.PayoutComplete }} Done {{ else }} Outstanding {{ end }}</td>
+									<td><a href="/fleet/{{ $fleet.Id }}" class="btn btn-default">View</a></td>
+								</tr>
+								{{ end }}
 								{{ end }}
 							</tbody>
 						</table>

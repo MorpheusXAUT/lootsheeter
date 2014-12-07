@@ -4,7 +4,12 @@
 	
 	<div class="container" role="main">
 		<div class="page-header">
-			<h1>Payout Reports</h1>
+			{{ $ShowAll := .ShowAll}}
+			{{ if $ShowAll }}
+			<h1>All Payout Reports</h1>
+			{{ else }}
+			<h1>Open Payout Reports</h1>
+			{{ end }}
 		</div>
 		<div class="row">
 			<div class="col-md">
@@ -20,6 +25,7 @@
 					</thead>
 					<tbody>
 						{{ range $report := .Reports }}
+						{{ if or $ShowAll (not $report.PayoutComplete) }}
 						<tr>
 							<td><a href="/report/{{ $report.Id }}">{{ $report.Id }}</a></td>
 							<td>{{ $report.StartRange }}</td>
@@ -27,6 +33,7 @@
 							<td>{{ len $report.Fleets }}</td>
 							<td><a href="/report/{{ $report.Id }}" class="btn btn-default">View</a>&nbsp;<a href="/report/{{ $report.Id }}/edit" class="btn btn-primary">Edit</a>&nbsp;<a href="/report/{{ $report.Id }}/delete" class="btn btn-danger">Delete</a></td>
 						</tr>
+						{{ end }}
 						{{ end }}
 					</tbody>
 				</table>

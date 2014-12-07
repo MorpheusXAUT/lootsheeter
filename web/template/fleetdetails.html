@@ -57,7 +57,7 @@
 						</table>
 						<p align="center">
 							<a href="#" class="btn btn-primary">Edit</a>
-							{{ if not .Fleet.IsFleetFinished }}
+							{{ if and (IsFleetCommander .Fleet) (not .Fleet.IsFleetFinished) }}
 							<a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#form_addprofit">Add Profit</a>
 							<a class="btn btn-warning collapse-data-btn" data-toggle="collapse" href="#form_addloss">Add Loss</a>
 							<a href="/fleet/{{ .Fleet.Id }}/finish" class="btn btn-danger">Finish Fleet</a>
