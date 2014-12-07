@@ -47,8 +47,8 @@ CREATE TABLE IF NOT EXISTS `fleetmembers` (
   KEY `fk_fleetmembers_fleet` (`fleet_id`),
   KEY `fk_fleetmembers_report` (`report_id`),
   CONSTRAINT `fk_fleetmembers_fleet` FOREIGN KEY (`fleet_id`) REFERENCES `fleets` (`id`),
-  CONSTRAINT `fk_fleetmembers_player` FOREIGN KEY (`player_id`) REFERENCES `players` (`id`),
-  CONSTRAINT `fk_fleetmembers_report` FOREIGN KEY (`report_id`) REFERENCES `reports` (`id`)
+  CONSTRAINT `fk_fleetmembers_report` FOREIGN KEY (`report_id`) REFERENCES `reports` (`id`),
+  CONSTRAINT `fk_fleetmembers_player` FOREIGN KEY (`player_id`) REFERENCES `players` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS `fleetmembers` (
 -- Dumping structure for table lootsheeter.fleets
 CREATE TABLE IF NOT EXISTS `fleets` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `corporation_id` bigint(20) NOT NULL,
   `name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `system` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `system_nickname` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
@@ -71,6 +72,8 @@ CREATE TABLE IF NOT EXISTS `fleets` (
   `active` enum('Y','N') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'Y',
   PRIMARY KEY (`id`),
   KEY `fk_fleets_report` (`report_id`),
+  KEY `fk_fleets_corporation` (`corporation_id`),
+  CONSTRAINT `fk_fleets_corporation` FOREIGN KEY (`corporation_id`) REFERENCES `corporations` (`id`),
   CONSTRAINT `fk_fleets_report` FOREIGN KEY (`report_id`) REFERENCES `reports` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
