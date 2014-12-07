@@ -137,18 +137,7 @@ func LoginSSOHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{
-		Name:   "player",
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1,
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:   "login",
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1,
-	})
+	session.DestroySession(w, r)
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

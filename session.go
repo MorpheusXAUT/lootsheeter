@@ -51,7 +51,7 @@ func CleanSessions() {
 	}
 }
 
-func (s *Session) DestroySession(r *http.Request) {
+func (s *Session) DestroySession(w http.ResponseWriter, r *http.Request) {
 	session, _ := s.store.Get(r, "player")
 
 	characterName := session.Values["character_name"].(string)
@@ -69,6 +69,7 @@ func (s *Session) DestroySession(r *http.Request) {
 		MaxAge: -1,
 	})
 
+	delete(s.players, characterName)
 }
 
 func (s *Session) GetPlayerFromRequest(r *http.Request) *models.Player {
