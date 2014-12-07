@@ -14,4 +14,6 @@ var (
 	mysqlDatabaseFlag = flag.String("mysqldatabase", "", "Database to use with the MySQL server")
 	mysqlHostFlag     = flag.String("mysqlhost", "localhost", "Hostname of the MySQL server")
 	mysqlPortFlag     = flag.Int("mysqlport", 3306, "Port of the MySQL server")
+	ssoClientId       = flag.String("ssoid", "", "EVE Online Application Client ID")
+	ssoClientSecret   = flag.String("ssosecret", "", "EVE Online Application Client Secret")
 )
