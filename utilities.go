@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -148,4 +149,16 @@ func GetPasteValue(raw string) (float64, error) {
 	}
 
 	return value, nil
+}
+
+func GenerateRandomString(length int) string {
+	chars := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+	b := make([]rune, length)
+
+	for i := range b {
+		b[i] = chars[rand.Intn(len(chars))]
+	}
+
+	return string(b)
 }
