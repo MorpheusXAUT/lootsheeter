@@ -24,7 +24,8 @@
 					</li>
 					<li {{ if eq .PageType 3 }} class="active" {{ end }}><a href="/players">Players</a></li>
 					<li {{ if eq .PageType 4 }} class="active" {{ end }}><a href="/reports">Reports</a></li>
-					<li {{ if eq .PageType 5 }} class="active" {{ end }}><a href="/admin">Admin</a></li>
+					{{ if not .LoggedIn }}<li {{ if eq .PageType 5 }} class="active" {{ end }}><a href="/login">Login</a></li>{{ else }}<li><a href="/logout">Logout</a></li>{{ end }}
+					<li {{ if eq .PageType 6 }} class="active" {{ end }}><a href="/admin">Admin</a></li>
           		</ul>
         	</div><!--/.nav-collapse -->
       	</div>

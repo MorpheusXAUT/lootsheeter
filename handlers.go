@@ -2,12 +2,18 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/morpheusxaut/lootsheeter/models"
 )
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -15,17 +21,136 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["PageTitle"] = "Index"
 	data["PageType"] = 1
+	data["LoggedIn"] = session.IsLoggedIn(w, r)
 
 	templates.ExecuteTemplate(w, "index", data)
 }
 
-func TrustRequestHandler(w http.ResponseWriter, r *http.Request) {
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	data := make(map[string]interface{})
 
-	data["PageTitle"] = "Trust requested"
-	data["PageType"] = 1
+	data["PageTitle"] = "Login"
+	data["PageType"] = 5
+	data["LoggedIn"] = session.IsLoggedIn(w, r)
 
-	templates.ExecuteTemplate(w, "index", data)
+	state := GenerateRandomString(32)
+
+	session.SetSSOState(w, r, state)
+
+	data["SSOState"] = state
+
+	templates.ExecuteTemplate(w, "login", data)
+}
+
+func LoginSSOHandler(w http.ResponseWriter, r *http.Request) {
+	client := &http.Client{}
+
+	authorizationCode := r.URL.Query().Get("code")
+	state := r.URL.Query().Get("state")
+
+	if len(authorizationCode) == 0 || len(state) == 0 {
+		logger.Errorf("Received empty authorization code or state in LoginSSOHandler...")
+
+		http.Error(w, "Received empty authorization code or state for SSO sign-on", http.StatusInternalServerError)
+		return
+	}
+
+	savedState := session.GetSSOState(r)
+	if !strings.EqualFold(savedState, state) {
+		logger.Errorf("Failed to verify SSO state...")
+
+		http.Redirect(w, r, "/login?error=sso_state", http.StatusSeeOther)
+		return
+	}
+
+	auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", *ssoClientId, *ssoClientSecret)))
+
+	verifyData := url.Values{}
+	verifyData.Set("grant_type", "authorization_code")
+	verifyData.Set("code", authorizationCode)
+
+	verifyReq, err := http.NewRequest("POST", "https://sisilogin.testeveonline.com/oauth/token", bytes.NewBufferString(verifyData.Encode()))
+	verifyReq.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	verifyReq.Header.Add("Content-Length", strconv.Itoa(len(verifyData.Encode())))
+	verifyReq.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+
+	verifyResp, err := client.Do(verifyReq)
+	if err != nil {
+		logger.Errorf("Received error while verifying authorization code in LoginSSOHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer verifyResp.Body.Close()
+
+	verifyBody, err := ioutil.ReadAll(verifyResp.Body)
+	if err != nil {
+		logger.Errorf("Received error while reading verification body in LoginSSOHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var t models.SSOToken
+
+	err = json.Unmarshal(verifyBody, &t)
+	if err != nil {
+		logger.Errorf("Failed to unmarshal SSO token in LoginSSOHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	charReq, err := http.NewRequest("GET", "https://sisilogin.testeveonline.com/oauth/verify", nil)
+	charReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", t.AccessToken))
+
+	charResp, err := client.Do(charReq)
+	if err != nil {
+		logger.Errorf("Received error while querying for character ID in LoginSSOHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer charResp.Body.Close()
+
+	charBody, err := ioutil.ReadAll(charResp.Body)
+	if err != nil {
+		logger.Errorf("Received error while reading character ID body in LoginSSOHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var v models.SSOVerification
+
+	err = json.Unmarshal(charBody, &v)
+	if err != nil {
+		logger.Errorf("Failed to unmarshal SSO verification in LoginSSOHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	session.SetIdentity(w, r, v.CharacterName, v.CharacterId)
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:   "player",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:   "login",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func FleetListHandler(w http.ResponseWriter, r *http.Request) {
@@ -33,6 +158,7 @@ func FleetListHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["PageTitle"] = "Active Fleets"
 	data["PageType"] = 2
+	data["LoggedIn"] = session.IsLoggedIn(w, r)
 
 	fleets, err := database.LoadAllFleets()
 	if err != nil {
@@ -45,7 +171,7 @@ func FleetListHandler(w http.ResponseWriter, r *http.Request) {
 	data["Fleets"] = fleets
 	data["ShowAll"] = false
 
-	err = templates.ExecuteTemplate(w, "fleets", data)
+	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleets", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in FleetListHandler: [%v]", err)
 	}
@@ -56,6 +182,7 @@ func FleetListAllHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["PageTitle"] = "All Fleets"
 	data["PageType"] = 2
+	data["LoggedIn"] = session.IsLoggedIn(w, r)
 
 	fleets, err := database.LoadAllFleets()
 	if err != nil {
@@ -68,7 +195,7 @@ func FleetListAllHandler(w http.ResponseWriter, r *http.Request) {
 	data["Fleets"] = fleets
 	data["ShowAll"] = true
 
-	err = templates.ExecuteTemplate(w, "fleets", data)
+	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleets", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in FleetListAllHandler: [%v]", err)
 	}
@@ -92,6 +219,7 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["PageTitle"] = fmt.Sprintf("Details Fleet #%d", fleetId)
 	data["PageType"] = 2
+	data["LoggedIn"] = session.IsLoggedIn(w, r)
 
 	fleet, err := database.LoadFleet(fleetId)
 	if err != nil {
@@ -103,7 +231,7 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["Fleet"] = fleet
 
-	err = templates.ExecuteTemplate(w, "fleetdetails", data)
+	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleetdetails", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in FleetDetailsHandler: [%v]", err)
 	}
@@ -336,6 +464,7 @@ func PlayerListHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["PageTitle"] = "Players"
 	data["PageType"] = 3
+	data["LoggedIn"] = session.IsLoggedIn(w, r)
 
 	players, err := database.LoadAllPlayers()
 	if err != nil {
@@ -347,7 +476,7 @@ func PlayerListHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["Players"] = players
 
-	err = templates.ExecuteTemplate(w, "players", data)
+	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "players", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in PlayerListHandler: [%v]", err)
 	}
@@ -371,6 +500,7 @@ func PlayerDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["PageTitle"] = fmt.Sprintf("Details Player #%d", playerId)
 	data["PageType"] = 3
+	data["LoggedIn"] = session.IsLoggedIn(w, r)
 
 	player, err := database.LoadPlayer(playerId)
 	if err != nil {
@@ -382,7 +512,7 @@ func PlayerDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["Player"] = player
 
-	err = templates.ExecuteTemplate(w, "playerdetails", data)
+	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "playerdetails", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in PlayerDetailsHandler: [%v]", err)
 	}
@@ -401,6 +531,7 @@ func ReportListHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["PageTitle"] = "Reports"
 	data["PageType"] = 4
+	data["LoggedIn"] = session.IsLoggedIn(w, r)
 
 	reports, err := database.LoadAllReports()
 	if err != nil {
@@ -412,7 +543,7 @@ func ReportListHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["Reports"] = reports
 
-	err = templates.ExecuteTemplate(w, "reports", data)
+	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "reports", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in ReportListHandler: [%v]", err)
 	}
@@ -432,6 +563,7 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["PageTitle"] = fmt.Sprintf("Report #%d", reportId)
 	data["PageType"] = 4
+	data["LoggedIn"] = session.IsLoggedIn(w, r)
 
 	report, err := database.LoadReport(reportId)
 	if err != nil {
@@ -443,7 +575,7 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["Report"] = report
 
-	err = templates.ExecuteTemplate(w, "reportdetails", data)
+	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "reportdetails", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in ReportDetailsHandler: [%v]", err)
 	}
@@ -453,9 +585,10 @@ func AdminMenuHandler(w http.ResponseWriter, r *http.Request) {
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = "Admin Menu"
-	data["PageType"] = 5
+	data["PageType"] = 6
+	data["LoggedIn"] = session.IsLoggedIn(w, r)
 
-	err := templates.ExecuteTemplate(w, "adminmenu", data)
+	err := templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "adminmenu", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in AdminMenuHandler: [%v]", err)
 	}

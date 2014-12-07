@@ -59,7 +59,7 @@ func IsPositiveFloat(f float64) bool {
 }
 
 func IsFleetCommander(r *http.Request, fleet *models.Fleet) bool {
-	player := GetPlayerFromRequest(r)
+	player := session.GetPlayerFromRequest(r)
 	if player == nil {
 		return false
 	}
@@ -72,7 +72,7 @@ func IsFleetCommander(r *http.Request, fleet *models.Fleet) bool {
 }
 
 func HasAccessMask(r *http.Request, access int) bool {
-	player := GetPlayerFromRequest(r)
+	player := session.GetPlayerFromRequest(r)
 	if player == nil {
 		return false
 	}

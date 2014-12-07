@@ -20,10 +20,22 @@ var routes = []Route{
 		HandlerFunc: IndexHandler,
 	},
 	Route{
-		Name:        "TrustRequest",
+		Name:        "Login",
 		Methods:     []string{"GET"},
-		Pattern:     "/trustrequest",
-		HandlerFunc: TrustRequestHandler,
+		Pattern:     "/login",
+		HandlerFunc: LoginHandler,
+	},
+	Route{
+		Name:        "LoginSSO",
+		Methods:     []string{"GET"},
+		Pattern:     "/login/sso",
+		HandlerFunc: LoginSSOHandler,
+	},
+	Route{
+		Name:        "Logout",
+		Methods:     []string{"GET"},
+		Pattern:     "/logout",
+		HandlerFunc: LogoutHandler,
 	},
 	Route{
 		Name:        "FleetList",
