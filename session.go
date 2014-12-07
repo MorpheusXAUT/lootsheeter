@@ -171,6 +171,12 @@ func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.C
 	session.Save(r, w)
 }
 
+func (s *Session) GetCorporationName(r *http.Request) string {
+	session, _ := s.store.Get(r, "player")
+
+	return session.Values["corporation_name"].(string)
+}
+
 func (s *Session) SetSSOState(w http.ResponseWriter, r *http.Request, state string) {
 	session, _ := s.store.Get(r, "login")
 
