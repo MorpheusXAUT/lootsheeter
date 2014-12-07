@@ -84,7 +84,7 @@ func (s *Session) GetPlayerFromRequest(r *http.Request) *models.Player {
 	if !ok {
 		p, err := database.LoadPlayerFromName(characterName)
 		if err != nil {
-			logger.Errorf("Failed to load player from database in Session: [%v]", err)
+			logger.Errorf("Failed to load player from database in session: [%v]", err)
 			return nil
 		}
 
@@ -126,11 +126,47 @@ func (s *Session) IsLoggedIn(w http.ResponseWriter, r *http.Request) bool {
 	}
 }
 
-func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, characterName string, characterId int64) {
+func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.CharacterAffiliation, sh models.CorporationSheet) {
 	session, _ := s.store.Get(r, "player")
 
-	session.Values["character_name"] = characterName
-	session.Values["character_id"] = characterId
+	session.Values["character_id"] = a.GetCharacterId()
+	session.Values["character_name"] = a.GetCharacterName()
+	session.Values["corporation_id"] = a.GetCorporationId()
+	session.Values["corporation_name"] = a.GetCorporationName()
+	session.Values["alliance_id"] = a.GetAllianceId()
+	session.Values["alliance_name"] = a.GetAllianceName()
+	session.Values["faction_id"] = a.GetFactionId()
+	session.Values["faction_name"] = a.GetFactionName()
+
+	corp, err := database.LoadCorporationFromName(a.GetCorporationName())
+	if err != nil {
+		c, err := database.SaveCorporation(&models.Corporation{
+			Id:     -1,
+			Name:   a.GetCorporationName(),
+			CorpId: a.GetCorporationId(),
+			Ticker: sh.Ticker})
+		if err != nil {
+			logger.Errorf("Failed to save new corporation in session: [%v]", err)
+			return
+		}
+
+		corp = c
+	}
+
+	_, err = database.LoadPlayerFromName(a.GetCharacterName())
+	if err != nil {
+		_, err = database.SavePlayer(&models.Player{
+			Id:          -1,
+			Name:        a.GetCharacterName(),
+			PlayerId:    a.GetCharacterId(),
+			Corporation: corp,
+			AccessMask:  models.AccessMaskNone,
+		})
+		if err != nil {
+			logger.Errorf("Failed to save new player in session: [%v]", err)
+			return
+		}
+	}
 
 	session.Save(r, w)
 }

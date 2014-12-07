@@ -2,18 +2,12 @@
 package main
 
 import (
-	"bytes"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/morpheusxaut/lootsheeter/models"
 )
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -43,8 +37,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LoginSSOHandler(w http.ResponseWriter, r *http.Request) {
-	client := &http.Client{}
-
 	authorizationCode := r.URL.Query().Get("code")
 	state := r.URL.Query().Get("state")
 
@@ -63,75 +55,39 @@ func LoginSSOHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", *ssoClientId, *ssoClientSecret)))
-
-	verifyData := url.Values{}
-	verifyData.Set("grant_type", "authorization_code")
-	verifyData.Set("code", authorizationCode)
-
-	verifyReq, err := http.NewRequest("POST", "https://sisilogin.testeveonline.com/oauth/token", bytes.NewBufferString(verifyData.Encode()))
-	verifyReq.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	verifyReq.Header.Add("Content-Length", strconv.Itoa(len(verifyData.Encode())))
-	verifyReq.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
-
-	verifyResp, err := client.Do(verifyReq)
+	t, err := FetchSSOToken(authorizationCode)
 	if err != nil {
-		logger.Errorf("Received error while verifying authorization code in LoginSSOHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer verifyResp.Body.Close()
-
-	verifyBody, err := ioutil.ReadAll(verifyResp.Body)
-	if err != nil {
-		logger.Errorf("Received error while reading verification body in LoginSSOHandler: [%v]", err)
+		logger.Errorf("Received error while fetching SSO token in LoginSSOHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	var t models.SSOToken
-
-	err = json.Unmarshal(verifyBody, &t)
+	v, err := FetchSSOVerification(t)
 	if err != nil {
-		logger.Errorf("Failed to unmarshal SSO token in LoginSSOHandler: [%v]", err)
+		logger.Errorf("Received error while fetching SSO verification in LoginSSOHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	charReq, err := http.NewRequest("GET", "https://sisilogin.testeveonline.com/oauth/verify", nil)
-	charReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", t.AccessToken))
-
-	charResp, err := client.Do(charReq)
+	a, err := FetchCharacterAffiliation(v)
 	if err != nil {
-		logger.Errorf("Received error while querying for character ID in LoginSSOHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer charResp.Body.Close()
-
-	charBody, err := ioutil.ReadAll(charResp.Body)
-	if err != nil {
-		logger.Errorf("Received error while reading character ID body in LoginSSOHandler: [%v]", err)
+		logger.Errorf("Received error while fetching character association in LoginSSOHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	var v models.SSOVerification
-
-	err = json.Unmarshal(charBody, &v)
+	sh, err := FetchCorporationSheet(a)
 	if err != nil {
-		logger.Errorf("Failed to unmarshal SSO verification in LoginSSOHandler: [%v]", err)
+		logger.Errorf("Received error while fetching corporation sheet in LoginSSOHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	session.SetIdentity(w, r, v.CharacterName, v.CharacterId)
+	session.SetIdentity(w, r, a, sh)
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

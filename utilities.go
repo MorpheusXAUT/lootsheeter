@@ -4,6 +4,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -12,6 +13,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/morpheusxaut/lootsheeter/models"
 )
 
 func GetEvepraisalValue(raw string) (float64, error) {
@@ -161,4 +164,54 @@ func GenerateRandomString(length int) string {
 	}
 
 	return string(b)
+}
+
+func FetchCharacterAffiliation(v models.SSOVerification) (models.CharacterAffiliation, error) {
+	assocReq, err := http.NewRequest("GET", fmt.Sprintf("https://api.testeveonline.com/eve/CharacterAffiliation.xml.aspx?ids=%d", v.CharacterId), nil)
+
+	client := &http.Client{}
+	assocResp, err := client.Do(assocReq)
+	if err != nil {
+		return models.CharacterAffiliation{}, err
+	}
+	defer assocResp.Body.Close()
+
+	assocBody, err := ioutil.ReadAll(assocResp.Body)
+	if err != nil {
+		return models.CharacterAffiliation{}, err
+	}
+
+	var a models.CharacterAffiliation
+
+	err = xml.Unmarshal(assocBody, &a)
+	if err != nil {
+		return models.CharacterAffiliation{}, err
+	}
+
+	return a, nil
+}
+
+func FetchCorporationSheet(a models.CharacterAffiliation) (models.CorporationSheet, error) {
+	sheetReq, err := http.NewRequest("GET", fmt.Sprintf("https://api.testeveonline.com/corp/CorporationSheet.xml.aspx?corporationID=%d", a.GetCorporationId()), nil)
+
+	client := &http.Client{}
+	sheetResp, err := client.Do(sheetReq)
+	if err != nil {
+		return models.CorporationSheet{}, err
+	}
+	defer sheetResp.Body.Close()
+
+	sheetBody, err := ioutil.ReadAll(sheetResp.Body)
+	if err != nil {
+		return models.CorporationSheet{}, err
+	}
+
+	var s models.CorporationSheet
+
+	err = xml.Unmarshal(sheetBody, &s)
+	if err != nil {
+		return models.CorporationSheet{}, err
+	}
+
+	return s, nil
 }
