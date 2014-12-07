@@ -78,26 +78,16 @@
 						<table class="table table-striped">
 							<thead>
 								<tr>
-									<th>#</th>
-									<th># Fleet</th>
 									<th>Name</th>
 									<th>Payout</th>
-									<th>Payout Complete</th>
-									<th>Action</th>
 								</tr>
 							</thead>
 							<tbody>
-								{{ range $fleet := .Report.Fleets }}
-								{{ range $member := $fleet.Members }}
+								{{ range $name, $payout := .Report.Payouts }}
 								<tr>
-									<td>{{ $member.Id }}</td>
-									<td><a href="/fleet/{{ $fleet.Id }}">{{ $fleet.Id }}</a></td>
-									<td>{{ $member.Name }}</td>
-									<td>{{ FormatFloat $member.Payout }} ISK</td>
-									<td class="{{ if $member.PayoutComplete }} success {{ else }} danger {{ end }}">{{ if $member.PayoutComplete }} Done {{ else }} Outstanding {{ end }}</td>
-									<td><a href="/fleet/{{ $fleet.Id }}" class="btn btn-default">View</a></td>
+									<td>{{ $name }}</td>
+									<td>{{ FormatFloat $payout }} ISK</td>
 								</tr>
-								{{ end }}
 								{{ end }}
 							</tbody>
 						</table>

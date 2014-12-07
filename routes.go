@@ -57,7 +57,7 @@ var routes = []Route{
 	},
 	Route{
 		Name:        "FleetCreateForm",
-		Methods:     []string{"GET"},
+		Methods:     []string{"POST"},
 		Pattern:     "/fleets/create",
 		HandlerFunc: FleetCreateFormHandler,
 	},

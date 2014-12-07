@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/morpheusxaut/lootsheeter/models"
 )
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -118,18 +120,44 @@ func FleetListHandler(w http.ResponseWriter, r *http.Request) {
 	data["PageType"] = 2
 	data["LoggedIn"] = loggedIn
 
-	fleets, err := database.LoadAllFleets()
-	if err != nil {
-		logger.Errorf("Failed to load all fleets in FleetListHandler: [%v]", err)
+	var fleets []*models.Fleet
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		f, err := database.LoadAllFleets()
+		if err != nil {
+			logger.Errorf("Failed to load all fleets in FleetListHandler: [%v]", err)
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fleets = f
+	} else {
+		corporationName := session.GetCorporationName(r)
+
+		corporation, err := database.LoadCorporationFromName(corporationName)
+		if err != nil {
+			logger.Errorf("Failed to load corporation in FleetListHandler: [%v]", err)
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		f, err := database.LoadAllFleetsFromCorpId(corporation.Id)
+		if err != nil {
+			logger.Errorf("Failed to load all fleets in FleetListHandler: [%v]", err)
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fleets = f
 	}
 
 	data["Fleets"] = fleets
 	data["ShowAll"] = false
 
-	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleets", data)
+	err := templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleets", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in FleetListHandler: [%v]", err)
 	}
@@ -149,18 +177,44 @@ func FleetListAllHandler(w http.ResponseWriter, r *http.Request) {
 	data["PageType"] = 2
 	data["LoggedIn"] = loggedIn
 
-	fleets, err := database.LoadAllFleets()
-	if err != nil {
-		logger.Errorf("Failed to load all fleets in FleetListAllHandler: [%v]", err)
+	var fleets []*models.Fleet
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		f, err := database.LoadAllFleets()
+		if err != nil {
+			logger.Errorf("Failed to load all fleets in FleetListAllHandler: [%v]", err)
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fleets = f
+	} else {
+		corporationName := session.GetCorporationName(r)
+
+		corporation, err := database.LoadCorporationFromName(corporationName)
+		if err != nil {
+			logger.Errorf("Failed to load corporation in FleetListAllHandler: [%v]", err)
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		f, err := database.LoadAllFleetsFromCorpId(corporation.Id)
+		if err != nil {
+			logger.Errorf("Failed to load all fleets in FleetListAllHandler: [%v]", err)
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fleets = f
 	}
 
 	data["Fleets"] = fleets
 	data["ShowAll"] = true
 
-	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleets", data)
+	err := templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleets", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in FleetListAllHandler: [%v]", err)
 	}
@@ -176,11 +230,21 @@ func FleetCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := make(map[string]interface{})
 
-	data["PageTitle"] = "All Fleets"
+	data["PageTitle"] = "Create Fleet"
 	data["PageType"] = 2
 	data["LoggedIn"] = loggedIn
 
-	err := templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleetcreate", data)
+	players, err := database.LoadAllPlayers()
+	if err != nil {
+		logger.Errorf("Failed to load all players in FleetCreateHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data["Players"] = players
+
+	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleetcreate", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in FleetCreateHandler: [%v]", err)
 	}
@@ -192,6 +256,80 @@ func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 	if !loggedIn {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	}
+
+	err := r.ParseForm()
+	if err != nil {
+		logger.Errorf("Failed to parse POST form in FleetCreateFormHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fleetCommanderId, err := strconv.ParseInt(r.FormValue("selectFleetCommander"), 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse commander ID in FleetCreateFormHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fleetName := r.FormValue("textFleetName")
+	fleetSystem := r.FormValue("textFleetSystem")
+	fleetSystemNickname := r.FormValue("textFleetSystemNickname")
+
+	if len(fleetName) == 0 || len(fleetSystem) == 0 {
+		logger.Warnf("Content of POST form in FleetCreateFormHandler was empty...")
+
+		http.Redirect(w, r, "/fleets/create", http.StatusSeeOther)
+		return
+	}
+
+	corporationName := session.GetCorporationName(r)
+
+	corporation, err := database.LoadCorporationFromName(corporationName)
+	if err != nil {
+		logger.Errorf("Failed to load corporation in FleetCreateFormHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fleet := models.NewFleet(-1, corporation.Id, fleetName, fleetSystem, fleetSystemNickname, 0, 0, 0, time.Now(), time.Time{}, 0, false, -1)
+
+	player, err := database.LoadPlayer(fleetCommanderId)
+	if err != nil {
+		logger.Errorf("Failed to load fleet commander in FleetCreateFormHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	logger.Printf("%#+v", fleet)
+
+	fleet, err = database.SaveFleet(fleet)
+	if err != nil {
+		logger.Errorf("Failed to save fleet in FleetCreateFormHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	logger.Printf("%#+v", fleet)
+
+	commander := models.NewFleetMember(fleetCommanderId, fleet.Id, player, models.FleetRoleFleetCommander, 0, 0, 0, false, -1)
+
+	fleet.AddMember(commander)
+
+	fleet, err = database.SaveFleet(fleet)
+	if err != nil {
+		logger.Errorf("Failed to save fleet commander in FleetCreateFormHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	logger.Printf("%#+v", fleet)
+
+	http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleet.Id), http.StatusSeeOther)
 }
 
 func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
@@ -314,7 +452,7 @@ func FleetAddProfitHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = r.ParseForm()
 	if err != nil {
-		logger.Errorf("Failed to parse POST form in FleetAddProfitHandler: [%v]", vars["fleetid"], err)
+		logger.Errorf("Failed to parse POST form in FleetAddProfitHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -665,6 +803,8 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	report.CalculatePayouts()
 
 	data["Report"] = report
 
