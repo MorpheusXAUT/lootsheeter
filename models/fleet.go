@@ -8,6 +8,7 @@ import (
 
 type Fleet struct {
 	Id                int64
+	CorporationId     int64
 	Name              string
 	Members           map[string]*FleetMember
 	System            string
@@ -22,9 +23,10 @@ type Fleet struct {
 	ReportId          int64
 }
 
-func NewFleet(id int64, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time, payout float64, complete bool, report int64) *Fleet {
+func NewFleet(id int64, corp int64, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time, payout float64, complete bool, report int64) *Fleet {
 	fleet := &Fleet{
 		Id:                id,
+		CorporationId:     corp,
 		Name:              name,
 		Members:           make(map[string]*FleetMember),
 		System:            system,
