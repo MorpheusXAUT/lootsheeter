@@ -17,13 +17,19 @@ func main() {
 
 	flag.Parse()
 
-	if strings.EqualFold(*mysqlUserFlag, "") || strings.EqualFold(*mysqlPasswordFlag, "") || strings.EqualFold(*mysqlDatabaseFlag, "") {
+	if strings.EqualFold(*mysqlUserFlag, "") ||
+		strings.EqualFold(*mysqlPasswordFlag, "") ||
+		strings.EqualFold(*mysqlDatabaseFlag, "") ||
+		strings.EqualFold(*ssoClientId, "") ||
+		strings.EqualFold(*ssoClientSecret, "") {
 		flag.Usage()
 	}
 
 	SetupLogger()
 
 	InitialiseDatabase(*mysqlHostFlag, *mysqlPortFlag, *mysqlUserFlag, *mysqlPasswordFlag, *mysqlDatabaseFlag)
+
+	InitialiseSessions()
 
 	SetupRouter(true)
 
