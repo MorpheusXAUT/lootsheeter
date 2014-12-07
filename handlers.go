@@ -21,11 +21,17 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+	if loggedIn {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = "Login"
 	data["PageType"] = 5
-	data["LoggedIn"] = session.IsLoggedIn(w, r)
+	data["LoggedIn"] = loggedIn
 
 	state := GenerateRandomString(32)
 
@@ -99,11 +105,18 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func FleetListHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = "Active Fleets"
 	data["PageType"] = 2
-	data["LoggedIn"] = session.IsLoggedIn(w, r)
+	data["LoggedIn"] = loggedIn
 
 	fleets, err := database.LoadAllFleets()
 	if err != nil {
@@ -123,11 +136,18 @@ func FleetListHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func FleetListAllHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = "All Fleets"
 	data["PageType"] = 2
-	data["LoggedIn"] = session.IsLoggedIn(w, r)
+	data["LoggedIn"] = loggedIn
 
 	fleets, err := database.LoadAllFleets()
 	if err != nil {
@@ -147,10 +167,41 @@ func FleetListAllHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func FleetCreateHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
 
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	data := make(map[string]interface{})
+
+	data["PageTitle"] = "All Fleets"
+	data["PageType"] = 2
+	data["LoggedIn"] = loggedIn
+
+	err := templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleetcreate", data)
+	if err != nil {
+		logger.Errorf("Failed to execute template in FleetCreateHandler: [%v]", err)
+	}
+}
+
+func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+	}
 }
 
 func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	vars := mux.Vars(r)
 	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
 	if err != nil {
@@ -164,7 +215,7 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["PageTitle"] = fmt.Sprintf("Details Fleet #%d", fleetId)
 	data["PageType"] = 2
-	data["LoggedIn"] = session.IsLoggedIn(w, r)
+	data["LoggedIn"] = loggedIn
 
 	fleet, err := database.LoadFleet(fleetId)
 	if err != nil {
@@ -183,10 +234,22 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
 
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
 }
 
 func FleetFinishHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	vars := mux.Vars(r)
 	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
 	if err != nil {
@@ -218,6 +281,13 @@ func FleetFinishHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func FleetAddProfitHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	vars := mux.Vars(r)
 	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
 	if err != nil {
@@ -303,6 +373,13 @@ func FleetAddProfitHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func FleetAddLossHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	vars := mux.Vars(r)
 	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
 	if err != nil {
@@ -401,15 +478,27 @@ func FleetAddLossHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func FleetDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
 
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
 }
 
 func PlayerListHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = "Players"
 	data["PageType"] = 3
-	data["LoggedIn"] = session.IsLoggedIn(w, r)
+	data["LoggedIn"] = loggedIn
 
 	players, err := database.LoadAllPlayers()
 	if err != nil {
@@ -427,11 +516,14 @@ func PlayerListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func PlayerCreateHandler(w http.ResponseWriter, r *http.Request) {
-
-}
-
 func PlayerDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	vars := mux.Vars(r)
 	playerId, err := strconv.ParseInt(vars["playerid"], 10, 64)
 	if err != nil {
@@ -445,7 +537,7 @@ func PlayerDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["PageTitle"] = fmt.Sprintf("Details Player #%d", playerId)
 	data["PageType"] = 3
-	data["LoggedIn"] = session.IsLoggedIn(w, r)
+	data["LoggedIn"] = loggedIn
 
 	player, err := database.LoadPlayer(playerId)
 	if err != nil {
@@ -464,19 +556,37 @@ func PlayerDetailsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func PlayerEditHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
 
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
 }
 
 func PlayerDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
 
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
 }
 
 func ReportListHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = "Reports"
 	data["PageType"] = 4
-	data["LoggedIn"] = session.IsLoggedIn(w, r)
+	data["LoggedIn"] = loggedIn
+	data["ShowAll"] = false
 
 	reports, err := database.LoadAllReports()
 	if err != nil {
@@ -494,7 +604,45 @@ func ReportListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func ReportListAllHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	data := make(map[string]interface{})
+
+	data["PageTitle"] = "Reports"
+	data["PageType"] = 4
+	data["LoggedIn"] = loggedIn
+	data["ShowAll"] = true
+
+	reports, err := database.LoadAllReports()
+	if err != nil {
+		logger.Errorf("Failed to load all reports in ReportListAllHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data["Reports"] = reports
+
+	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "reports", data)
+	if err != nil {
+		logger.Errorf("Failed to execute template in ReportListAllHandler: [%v]", err)
+	}
+}
+
 func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	vars := mux.Vars(r)
 	reportId, err := strconv.ParseInt(vars["reportid"], 10, 64)
 	if err != nil {
@@ -508,7 +656,7 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["PageTitle"] = fmt.Sprintf("Report #%d", reportId)
 	data["PageType"] = 4
-	data["LoggedIn"] = session.IsLoggedIn(w, r)
+	data["LoggedIn"] = loggedIn
 
 	report, err := database.LoadReport(reportId)
 	if err != nil {
@@ -526,12 +674,27 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func ReportCreateHandler(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func ReportCreateFormHandler(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func AdminMenuHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = "Admin Menu"
 	data["PageType"] = 6
-	data["LoggedIn"] = session.IsLoggedIn(w, r)
+	data["LoggedIn"] = loggedIn
 
 	err := templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "adminmenu", data)
 	if err != nil {

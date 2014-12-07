@@ -51,9 +51,15 @@ var routes = []Route{
 	},
 	Route{
 		Name:        "FleetCreate",
-		Methods:     []string{"GET", "POST"},
+		Methods:     []string{"GET"},
 		Pattern:     "/fleets/create",
 		HandlerFunc: FleetCreateHandler,
+	},
+	Route{
+		Name:        "FleetCreateForm",
+		Methods:     []string{"GET"},
+		Pattern:     "/fleets/create",
+		HandlerFunc: FleetCreateFormHandler,
 	},
 	Route{
 		Name:        "FleetDetails",
@@ -98,12 +104,6 @@ var routes = []Route{
 		HandlerFunc: PlayerListHandler,
 	},
 	Route{
-		Name:        "PlayerCreate",
-		Methods:     []string{"GET", "POST"},
-		Pattern:     "/players/create",
-		HandlerFunc: PlayerCreateHandler,
-	},
-	Route{
 		Name:        "PlayerDetails",
 		Methods:     []string{"GET"},
 		Pattern:     "/player/{playerid:[0-9]+}",
@@ -126,6 +126,24 @@ var routes = []Route{
 		Methods:     []string{"GET"},
 		Pattern:     "/reports",
 		HandlerFunc: ReportListHandler,
+	},
+	Route{
+		Name:        "ReportListAll",
+		Methods:     []string{"GET"},
+		Pattern:     "/reports/all",
+		HandlerFunc: ReportListAllHandler,
+	},
+	Route{
+		Name:        "ReportCreate",
+		Methods:     []string{"GET"},
+		Pattern:     "/reports/create",
+		HandlerFunc: ReportCreateHandler,
+	},
+	Route{
+		Name:        "ReportCreateForm",
+		Methods:     []string{"POST"},
+		Pattern:     "/reports/create",
+		HandlerFunc: ReportCreateFormHandler,
 	},
 	Route{
 		Name:        "ReportDetails",
