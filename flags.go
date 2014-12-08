@@ -16,4 +16,5 @@ var (
 	mysqlPortFlag     = flag.Int("mysqlport", 3306, "Port of the MySQL server")
 	ssoClientId       = flag.String("ssoid", "", "EVE Online Application Client ID")
 	ssoClientSecret   = flag.String("ssosecret", "", "EVE Online Application Client Secret")
+	ssoCallbackUrl    = flag.String("ssocallback", "", "EVE Online Application Callback URL")
 )

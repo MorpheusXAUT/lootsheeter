@@ -21,7 +21,8 @@ func main() {
 		strings.EqualFold(*mysqlPasswordFlag, "") ||
 		strings.EqualFold(*mysqlDatabaseFlag, "") ||
 		strings.EqualFold(*ssoClientId, "") ||
-		strings.EqualFold(*ssoClientSecret, "") {
+		strings.EqualFold(*ssoClientSecret, "") ||
+		strings.EqualFold(*ssoCallbackUrl, "") {
 		flag.Usage()
 	}
 
