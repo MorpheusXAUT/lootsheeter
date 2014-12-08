@@ -158,6 +158,37 @@ func (db *Database) LoadAllPlayers() ([]*models.Player, error) {
 	return players, nil
 }
 
+func (db *Database) LoadAvailablePlayers(fleedId int64, corporationId int64) ([]*models.Player, error) {
+	logger.Tracef("Querying database for available players with cid = %d...", corporationId)
+
+	players := make([]*models.Player, 0)
+
+	rows, err := db.db.Query("SELECT p.id AS pid, p.player_id AS player_id, p.name AS player_name, p.corporation_id AS cid, p.access AS player_access FROM players AS p WHERE p.active = 'Y' AND p.corporation_id = ? AND p.id NOT IN (SELECT player_id FROM fleetmembers WHERE fleet_id = ?)", corporationId, fleedId)
+	if err != nil {
+		return players, fmt.Errorf("Received error while querying for available players: [%v]", err)
+	}
+
+	for rows.Next() {
+		var pid, playerId, cid int64
+		var playerAccess int
+		var playerName string
+
+		err := rows.Scan(&pid, &playerId, &playerName, &cid, &playerAccess)
+		if err != nil {
+			return players, fmt.Errorf("Received error while scanning available player rows: [%v]", err)
+		}
+
+		corp, err := db.LoadCorporation(cid)
+		if err != nil {
+			return players, err
+		}
+
+		players = append(players, models.NewPlayer(pid, playerId, playerName, corp, models.AccessMask(playerAccess)))
+	}
+
+	return players, nil
+}
+
 func (db *Database) LoadFleetMember(fleetId int64, id int64) (*models.FleetMember, error) {
 	logger.Tracef("Querying database for fleet member with fid = %d and pid = %d...", fleetId, id)
 
