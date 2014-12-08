@@ -411,6 +411,13 @@ func FleetFinishHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !IsFleetCommander(r, fleet) {
+		logger.Errorf("Request to finish fleet received by non-fleetcommander in FleetFinishHandler: [%v]", err)
+
+		http.Error(w, "Hurrdurr, bad boy! You're not the fleet commander, go away!", http.StatusInternalServerError)
+		return
+	}
+
 	fleet.FinishFleet()
 
 	fleet, err = database.SaveFleet(fleet)
@@ -453,6 +460,13 @@ func FleetAddProfitHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to load fleet in FleetAddProfitHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	
+	if !IsFleetCommander(r, fleet) {
+		logger.Errorf("Request to add profit received by non-fleetcommander in FleetAddProfitHandler: [%v]", err)
+
+		http.Error(w, "Hurrdurr, bad boy! You're not the fleet commander, go away!", http.StatusInternalServerError)
 		return
 	}
 
@@ -545,6 +559,13 @@ func FleetAddLossHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to load fleet in FleetAddLossHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !IsFleetCommander(r, fleet) {
+		logger.Errorf("Request to add loss received by non-fleetcommander in FleetAddLossHandler: [%v]", err)
+
+		http.Error(w, "Hurrdurr, bad boy! You're not the fleet commander, go away!", http.StatusInternalServerError)
 		return
 	}
 
@@ -659,6 +680,13 @@ func FleetAddMemberHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to load fleet in FleetAddMemberHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !IsFleetCommander(r, fleet) {
+		logger.Errorf("Request to add member received by non-fleetcommander in FleetAddMemberHandler: [%v]", err)
+
+		http.Error(w, "Hurrdurr, bad boy! You're not the fleet commander, go away!", http.StatusInternalServerError)
 		return
 	}
 
