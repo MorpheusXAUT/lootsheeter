@@ -365,6 +365,18 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["Fleet"] = fleet
 
+	availablePlayers, err := database.LoadAvailablePlayers(fleetId, fleet.CorporationId)
+	if err != nil {
+		logger.Errorf("Failed to load available players in FleetDetailsHandler: [%v]", fleetId, err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data["AvailablePlayers"] = availablePlayers
+
+	logger.Printf("%#+v", availablePlayers)
+
 	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleetdetails", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in FleetDetailsHandler: [%v]", err)

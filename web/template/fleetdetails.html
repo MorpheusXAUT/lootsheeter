@@ -117,7 +117,29 @@
 							</tbody>
 						</table>
 						<p align="center">
-							<a href="#" class="btn btn-success">Add Member</a>
+							<a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#form_addmember">Add Member</a>
+							<form role="form-horizontal" id="form_addmember" align="center" action="/fleet/{{ .Fleet.Id }}/addmember" method="POST" class="collapse">
+							<div class="form-group">
+								<label class="control-label" for="addmember_selectMember">Members available</label>
+								<select class="form-control" id="addmember_selectMember" name="addmember_selectMember">
+									{{ range $player := .AvailablePlayers }}
+										<option value="{{ $player.Id }}">{{ $player.Name }}</option>
+									{{ end }}
+								</select>
+							</div>
+							<div class="form-group">
+								<label class="control-label" for="addmember_selectRole">Fleet Role</label>
+								<select class="form-control" id="addmember_selectRole" name="addmember_selectRole">
+									<option value="32">DPS</option>
+									<option value="16">Logistics</option>
+									<option value="8">Salvage</option>
+									<option value="4">Scout</option>
+								</select>
+							</div>
+							<div class="form-group">
+								<button type="submit" class="btn btn-success">Submit</button>
+							</div>
+						</form>
 						</p>
 					</div>
 				</div>
