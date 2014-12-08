@@ -303,8 +303,6 @@ func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Printf("%#+v", fleet)
-
 	fleet, err = database.SaveFleet(fleet)
 	if err != nil {
 		logger.Errorf("Failed to save fleet in FleetCreateFormHandler: [%v]", err)
@@ -313,9 +311,7 @@ func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Printf("%#+v", fleet)
-
-	commander := models.NewFleetMember(fleetCommanderId, fleet.Id, player, models.FleetRoleFleetCommander, 0, 0, 0, false, -1)
+	commander := models.NewFleetMember(fleetCommanderId, fleet.Id, player, models.FleetRoleFleetCommander, 0, 1, 0, false, -1)
 
 	fleet.AddMember(commander)
 
@@ -326,8 +322,6 @@ func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	logger.Printf("%#+v", fleet)
 
 	http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleet.Id), http.StatusSeeOther)
 }
@@ -374,8 +368,6 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data["AvailablePlayers"] = availablePlayers
-
-	logger.Printf("%#+v", availablePlayers)
 
 	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleetdetails", data)
 	if err != nil {
@@ -634,6 +626,85 @@ func FleetDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
+}
+
+func FleetAddMemberHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	vars := mux.Vars(r)
+	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse fleet ID %q in FleetAddMemberHandler: [%v]", vars["fleetid"], err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/fleet/%d", fleetId)) {
+		logger.Warnf("Received request to FleetAddMemberHandler without proper referrer: %q", r.Referer())
+
+		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
+		return
+	}
+
+	fleet, err := database.LoadFleet(fleetId)
+	if err != nil {
+		logger.Errorf("Failed to load fleet in FleetAddMemberHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		logger.Errorf("Failed to parse POST form in FleetAddMemberHandler: [%v]", vars["fleetid"], err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	memberId, err := strconv.ParseInt(r.FormValue("addmember_selectMember"), 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse memberId in FleetAddMemberHandler: [%v]", vars["fleetid"], err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	memberRole, err := strconv.ParseInt(r.FormValue("addmember_selectRole"), 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse memberRole in FleetAddMemberHandler: [%v]", vars["fleetid"], err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	player, err := database.LoadPlayer(memberId)
+	if err != nil {
+		logger.Errorf("Failed to load player in FleetAddMemberHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	member := models.NewFleetMember(-1, fleetId, player, models.FleetRole(memberRole), 0, 1, 0, false, -1)
+
+	fleet.AddMember(member)
+
+	fleet, err = database.SaveFleet(fleet)
+	if err != nil {
+		logger.Errorf("Failed to load player in FleetAddMemberHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
 }
 
 func PlayerListHandler(w http.ResponseWriter, r *http.Request) {

@@ -98,6 +98,12 @@ var routes = []Route{
 		HandlerFunc: FleetDeleteHandler,
 	},
 	Route{
+		Name:        "FleetAddMember",
+		Methods:     []string{"POST"},
+		Pattern:     "/fleet/{fleetid:[0-9]+}/addmember",
+		HandlerFunc: FleetAddMemberHandler,
+	},
+	Route{
 		Name:        "PlayerList",
 		Methods:     []string{"GET"},
 		Pattern:     "/players",
