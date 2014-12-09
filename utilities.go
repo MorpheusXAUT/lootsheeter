@@ -215,3 +215,20 @@ func FetchCorporationSheet(a models.CharacterAffiliation) (models.CorporationShe
 
 	return s, nil
 }
+
+func SendJSONResponse(w http.ResponseWriter, response map[string]interface{}) {
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		logger.Errorf("Failed to encode response to JSON: [%v]", err)
+		
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Length", strconv.Itoa(len(jsonResponse)))
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Write(jsonResponse)
+}

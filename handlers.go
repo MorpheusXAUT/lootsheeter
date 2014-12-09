@@ -2,7 +2,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -454,6 +453,12 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 	case "finish":
 		FleetEditFinishHandler(w, r, fleet)
 		break
+	default:
+		response := make(map[string]interface{})
+		response["result"] = "error"
+		response["error"] = "Invalid command"
+
+		SendJSONResponse(w, response)
 	}
 }
 
@@ -464,20 +469,7 @@ func FleetEditPollHandler(w http.ResponseWriter, r *http.Request, fleet *models.
 	response["error"] = nil
 	response["fleet"] = fleet
 
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		logger.Errorf("Failed to encode response in FleetEditPollHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Length", strconv.Itoa(len(jsonResponse)))
-
-	w.WriteHeader(http.StatusOK)
-
-	w.Write(jsonResponse)
+	SendJSONResponse(w, response)
 }
 
 func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
@@ -487,14 +479,21 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 	if err != nil {
 		logger.Errorf("Failed to parse memberId in FleetEditAddMemberHandler: [%v]", err)
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
 		return
 	}
+
 	fleetRole, err := strconv.ParseInt(r.FormValue("fleetRole"), 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse fleetRole in FleetEditAddMemberHandler: [%v]", err)
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
 		return
 	}
 
@@ -502,7 +501,10 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 	if err != nil {
 		logger.Errorf("Failed to load player in FleetEditAddMemberHandler: [%v]", err)
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
 		return
 	}
 
@@ -514,7 +516,10 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 	if err != nil {
 		logger.Errorf("Failed to save fleet in FleetEditAddMemberHandler: [%v]", err)
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
 		return
 	}
 
@@ -522,20 +527,7 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 	response["error"] = nil
 	response["fleet"] = fleet
 
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		logger.Errorf("Failed to encode response in FleetEditAddMemberHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Length", strconv.Itoa(len(jsonResponse)))
-
-	w.WriteHeader(http.StatusOK)
-
-	w.Write(jsonResponse)
+	SendJSONResponse(w, response)
 }
 
 func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
@@ -545,7 +537,10 @@ func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet 
 	if err != nil {
 		logger.Errorf("Failed to parse memberId in FleetEditRemoveMemberHandler: [%v]", err)
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
 		return
 	}
 
@@ -553,7 +548,10 @@ func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet 
 	if err != nil {
 		logger.Errorf("Failed to load fleet member in FleetEditRemoveMemberHandler: [%v]", err)
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
 		return
 	}
 
@@ -563,7 +561,10 @@ func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet 
 	if err != nil {
 		logger.Errorf("Failed to remove fleet member in FleetEditRemoveMemberHandler: [%v]", err)
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
 		return
 	}
 
@@ -571,20 +572,7 @@ func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet 
 	response["error"] = nil
 	response["fleet"] = fleet
 
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		logger.Errorf("Failed to encode response in FleetEditRemoveMemberHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Length", strconv.Itoa(len(jsonResponse)))
-
-	w.WriteHeader(http.StatusOK)
-
-	w.Write(jsonResponse)
+	SendJSONResponse(w, response)
 }
 
 func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
@@ -594,7 +582,10 @@ func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 	if len(rawProfit) == 0 {
 		logger.Errorf("Content of rawProfit in FleetAddProfitHandler was empty...")
 
-		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleet.Id), http.StatusBadRequest)
+		response["result"] = "error"
+		response["error"] = fmt.Sprintf("Content of rawProfit was empty")
+
+		SendJSONResponse(w, response)
 		return
 	}
 
@@ -610,7 +601,10 @@ func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 			if err != nil {
 				logger.Errorf("Failed to parse evepraisal row in FleetEditAddMemberHandler: [%v]", err)
 
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				response["result"] = "error"
+				response["error"] = err.Error()
+
+				SendJSONResponse(w, response)
 				return
 			}
 
@@ -621,7 +615,10 @@ func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 		if err != nil {
 			logger.Errorf("Failed to parse paste in FleetEditAddMemberHandler: [%v]", err)
 
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			response["result"] = "error"
+			response["error"] = err.Error()
+
+			SendJSONResponse(w, response)
 			return
 		}
 
@@ -634,7 +631,10 @@ func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 	if err != nil {
 		logger.Errorf("Failed to save fleet in FleetEditAddMemberHandler: [%v]", err)
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
 		return
 	}
 
@@ -642,20 +642,7 @@ func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 	response["error"] = nil
 	response["fleet"] = fleet
 
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		logger.Errorf("Failed to encode response in FleetEditAddMemberHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Length", strconv.Itoa(len(jsonResponse)))
-
-	w.WriteHeader(http.StatusOK)
-
-	w.Write(jsonResponse)
+	SendJSONResponse(w, response)
 }
 
 func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
@@ -665,7 +652,10 @@ func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *mode
 	if len(rawLoss) == 0 {
 		logger.Errorf("Content of rawLoss in FleetEditAddLossHandler was empty...")
 
-		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleet.Id), http.StatusBadRequest)
+		response["result"] = "error"
+		response["error"] = fmt.Sprintf("Content of rawLoss was empty")
+
+		SendJSONResponse(w, response)
 		return
 	}
 
@@ -681,7 +671,10 @@ func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *mode
 			if err != nil {
 				logger.Errorf("Failed to parse evepraisal row in FleetEditAddLossHandler: [%v]", err)
 
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				response["result"] = "error"
+				response["error"] = err.Error()
+
+				SendJSONResponse(w, response)
 				return
 			}
 
@@ -695,7 +688,10 @@ func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *mode
 			if err != nil {
 				logger.Errorf("Failed to parse zKillboard row in FleetEditAddLossHandler: [%v]", err)
 
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				response["result"] = "error"
+				response["error"] = err.Error()
+
+				SendJSONResponse(w, response)
 				return
 			}
 
@@ -706,7 +702,10 @@ func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *mode
 		if err != nil {
 			logger.Errorf("Failed to parse paste in FleetEditAddLossHandler: [%v]", err)
 
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			response["result"] = "error"
+			response["error"] = err.Error()
+
+			SendJSONResponse(w, response)
 			return
 		}
 
@@ -719,7 +718,10 @@ func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *mode
 	if err != nil {
 		logger.Errorf("Failed to save fleet in FleetEditAddLossHandler: [%v]", err)
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
 		return
 	}
 
@@ -727,20 +729,7 @@ func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *mode
 	response["error"] = nil
 	response["fleet"] = fleet
 
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		logger.Errorf("Failed to encode response in FleetEditAddLossHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Length", strconv.Itoa(len(jsonResponse)))
-
-	w.WriteHeader(http.StatusOK)
-
-	w.Write(jsonResponse)
+	SendJSONResponse(w, response)
 }
 
 func FleetEditCalculateHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
@@ -752,7 +741,10 @@ func FleetEditCalculateHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 	if err != nil {
 		logger.Errorf("Failed to save fleet in FleetEditCalculateHandler: [%v]", err)
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
 		return
 	}
 
@@ -760,20 +752,7 @@ func FleetEditCalculateHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 	response["error"] = nil
 	response["fleet"] = fleet
 
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		logger.Errorf("Failed to encode response in FleetEditCalculateHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Length", strconv.Itoa(len(jsonResponse)))
-
-	w.WriteHeader(http.StatusOK)
-
-	w.Write(jsonResponse)
+	SendJSONResponse(w, response)
 }
 
 func FleetEditFinishHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
@@ -785,7 +764,10 @@ func FleetEditFinishHandler(w http.ResponseWriter, r *http.Request, fleet *model
 	if err != nil {
 		logger.Errorf("Failed to save fleet in FleetEditFinishHandler: [%v]", err)
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
 		return
 	}
 
@@ -793,20 +775,7 @@ func FleetEditFinishHandler(w http.ResponseWriter, r *http.Request, fleet *model
 	response["error"] = nil
 	response["fleet"] = fleet
 
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		logger.Errorf("Failed to encode response in FleetEditFinishHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Length", strconv.Itoa(len(jsonResponse)))
-
-	w.WriteHeader(http.StatusOK)
-
-	w.Write(jsonResponse)
+	SendJSONResponse(w, response)
 }
 
 func FleetFinishHandler(w http.ResponseWriter, r *http.Request) {
