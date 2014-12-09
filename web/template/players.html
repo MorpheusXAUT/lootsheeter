@@ -22,7 +22,7 @@
 						<tr>
 							<td><a href="/player/{{ $player.Id }}">{{ $player.Id }}</a></td>
 							<td>{{ $player.Name }}</td>
-							<td>{{ $player.Corporation.Name }}</td>
+							<td>{{ $player.Corp.Name }}</td>
 							<td><a href="/player/{{ $player.Id }}" class="btn btn-default">View</a>&nbsp;<a href="/player/{{ $player.Id }}/edit" class="btn btn-primary">Edit</a>&nbsp;<a href="/player/{{ $player.Id }}/delete" class="btn btn-danger">Delete</a></td>
 						</tr>
 						{{ end }}
