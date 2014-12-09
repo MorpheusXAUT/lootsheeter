@@ -3,7 +3,7 @@
 	{{ template "navigation" . }}
 
 	{{ $FleetID := .Fleet.Id}}
-	{{ $FleetCommander := IsFleetCommander .Fleet }}
+	{{ $FleetAdmin := or (IsFleetCommander .Fleet) (HasAccessMask 256) }}
 	
 	<div class="container" role="main">
 		<div class="page-header">
@@ -57,28 +57,28 @@
 							</tbody>
 						</table>
 						<p align="center">
-							{{ if $FleetCommander }}
+							{{ if $FleetAdmin }}
 							<a href="#" class="btn btn-primary">Edit</a>
 							{{ if not .Fleet.IsFleetFinished }}
-							<a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#form_addprofit">Add Profit</a>
-							<a class="btn btn-warning collapse-data-btn" data-toggle="collapse" href="#form_addloss">Add Loss</a>
-							<a href="/fleet/{{ .Fleet.Id }}/finish" class="btn btn-danger">Finish Fleet</a>
+							<a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#addProfitForm">Add Profit</a>
+							<a class="btn btn-warning collapse-data-btn" data-toggle="collapse" href="#addLossForm">Add Loss</a>
+							<a href="#" class="btn btn-danger">Finish Fleet</a>
 							{{ end }}
 							{{ end }}
 						</p>
-						<form role="form-horizontal" id="form_addprofit" align="center" action="/fleet/{{ .Fleet.Id }}/addprofit" method="POST" class="collapse">
+						<form role="form-horizontal" id="addProfitForm" align="center" class="collapse">
 							<div class="form-group">
-								<label class="control-label" for="addprofit_textarea">Profit Overview</label>
-								<textarea class="form-control" id="addprofit_textarea" name="addprofit_textarea" rows="5" placeholder="Paste profit overview or Evepraisal link here"></textarea>
+								<label class="control-label" for="addProfitRaw">Profit Overview</label>
+								<textarea class="form-control" id="addProfitRaw" name="addProfitRaw" rows="5" placeholder="Paste profit overview or Evepraisal link here"></textarea>
 							</div>
 							<div class="form-group">
 								<button type="submit" class="btn btn-success">Submit</button>
 							</div>
 						</form>
-						<form role="form-horizontal" id="form_addloss" align="center" action="/fleet/{{ .Fleet.Id }}/addloss" method="POST" class="collapse">
+						<form role="form-horizontal" id="addLossForm" align="center" class="collapse">
 							<div class="form-group">
-								<label class="control-label" for="addloss_textarea">Loss Overview</label>
-								<textarea class="form-control" id="addloss_textarea" name="addloss_textarea" rows="5" placeholder="Paste loss overview, zKillboard link or Evepraisal link here"></textarea>
+								<label class="control-label" for="addLossRaw">Loss Overview</label>
+								<textarea class="form-control" id="addLossRaw" name="addLossRaw" rows="5" placeholder="Paste loss overview, zKillboard link or Evepraisal link here"></textarea>
 							</div>
 							<div class="form-group">
 								<button type="submit" class="btn btn-success">Submit</button>
@@ -99,7 +99,7 @@
 									<th>Payment modifier</th>
 									<th>Payout</th>
 									<th>Payout Complete</th>
-									{{ if $FleetCommander }}
+									{{ if $FleetAdmin }}
 									<th>Action</th>
 									{{ end }}
 								</tr>
@@ -107,16 +107,68 @@
 							<tbody>
 								{{ range $member := .Fleet.Members }}
 								<tr>
-									<form role="form-horizontal" action="/fleet/{{ $FleetID }}/addprofit" method="POST">
-										<td>{{ $member.Id }}</td>
-										<td>{{ $member.Name }}</td>
-										<td><div id="form_fleetmember_role_{{ $member.Id }}"><h4><span class="label {{ $member.Role.LabelType }}">{{ $member.Role }}</span></h4></div><div id="form_fleetmember_role_edit_{{ $member.Id }}" class="hide">Test</div></td>
-										<td><div id="form_fleetmember_sitemodifier_{{ $member.Id }}">{{ $member.SiteModifier }}</div><div id="form_fleetmember_sitemodifier_edit_{{ $member.Id }}" class="hide">Test</div></td>
-										<td><div id="form_fleetmember_paymentmodifier_{{ $member.Id }}">{{ if eq $member.PaymentModifier 1.0 }} {{ $member.Role.PaymentRate }} {{ else }} {{ $member.PaymentModifier }} {{ end }}</div><div id="form_fleetmember_paymentmodifier_edit_{{ $member.Id }}" class="hide">Test</div></td>
-										<td class="text-right"><div id="form_fleetmember_payout_{{ $member.Id }}">{{ FormatFloat $member.Payout }} ISK</div><div id="form_fleetmember_payout_edit_{{ $member.Id }}" class="hide">Test</div></td>
-										<td class="{{ if $member.PayoutComplete }} success {{ else }} danger {{ end }}"><div id="form_fleetmember_payoutcomplete_{{ $member.Id }}">{{ if $member.PayoutComplete }} Done {{ else }} Outstanding {{ end }}</div><div id="form_fleetmember_payoutcomplete_edit_{{ $member.Id }}" class="hide">Test</div></td>
-										{{ if $FleetCommander }}
-										<td><a onclick="toggleFleetmemberEdit({{ $member.Id }}, true);" class="btn btn-primary" id="form_fleetmember_action_{{ $member.Id }}">Edit</a><a href="#" class="btn btn-success hide" id="form_fleetmember_action_edit_{{ $member.Id }}">Save</a>&nbsp;<a href="#" class="btn btn-danger" id="form_fleetmember_action_cancel_{{ $member.Id }}">Remove</a><a onclick="toggleFleetmemberEdit({{ $member.Id }}, false);" class="btn btn-danger hide" id="form_fleetmember_action_cancel_edit_{{ $member.Id }}">Cancel</a></td>
+									<form role="form-horizontal">
+										<td>
+											{{ $member.Id }}
+										</td>
+										<td>
+											{{ $member.Name }}
+										</td>
+										<td>
+											<div id="fleetMemberRole" member="{{ $member.Id }}">
+												<h4><span class="label {{ $member.Role.LabelType }}">{{ $member.Role }}</span></h4>
+											</div>
+											<div id="fleetMemberRoleForm" member="{{ $member.Id }}" style="display: none;">
+												<select class="form-control" id="fleetMemberRoleEdit" name="fleetMemberRoleEdit">
+													<option value="4">Scout</option>
+													<option value="8">Salvage</option>
+													<option value="16">Logistics</option>
+													<option value="32">DPS</option>
+													<option value="64">Fleetcommander</option>
+												</select>
+											</div>
+										</td>
+										<td>
+											<div id="fleetMemberSiteModifier" member="{{ $member.Id }}">
+												{{ $member.SiteModifier }}
+											</div>
+											<div id="fleetMemberSiteModifierForm" member="{{ $member.Id }}" style="display: none;">
+												<input type="number" class="form-control" id="fleetMemberSiteModiferEdit" name="fleetMemberSiteModiferEdit" value="{{ $member.SiteModifier }}">
+											</div>
+										</td>
+										<td>
+											<div id="fleetMemberPaymentModifier" member="{{ $member.Id }}">
+												{{ $member.PaymentModifier }}
+											</div>
+											<div id="fleetMemberPaymentModifierForm" member="{{ $member.Id }}" style="display: none;">
+												<input type="number" class="form-control" id="fleetMemberPaymentModifierEdit" name="fleetMemberPaymentModifierEdit" min="0" step="0.1" value="{{ $member.PaymentModifier }}">
+											</div>
+										</td>
+										<td class="text-right">
+											{{ FormatFloat $member.Payout }} ISK
+										</td>
+										<td class="{{ if $member.PayoutComplete }} success {{ else }} danger {{ end }}">
+											<div id="fleetMemberPayoutComplete" member="{{ $member.Id }}">
+												{{ if $member.PayoutComplete }} Done {{ else }} Outstanding {{ end }}
+											</div>
+											<div id="fleetMemberPayoutCompleteForm" member="{{ $member.Id }}" style="display: none;">
+												<select class="form-control" id="fleetMemberPayoutCompleteEdit" name="fleetMemberPayoutCompleteEdit">
+													<option value="false">Outstanding</option>
+													<option value="true">Done</option>
+												</select>
+											</div>
+										</td>
+										{{ if $FleetAdmin }}
+										<td>
+											<div id="fleetMemberActions" member="{{ $member.Id }}">
+												<a onclick="toggleFleetmemberEdit({{ $member.Id }});" class="btn btn-primary" member="{{ $member.Id }}">Edit</a>
+												<a href="#" class="btn btn-danger">Remove</a>
+											</div>
+											<div id="fleetMemberActionsForm" member="{{ $member.Id }}" style="display: none;">
+												<a href="#" class="btn btn-success" id="form_fleetmember_action_edit_{{ $member.Id }}">Save</a>&nbsp;
+												<a onclick="toggleFleetmemberEdit({{ $member.Id }});" class="btn btn-danger">Cancel</a>
+											</div>
+										</td>
 										{{ end }}
 									</form>
 								</tr>
@@ -124,24 +176,32 @@
 							</tbody>
 						</table>
 						<p align="center">
-							<a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#form_addmember">Add Member</a>
-							<form role="form-horizontal" id="form_addmember" align="center" action="/fleet/{{ .Fleet.Id }}/addmember" method="POST" class="collapse">
+							<a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#addMemberForm">Add Member</a>
+							<form role="form-horizontal" id="addMemberForm" align="center" class="collapse">
 							<div class="form-group" align="center">
-								<label class="control-label" for="addmember_selectMember">Members available</label>
-								<select class="form-control" style="width:50% !important" id="addmember_selectMember" name="addmember_selectMember">
+								<label class="control-label" for="addMemberSelectMember">Members available</label>
+								<select class="form-control" style="width:50% !important" id="addLossRaw" name="addLossRaw">
 									{{ range $player := .AvailablePlayers }}
 										<option value="{{ $player.Id }}">{{ $player.Name }}</option>
 									{{ end }}
 								</select>
 							</div>
 							<div class="form-group" align="center">
-								<label class="control-label" for="addmember_selectRole">Fleet Role</label>
-								<select class="form-control" style="width:50% !important" id="addmember_selectRole" name="addmember_selectRole">
-									<option value="32">DPS</option>
-									<option value="16">Logistics</option>
-									<option value="8">Salvage</option>
+								<label class="control-label" for="addMemberSelectRole">Fleet Role</label>
+								<select class="form-control" style="width:50% !important" id="addMemberSelectRole" name="addMemberSelectRole">
 									<option value="4">Scout</option>
+									<option value="8">Salvage</option>
+									<option value="16">Logistics</option>
+									<option value="32">DPS</option>
+									<option value="64">Fleetcommander</option>
 								</select>
+							</div>
+							<div class="form-group">
+								<button type="submit" class="btn btn-success">Submit</button>
+							</div><br />
+							<div class="form-group">
+								<label class="control-label" for="addMemberFleetComposition">Fleet Composition</label>
+								<textarea class="form-control" id="addMemberFleetComposition" name="addMemberFleetComposition" rows="5" placeholder="Paste the fleet composition in here to automatically add all members to fleet"></textarea>
 							</div>
 							<div class="form-group">
 								<button type="submit" class="btn btn-success">Submit</button>
