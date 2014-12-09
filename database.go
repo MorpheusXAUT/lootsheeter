@@ -586,6 +586,17 @@ func (db *Database) LoadAllReports() ([]*models.Report, error) {
 	return reports, nil
 }
 
+func (db *Database) RemoveFleetMember(fleetId int64, memberId int64) error {
+	logger.Tracef("Removing fleet member #%d from fleet #%d from database...")
+
+	_, err := db.db.Exec("DELETE FROM fleetmembers WHERE fleet_id = ? AND id = ?", fleetId, memberId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (db *Database) SaveFleet(fleet *models.Fleet) (*models.Fleet, error) {
 	logger.Tracef("Saving fleet #%d to database...", fleet.Id)
 
@@ -668,7 +679,7 @@ func (db *Database) SavePlayer(player *models.Player) (*models.Player, error) {
 
 	_, err := db.LoadPlayer(player.Id)
 	if err != nil {
-		result, err := db.db.Exec("INSERT INTO players(player_id, name, corporation_id, access) VALUES (?, ?, ?, ?)", player.PlayerId, player.Name, player.Corporation.Id, player.AccessMask)
+		result, err := db.db.Exec("INSERT INTO players(player_id, name, corporation_id, access) VALUES (?, ?, ?, ?)", player.PlayerId, player.Name, player.Corp.Id, player.AccessMask)
 		if err != nil {
 			return player, err
 		}
@@ -680,7 +691,7 @@ func (db *Database) SavePlayer(player *models.Player) (*models.Player, error) {
 
 		player.Id = id
 	} else {
-		_, err := db.db.Exec("UPDATE players SET player_id=?, name=?, corporation_id=?, access=? WHERE id=?", player.PlayerId, player.Name, player.Corporation.Id, player.AccessMask, player.Id)
+		_, err := db.db.Exec("UPDATE players SET player_id=?, name=?, corporation_id=?, access=? WHERE id=?", player.PlayerId, player.Name, player.Corp.Id, player.AccessMask, player.Id)
 		if err != nil {
 			return player, err
 		}

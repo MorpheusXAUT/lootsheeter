@@ -156,11 +156,11 @@ func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.C
 	_, err = database.LoadPlayerFromName(a.GetCharacterName())
 	if err != nil {
 		_, err = database.SavePlayer(&models.Player{
-			Id:          -1,
-			Name:        a.GetCharacterName(),
-			PlayerId:    a.GetCharacterId(),
-			Corporation: corp,
-			AccessMask:  models.AccessMaskNone,
+			Id:         -1,
+			Name:       a.GetCharacterName(),
+			PlayerId:   a.GetCharacterId(),
+			Corp:       corp,
+			AccessMask: models.AccessMaskNone,
 		})
 		if err != nil {
 			logger.Errorf("Failed to save new player in session: [%v]", err)
