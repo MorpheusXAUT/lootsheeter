@@ -18,52 +18,121 @@
 					<div class="panel-body">
 						<table class="table table-bordered">
 							<tbody>
-								<tr>
-									<th>Fleet Name</th>
-									<td>{{ .Fleet.Name }}</td>
-									<th>Profit</th>
-									<td class="text-right {{ if IsPositiveFloat .Fleet.Profit }} success {{ end }}">{{ FormatFloat .Fleet.Profit }} ISK</td>
-								</tr>
-								<tr>
-									<th>Fleet System</th>
-									<td>{{ .Fleet.System }} {{ if gt (len .Fleet.SystemNickname) 0 }}({{ .Fleet.SystemNickname }}){{ end }}</td>
-									<th>Losses</th>
-									<td class="text-right {{ if IsPositiveFloat .Fleet.Losses  }} error {{ end }}">{{ FormatFloat .Fleet.Losses }} ISK</td>
-								</tr>
-								<tr>
-									<th>Member Count</th>
-									<td>{{ len .Fleet.Members }}</td>
-									<th>Surplus</th>
-									<td class="text-right {{ if IsPositiveFloat .Fleet.GetSurplus  }} success {{ else }} error {{ end }}">{{ FormatFloat .Fleet.GetSurplus }} ISK</td>
-								</tr>
-								<tr>
-									<th>Start Time</th>
-									<td>{{ .Fleet.StartTime }}</td>
-									<th>Corporation Payout</th>
-									<td class="text-right">{{ FormatFloat .Fleet.CorporationPayout }} ISK</td>
-								</tr>
-								<tr>
-									<th>End Time</th>
-									<td>{{ if .Fleet.IsFleetFinished }} {{ .Fleet.EndTime }} {{ else }} --- {{ end }}</td>
-									<th>Sites Finished</th>
-									<td>{{ .Fleet.SitesFinished }}</td>
-								</tr>
-								<tr>
-									<th>Payout Report</th>
-									<td>{{ if gt .Fleet.ReportId 0 }}<a href="/report/{{ .Fleet.ReportId }}">#{{ .Fleet.ReportId }}</a>{{ else }} --- {{ end }}</td>
-									<th>Payout Complete</th>
-									<td class="{{ if .Fleet.PayoutComplete }} success {{ else }} danger {{ end }}">{{ if .Fleet.PayoutComplete }} Done {{ else }} Outstanding {{ end }}</td>
-								</tr>
+                            	<form role="form-horizontal" id="fleetDetails">
+                                    <tr>
+                                        <th>
+                                            Fleet Name
+                                        </th>
+                                        <td>
+                                            {{ .Fleet.Name }}
+                                        </td>
+                                        <th>
+                                            Profit
+                                        </th>
+                                        <td class="text-right {{ if IsPositiveFloat .Fleet.Profit }} success {{ end }}">
+                                            {{ FormatFloat .Fleet.Profit }} ISK
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            Fleet System
+                                        </th>
+                                        <td>
+                                            {{ .Fleet.System }} {{ if gt (len .Fleet.SystemNickname) 0 }}({{ .Fleet.SystemNickname }}){{ end }}
+                                        </td>
+                                        <th>
+                                            Losses
+                                        </th>
+                                        <td class="text-right {{ if IsPositiveFloat .Fleet.Losses  }} error {{ end }}">
+                                            {{ FormatFloat .Fleet.Losses }} ISK
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            Member Count
+                                        </th>
+                                        <td>
+                                            {{ len .Fleet.Members }}
+                                        </td>
+                                        <th>
+                                            Surplus
+                                        </th>
+                                        <td class="text-right {{ if IsPositiveFloat .Fleet.GetSurplus  }} success {{ else }} error {{ end }}">
+                                            {{ FormatFloat .Fleet.GetSurplus }} ISK
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            Start Time
+                                        </th>
+                                        <td>
+                                            {{ .Fleet.StartTime }}
+                                        </td>
+                                        <th>
+                                            Corporation Payout
+                                        </th>
+                                        <td class="text-right">
+                                            {{ FormatFloat .Fleet.CorporationPayout }} ISK
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            End Time
+                                        </th>
+                                        <td>
+                                            {{ if .Fleet.IsFleetFinished }} {{ .Fleet.EndTime }} {{ else }} --- {{ end }}
+                                        </td>
+                                        <th>
+                                            Sites Finished
+                                        </th>
+                                        <td>
+                                            <div id="fleetDetailsSitesFinished" fleet="{{ .Fleet.Id }}" class="fleet-details">
+                                                {{ .Fleet.SitesFinished }}
+                                            </div>
+                                            <div id="fleetDetailsSitesFinishedForm" fleet="{{ .Fleet.Id }}" style="display: none;" class="fleet-details">
+												<input type="number" class="form-control" id="fleetDetailsSitesFinishedEdit" name="fleetDetailsSitesFinishedEdit" value="{{ .Fleet.SitesFinished }}" min="0">
+											</div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            Payout Report
+                                        </th>
+                                        <td>
+                                            {{ if gt .Fleet.ReportId 0 }}<a href="/report/{{ .Fleet.ReportId }}">#{{ .Fleet.ReportId }}</a>{{ else }} --- {{ end }}
+                                        </td>
+                                        <th>
+                                            Payout Complete
+                                        </th>
+                                        <td class="{{ if .Fleet.PayoutComplete }} success {{ else }} danger {{ end }}">
+                                            <div id="fleetDetailsPayoutComplete" fleet="{{ .Fleet.Id }}" class="fleet-details">
+												{{ if .Fleet.PayoutComplete }} Done {{ else }} Outstanding {{ end }}
+											</div>
+											<div id="fleetDetailsPayoutCompleteForm" fleet="{{ .Fleet.Id }}" style="display: none;" class="fleet-details">
+												<select class="form-control" id="fleetDetailsPayoutCompleteEdit" name="fleetDetailsPayoutCompleteEdit">
+													<option value="false">Outstanding</option>
+													<option value="true">Done</option>
+												</select>
+											</div>
+                                        </td>
+                                    </tr>
+                                </form>
 							</tbody>
 						</table>
 						<p align="center">
 							{{ if $FleetAdmin }}
-							<a href="#" class="btn btn-primary">Edit</a>
-							{{ if not .Fleet.IsFleetFinished }}
-							<a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#addProfitForm">Add Profit</a>
-							<a class="btn btn-warning collapse-data-btn" data-toggle="collapse" href="#addLossForm">Add Loss</a>
-							<a href="#" class="btn btn-danger">Finish Fleet</a>
-							{{ end }}
+							<div id="fleetMemberActions" fleet="{{ .Fleet.Id }}" align="center" class="fleet-details">
+                                <a class="btn btn-primary fleet-details-toggle" fleet="{{ .Fleet.Id }}">Edit</a>
+                                {{ if not .Fleet.IsFleetFinished }}
+                                <a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#addProfitForm">Add Profit</a>
+                                <a class="btn btn-warning collapse-data-btn" data-toggle="collapse" href="#addLossForm">Add Loss</a>
+                                <a href="#" class="btn btn-danger">Finish Fleet</a>
+                                {{ end }}
+                            </div>
+                            <div id="fleetMemberActionsForm" fleet="{{ .Fleet.Id }}" style="display: none;" align="center" class="fleet-details">
+                                <a class="btn btn-success fleet-details-save" fleet="{{ .Fleet.Id }}">Save</a>&nbsp;
+                                <a class="btn btn-danger fleet-details-toggle" fleet="{{ .Fleet.Id }}">Cancel</a>
+                            </div>
 							{{ end }}
 						</p>
 						<form role="form-horizontal" id="addProfitForm" align="center" class="collapse">
@@ -72,7 +141,7 @@
 								<textarea class="form-control" id="addProfitRaw" name="addProfitRaw" rows="5" placeholder="Paste profit overview or Evepraisal link here"></textarea>
 							</div>
 							<div class="form-group">
-								<button type="submit" class="btn btn-success">Submit</button>
+								<a class="btn btn-success add-profit-submit" fleet="{{ .Fleet.Id }}">Submit</a>
 							</div>
 						</form>
 						<form role="form-horizontal" id="addLossForm" align="center" class="collapse">
@@ -81,7 +150,7 @@
 								<textarea class="form-control" id="addLossRaw" name="addLossRaw" rows="5" placeholder="Paste loss overview, zKillboard link or Evepraisal link here"></textarea>
 							</div>
 							<div class="form-group">
-								<button type="submit" class="btn btn-success">Submit</button>
+								<a class="btn btn-success add-loss-submit" fleet="{{ .Fleet.Id }}">Submit</a>
 							</div>
 						</form>
 					</div>
@@ -106,8 +175,8 @@
 							</thead>
 							<tbody>
 								{{ range $member := .Fleet.Members }}
-								<tr>
-									<form role="form-horizontal">
+								<tr class="fleet-member-list-row" member="{{ $member.Id }}">
+									<form role="form-horizontal" id="fleetMemberList">
 										<td>
 											{{ $member.Id }}
 										</td>
@@ -115,10 +184,10 @@
 											{{ $member.Name }}
 										</td>
 										<td>
-											<div id="fleetMemberRole" member="{{ $member.Id }}">
+											<div id="fleetMemberRole" member="{{ $member.Id }}" class="fleet-member-list">
 												<h4><span class="label {{ $member.Role.LabelType }}">{{ $member.Role }}</span></h4>
 											</div>
-											<div id="fleetMemberRoleForm" member="{{ $member.Id }}" style="display: none;">
+											<div id="fleetMemberRoleForm" member="{{ $member.Id }}" style="display: none;" class="fleet-member-list">
 												<select class="form-control" id="fleetMemberRoleEdit" name="fleetMemberRoleEdit">
 													<option value="4">Scout</option>
 													<option value="8">Salvage</option>
@@ -129,18 +198,18 @@
 											</div>
 										</td>
 										<td>
-											<div id="fleetMemberSiteModifier" member="{{ $member.Id }}">
+											<div id="fleetMemberSiteModifier" member="{{ $member.Id }}" class="fleet-member-list">
 												{{ $member.SiteModifier }}
 											</div>
-											<div id="fleetMemberSiteModifierForm" member="{{ $member.Id }}" style="display: none;">
+											<div id="fleetMemberSiteModifierForm" member="{{ $member.Id }}" style="display: none;" class="fleet-member-list">
 												<input type="number" class="form-control" id="fleetMemberSiteModiferEdit" name="fleetMemberSiteModiferEdit" value="{{ $member.SiteModifier }}">
 											</div>
 										</td>
 										<td>
-											<div id="fleetMemberPaymentModifier" member="{{ $member.Id }}">
+											<div id="fleetMemberPaymentModifier" member="{{ $member.Id }}" class="fleet-member-list">
 												{{ $member.PaymentModifier }}
 											</div>
-											<div id="fleetMemberPaymentModifierForm" member="{{ $member.Id }}" style="display: none;">
+											<div id="fleetMemberPaymentModifierForm" member="{{ $member.Id }}" style="display: none;" class="fleet-member-list">
 												<input type="number" class="form-control" id="fleetMemberPaymentModifierEdit" name="fleetMemberPaymentModifierEdit" min="0" step="0.1" value="{{ $member.PaymentModifier }}">
 											</div>
 										</td>
@@ -148,10 +217,10 @@
 											{{ FormatFloat $member.Payout }} ISK
 										</td>
 										<td class="{{ if $member.PayoutComplete }} success {{ else }} danger {{ end }}">
-											<div id="fleetMemberPayoutComplete" member="{{ $member.Id }}">
+											<div id="fleetMemberPayoutComplete" member="{{ $member.Id }}" class="fleet-member-list">
 												{{ if $member.PayoutComplete }} Done {{ else }} Outstanding {{ end }}
 											</div>
-											<div id="fleetMemberPayoutCompleteForm" member="{{ $member.Id }}" style="display: none;">
+											<div id="fleetMemberPayoutCompleteForm" member="{{ $member.Id }}" style="display: none;" class="fleet-member-list">
 												<select class="form-control" id="fleetMemberPayoutCompleteEdit" name="fleetMemberPayoutCompleteEdit">
 													<option value="false">Outstanding</option>
 													<option value="true">Done</option>
@@ -160,13 +229,13 @@
 										</td>
 										{{ if $FleetAdmin }}
 										<td>
-											<div id="fleetMemberActions" member="{{ $member.Id }}">
-												<a onclick="toggleFleetmemberEdit({{ $member.Id }});" class="btn btn-primary" member="{{ $member.Id }}">Edit</a>
-												<a href="#" class="btn btn-danger">Remove</a>
+											<div id="fleetMemberActions" member="{{ $member.Id }}" class="fleet-member-list">
+												<a class="btn btn-primary fleet-member-list-toggle" member="{{ $member.Id }}">Edit</a>
+												<a class="btn btn-danger fleet-member-list-remove" member="{{ $member.Id }}">Remove</a>
 											</div>
-											<div id="fleetMemberActionsForm" member="{{ $member.Id }}" style="display: none;">
-												<a href="#" class="btn btn-success" id="form_fleetmember_action_edit_{{ $member.Id }}">Save</a>&nbsp;
-												<a onclick="toggleFleetmemberEdit({{ $member.Id }});" class="btn btn-danger">Cancel</a>
+											<div id="fleetMemberActionsForm" member="{{ $member.Id }}" style="display: none;" class="fleet-member-list">
+												<a class="btn btn-success fleet-member-list-save" member="{{ $member.Id }}">Save</a>&nbsp;
+												<a class="btn btn-danger fleet-member-list-toggle" member="{{ $member.Id }}">Cancel</a>
 											</div>
 										</td>
 										{{ end }}
@@ -197,14 +266,14 @@
 								</select>
 							</div>
 							<div class="form-group">
-								<button type="submit" class="btn btn-success">Submit</button>
+								<a class="btn btn-success add-member-submit" fleet="{{ .Fleet.Id }}">Submit</a>
 							</div><br />
 							<div class="form-group">
 								<label class="control-label" for="addMemberFleetComposition">Fleet Composition</label>
 								<textarea class="form-control" id="addMemberFleetComposition" name="addMemberFleetComposition" rows="5" placeholder="Paste the fleet composition in here to automatically add all members to fleet"></textarea>
 							</div>
 							<div class="form-group">
-								<button type="submit" class="btn btn-success">Submit</button>
+								<a class="btn btn-success add-member-submit" fleet="{{ .Fleet.Id }}">Submit</a>
 							</div>
 						</form>
 						</p>

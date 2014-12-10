@@ -475,7 +475,7 @@ func FleetEditPollHandler(w http.ResponseWriter, r *http.Request, fleet *models.
 func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
-	memberId, err := strconv.ParseInt(r.FormValue("memberId"), 10, 64)
+	memberId, err := strconv.ParseInt(r.FormValue("addMemberSelectMember"), 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse memberId in FleetEditAddMemberHandler: [%v]", err)
 
@@ -486,7 +486,7 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 		return
 	}
 
-	fleetRole, err := strconv.ParseInt(r.FormValue("fleetRole"), 10, 64)
+	fleetRole, err := strconv.ParseInt(r.FormValue("addMemberSelectRole"), 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse fleetRole in FleetEditAddMemberHandler: [%v]", err)
 
@@ -578,7 +578,7 @@ func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet 
 func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
-	rawProfit := r.FormValue("rawProfit")
+	rawProfit := r.FormValue("addProfitRaw")
 	if len(rawProfit) == 0 {
 		logger.Errorf("Content of rawProfit in FleetAddProfitHandler was empty...")
 
@@ -648,7 +648,7 @@ func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
-	rawLoss := r.FormValue("rawLoss")
+	rawLoss := r.FormValue("addLossRaw")
 	if len(rawLoss) == 0 {
 		logger.Errorf("Content of rawLoss in FleetEditAddLossHandler was empty...")
 

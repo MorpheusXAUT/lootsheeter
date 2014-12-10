@@ -1,7 +1,3 @@
-function toggleFleetmemberEdit(index) {
-	$('div[member='+index+']').toggle();
-}
-
 $('a[data-toggle=collapse]').click(function() {
 	if ($(this).hasClass('active') === true) {
 		$(this).removeClass('active');
