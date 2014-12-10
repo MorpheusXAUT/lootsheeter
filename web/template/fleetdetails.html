@@ -180,7 +180,7 @@
 							<form role="form-horizontal" id="addMemberForm" align="center" class="collapse">
 							<div class="form-group" align="center">
 								<label class="control-label" for="addMemberSelectMember">Members available</label>
-								<select class="form-control" style="width:50% !important" id="addLossRaw" name="addLossRaw">
+								<select class="form-control" style="width:50% !important" id="addMemberSelectMember" name="addMemberSelectMember">
 									{{ range $player := .AvailablePlayers }}
 										<option value="{{ $player.Id }}">{{ $player.Name }}</option>
 									{{ end }}
