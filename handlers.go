@@ -40,8 +40,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	session.SetSSOState(w, r, state)
 
 	data["SSOState"] = state
-	data["SSOClientId"] = *ssoClientId
-	data["SSOCallbackUrl"] = *ssoCallbackUrl
+	data["SSOClientId"] = config.SSOClientId
+	data["SSOCallbackUrl"] = config.SSOCallbackUrl
 
 	templates.ExecuteTemplate(w, "login", data)
 }

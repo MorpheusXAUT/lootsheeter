@@ -32,11 +32,11 @@ func SetupRouter(strictSlash bool) {
 	logger.Infof("Successfully set up new router!")
 }
 
-func HandleRequests(host string, port int) {
-	logger.Infof("Listening for requests on %q...", net.JoinHostPort(host, strconv.Itoa(port)))
+func HandleRequests() {
+	logger.Infof("Listening for requests on %q...", net.JoinHostPort(config.HttpHost, strconv.Itoa(config.HttpPort)))
 
 	http.Handle("/", router)
-	err := http.ListenAndServe(net.JoinHostPort(host, strconv.Itoa(port)), nil)
+	err := http.ListenAndServe(net.JoinHostPort(config.HttpHost, strconv.Itoa(config.HttpPort)), nil)
 
 	logger.Fatalf("Received error while listening for requests: [%v]", err)
 }

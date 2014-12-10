@@ -15,14 +15,14 @@ var (
 )
 
 func SetupLogger() {
-	logger.SetMinMaxSeverity(factorlog.Severity(1<<uint(*debugLevelFlag)), factorlog.PANIC)
+	logger.SetMinMaxSeverity(factorlog.Severity(1<<uint(config.DebugLevel)), factorlog.PANIC)
 }
 
 func WebLogger(inner http.Handler, name string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		if *debugLevelFlag == 1 {
+		if config.DebugLevel == 1 {
 			templates = template.Must(template.New("").Funcs(TemplateFunctions(nil)).ParseGlob("web/template/*"))
 		}
 

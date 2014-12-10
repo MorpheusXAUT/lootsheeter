@@ -29,10 +29,10 @@ func NewDatabase(d *sql.DB) *Database {
 	return database
 }
 
-func InitialiseDatabase(host string, port int, user string, password string, data string) {
-	logger.Infof("Trying to connect to MySQL database at %q...", net.JoinHostPort(host, strconv.Itoa(port)))
+func InitialiseDatabase() {
+	logger.Infof("Trying to connect to MySQL database at %q...", net.JoinHostPort(config.MySqlHost, strconv.Itoa(config.MySqlPort)))
 
-	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=true", user, password, net.JoinHostPort(host, strconv.Itoa(port)), data))
+	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=true", config.MySqlUser, config.MySqlPassword, net.JoinHostPort(config.MySqlHost, strconv.Itoa(config.MySqlPort)), config.MySqlDatabase))
 	if err != nil {
 		logger.Fatalf("Failed to connect to database: [%v]", err)
 		return

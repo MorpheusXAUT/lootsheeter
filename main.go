@@ -15,24 +15,30 @@ func main() {
 		os.Exit(2)
 	}
 
-	flag.Parse()
+	c, err := ParseConfigFlags()
+	if err != nil {
+		fmt.Printf("Received error while parsing config flags: [%v]\n", err)
+		return
+	}
 
-	if strings.EqualFold(*mysqlUserFlag, "") ||
-		strings.EqualFold(*mysqlPasswordFlag, "") ||
-		strings.EqualFold(*mysqlDatabaseFlag, "") ||
-		strings.EqualFold(*ssoClientId, "") ||
-		strings.EqualFold(*ssoClientSecret, "") ||
-		strings.EqualFold(*ssoCallbackUrl, "") {
+	config = c
+
+	if strings.EqualFold(config.MySqlUser, "") ||
+		strings.EqualFold(config.MySqlPassword, "") ||
+		strings.EqualFold(config.MySqlDatabase, "") ||
+		strings.EqualFold(config.SSOClientId, "") ||
+		strings.EqualFold(config.SSOClientSecret, "") ||
+		strings.EqualFold(config.SSOCallbackUrl, "") {
 		flag.Usage()
 	}
 
 	SetupLogger()
 
-	InitialiseDatabase(*mysqlHostFlag, *mysqlPortFlag, *mysqlUserFlag, *mysqlPasswordFlag, *mysqlDatabaseFlag)
+	InitialiseDatabase()
 
 	InitialiseSessions()
 
 	SetupRouter(true)
 
-	HandleRequests(*httpHostFlag, *httpPortFlag)
+	HandleRequests()
 }
