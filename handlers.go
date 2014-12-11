@@ -1466,11 +1466,104 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReportCreateHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
 
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	data := make(map[string]interface{})
+
+	data["PageTitle"] = "Create Report"
+	data["PageType"] = 4
+	data["LoggedIn"] = loggedIn
+
+	fleets, err := database.LoadAllFleetsWithoutReports()
+	if err != nil {
+		logger.Errorf("Failed to load all reports in ReportCreateHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data["Fleets"] = fleets
+
+	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "reportcreate", data)
+	if err != nil {
+		logger.Errorf("Failed to execute template in ReportCreateHandler: [%v]", err)
+	}
 }
 
 func ReportCreateFormHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
 
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		logger.Errorf("Failed to parse POST form in ReportCreateFormHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fleetsInclude := []string(r.Form["fleetsInclude"])
+	if len(fleetsInclude) == 0 {
+		logger.Warnf("Content of POST form in ReportCreateFormHandler was empty...")
+
+		http.Redirect(w, r, "/reports/create", http.StatusSeeOther)
+		return
+	}
+
+	fleets := make([]*models.Fleet, 0)
+	startTime := time.Now()
+	endTime := time.Time{}
+
+	for _, fleet := range fleetsInclude {
+		fleetId, err := strconv.ParseInt(fleet, 10, 64)
+		if err != nil {
+			logger.Errorf("Failed to parse fleet ID in ReportCreateFormHandler: [%v]", err)
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		f, err := database.LoadFleet(fleetId)
+		if err != nil {
+			logger.Errorf("Failed to load fleet in ReportCreateFormHandler: [%v]", err)
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if f.StartTime.Before(startTime) {
+			startTime = f.StartTime
+		}
+
+		if f.EndTime.After(endTime) {
+			endTime = f.EndTime
+		}
+
+		fleets = append(fleets, f)
+	}
+
+	player := session.GetPlayerFromRequest(r)
+
+	report := models.NewReport(-1, 0, startTime, endTime, false, player, fleets)
+
+	report, err = database.SaveReport(report)
+	if err != nil {
+		logger.Errorf("Failed to save report in ReportCreateFormHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/report/%d", report.Id), http.StatusSeeOther)
 }
 
 func AdminMenuHandler(w http.ResponseWriter, r *http.Request) {

@@ -383,6 +383,66 @@ func (db *Database) LoadAllFleets() ([]*models.Fleet, error) {
 	return fleets, nil
 }
 
+func (db *Database) LoadAllFleetsWithoutReports() ([]*models.Fleet, error) {
+	logger.Tracef("Querying database for all fleets without reports...")
+
+	fleets := make([]*models.Fleet, 0)
+
+	rows, err := db.db.Query("SELECT f.id AS fid, f.corporation_id AS cid, f.name as fleet_name, f.system AS fleet_system, f.system_nickname AS fleet_system_nickname, f.profit AS fleet_profit, f.losses AS fleet_losses, f.sites_finished AS fleet_sites_finished, f.`start` AS fleet_start, f.`end` AS fleet_end, f.corporation_payout AS fleet_corporation_payout, f.payout_complete AS fleet_payout_complete, f.report_id AS rid FROM fleets AS f WHERE f.report_id IS NULL AND f.active = 'Y'")
+	if err != nil {
+		return fleets, fmt.Errorf("Received error while querying for all fleets without reports: [%v]", err)
+	}
+
+	for rows.Next() {
+		var fid, cid, rid int64
+		var sqlRid sql.NullInt64
+		var fleetName, fleetSystem, fleetSystemNickname, fleetPayoutCompleteEnumString string
+		var fleetProfit, fleetLosses, fleetCorporationPayout float64
+		var fleetSitesFinished int
+		var fleetStart, fleetEnd *time.Time
+		var fleetPayoutComplete bool
+
+		err := rows.Scan(&fid, &cid, &fleetName, &fleetSystem, &fleetSystemNickname, &fleetProfit, &fleetLosses, &fleetSitesFinished, &fleetStart, &fleetEnd, &fleetCorporationPayout, &fleetPayoutCompleteEnumString, &sqlRid)
+		if err != nil {
+			return fleets, fmt.Errorf("Received error while scanning fleet rows without reports: [%v]", err)
+		}
+
+		if fleetEnd == nil {
+			fleetEnd = &time.Time{}
+		}
+
+		if sqlRid.Valid {
+			rid = sqlRid.Int64
+		} else {
+			rid = -1
+		}
+
+		if strings.EqualFold(fleetPayoutCompleteEnumString, "y") {
+			fleetPayoutComplete = true
+		} else {
+			fleetPayoutComplete = false
+		}
+
+		fleetMembers, err := db.LoadAllFleetMembers(fid)
+		if err != nil {
+			return fleets, err
+		}
+
+		fleet := models.NewFleet(fid, cid, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
+
+		for _, member := range fleetMembers {
+			err = fleet.AddMember(member)
+			if err != nil {
+				return fleets, err
+			}
+		}
+
+		fleets = append(fleets, fleet)
+	}
+
+	return fleets, nil
+}
+
 func (db *Database) LoadAllFleetsFromCorpId(corporationId int64) ([]*models.Fleet, error) {
 	logger.Tracef("Querying database for all fleets with cid = %d...", corporationId)
 
@@ -506,7 +566,7 @@ func (db *Database) LoadAllReportFleets(recordId int64) ([]*models.Fleet, error)
 func (db *Database) LoadReport(id int64) (*models.Report, error) {
 	logger.Tracef("Querying database for report with rid = %d...", id)
 
-	row := db.db.QueryRow("SELECT r.id AS rid, r.created_by AS record_created_b, r.total_payout AS record_total_payout, r.startrange AS record_startrange, r.endrange AS record_endrange, r.payout_complete AS record_payout_complete FROM reports AS r")
+	row := db.db.QueryRow("SELECT r.id AS rid, r.created_by AS record_created_b, r.total_payout AS record_total_payout, r.startrange AS record_startrange, r.endrange AS record_endrange, r.payout_complete AS record_payout_complete FROM reports AS r WHERE id=?", id)
 
 	var rid, pid int64
 	var recordTotalPayout float64
@@ -608,9 +668,16 @@ func (db *Database) SaveFleet(fleet *models.Fleet) (*models.Fleet, error) {
 		fleetPayoutCompleteEnumString = "N"
 	}
 
+	var fleetReportId sql.NullInt64
+
+	if fleet.ReportId > 0 {
+		fleetReportId.Int64 = fleet.ReportId
+		fleetReportId.Valid = true
+	}
+
 	_, err := db.LoadFleet(fleet.Id)
 	if err != nil {
-		result, err := db.db.Exec("INSERT INTO fleets(name, corporation_id, system, system_nickname, profit, losses, sites_finished, start, end, corporation_payout, payout_complete) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fleet.Name, fleet.CorporationId, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleet.EndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString)
+		result, err := db.db.Exec("INSERT INTO fleets(name, corporation_id, system, system_nickname, profit, losses, sites_finished, start, end, corporation_payout, payout_complete, report_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fleet.Name, fleet.CorporationId, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleet.EndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString, fleetReportId)
 		if err != nil {
 			return fleet, err
 		}
@@ -622,7 +689,7 @@ func (db *Database) SaveFleet(fleet *models.Fleet) (*models.Fleet, error) {
 
 		fleet.Id = id
 	} else {
-		_, err := db.db.Exec("UPDATE fleets SET name=?, corporation_id = ?, system=?, system_nickname=?, profit=?, losses=?, sites_finished=?, start=?, end=?, corporation_payout=?, payout_complete=? WHERE id=?", fleet.Name, fleet.CorporationId, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleet.EndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString, fleet.Id)
+		_, err := db.db.Exec("UPDATE fleets SET name=?, corporation_id = ?, system=?, system_nickname=?, profit=?, losses=?, sites_finished=?, start=?, end=?, corporation_payout=?, payout_complete=?, report_id=? WHERE id=?", fleet.Name, fleet.CorporationId, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleet.EndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString, fleetReportId, fleet.Id)
 		if err != nil {
 			return fleet, err
 		}
@@ -724,4 +791,46 @@ func (db *Database) SaveCorporation(corporation *models.Corporation) (*models.Co
 	}
 
 	return corporation, nil
+}
+
+func (db *Database) SaveReport(report *models.Report) (*models.Report, error) {
+	logger.Tracef("Saving report #%d to database...", report.Id)
+
+	var reportPayoutCompleteEnum string
+
+	if report.PayoutComplete {
+		reportPayoutCompleteEnum = "Y"
+	} else {
+		reportPayoutCompleteEnum = "N"
+	}
+
+	_, err := db.LoadReport(report.Id)
+	if err != nil {
+		result, err := db.db.Exec("INSERT INTO reports(created_by, total_payout, startrange, endrange, payout_complete) VALUES (?, ?, ?, ?, ?)", report.CreatedBy.Id, report.TotalPayout, report.StartRange, report.EndRange, reportPayoutCompleteEnum)
+		if err != nil {
+			return report, err
+		}
+
+		id, err := result.LastInsertId()
+		if err != nil {
+			return report, err
+		}
+
+		report.Id = id
+
+		for _, fleet := range report.Fleets {
+			fleet.ReportId = report.Id
+
+			f, err := database.SaveFleet(fleet)
+			if err != nil {
+				return report, err
+			}
+
+			fleet = f
+		}
+	} else {
+
+	}
+
+	return report, nil
 }

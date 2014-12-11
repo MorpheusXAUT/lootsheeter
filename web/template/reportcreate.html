@@ -1,0 +1,64 @@
+{{ define "reportcreate" }}
+	{{ template "header" . }}
+	{{ template "navigation" . }}
+	
+	<div class="container" role="main">
+		<div class="page-header">
+			<h1>Create a payout report</h1>
+		</div>
+		<div class="row">
+			<div class="col-md">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3>Report Details</h3>
+					</div>
+					<div class="panel-body">
+                   		<form class="form-horizontal" role="form" id="reportCreateForm" action="/reports/create" method="post">
+                            <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Name</th>
+                                            <th>System</th>
+                                            <th>End Time</th>
+                                            <th>Surplus</th>
+                                            <th>Include</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{ range $fleet := .Fleets }}
+                                        <tr>
+                                            <td>
+                                                {{ $fleet.Id }}
+                                            </td>
+                                            <td>
+                                                {{ $fleet.Name }}
+                                            </td>
+                                            <td>
+                                                {{ $fleet.System }}
+                                            </td>
+                                            <td>
+                                                {{ $fleet.EndTime }}
+                                            </td>
+                                            <td class="text-right {{ if IsPositiveFloat $fleet.GetSurplus  }} success {{ else }} error {{ end }}">
+                                                {{ FormatFloat $fleet.GetSurplus }} ISK
+                                            </td>
+                                            <td>
+                                                <input type="checkbox" value="{{ $fleet.Id }}" name="fleetsInclude">
+                                            </td>
+                                        <tr>
+                                        {{ end }}
+                                    </tbody>
+                            </table>
+                            <p align="center">
+                            	<button class="btn btn-success" type="submit">Create Report</button>
+                            </p>
+                        </form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	{{ template "footer" . }}
+{{ end }}
