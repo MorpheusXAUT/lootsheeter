@@ -18,7 +18,7 @@
 					<div class="panel-body">
 						<table class="table table-bordered">
 							<tbody>
-                            	<form role="form-horizontal" id="fleetDetails">
+                            	<form role="form-horizontal" id="fleetDetailsForm">
                                     <tr>
                                         <th>
                                             Fleet Name
@@ -126,7 +126,8 @@
                                 {{ if not .Fleet.IsFleetFinished }}
                                 <a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#addProfitForm">Add Profit</a>
                                 <a class="btn btn-warning collapse-data-btn" data-toggle="collapse" href="#addLossForm">Add Loss</a>
-                                <a href="#" class="btn btn-danger">Finish Fleet</a>
+                                <a class="btn btn-info fleet-details-calculate" fleet="{{ .Fleet.Id }}">Calculate Payouts</a>
+                                <a class="btn btn-danger fleet-details-finish" fleet="{{ .Fleet.Id }}">Finish Fleet</a>
                                 {{ end }}
                             </div>
                             <div id="fleetMemberActionsForm" fleet="{{ .Fleet.Id }}" style="display: none;" align="center" class="fleet-details">
@@ -231,10 +232,11 @@
 										<td>
 											<div id="fleetMemberActions" member="{{ $member.Id }}" class="fleet-member-list">
 												<a class="btn btn-primary fleet-member-list-toggle" member="{{ $member.Id }}">Edit</a>
-												<a class="btn btn-danger fleet-member-list-remove" member="{{ $member.Id }}">Remove</a>
+												<a class="btn btn-danger fleet-member-list-remove" member="{{ $member.Id }}" fleet="{{ $FleetID }}">Remove</a>
 											</div>
 											<div id="fleetMemberActionsForm" member="{{ $member.Id }}" style="display: none;" class="fleet-member-list">
-												<a class="btn btn-success fleet-member-list-save" member="{{ $member.Id }}">Save</a>&nbsp;
+                                            	<input type="hidden" class="form-control" id="fleetMemberMemberId" name="fleetMemberMemberId" value="{{ $member.Id }}">
+												<a class="btn btn-success fleet-member-list-save" member="{{ $member.Id }}" fleet="{{ $FleetID }}">Save</a>&nbsp;
 												<a class="btn btn-danger fleet-member-list-toggle" member="{{ $member.Id }}">Cancel</a>
 											</div>
 										</td>
@@ -282,6 +284,8 @@
 			</div>
 		</div>
 	</div>
+    
+	<script src="/js/fleetdetails.js"></script>
 
 	{{ template "footer" . }}	
 {{ end }}

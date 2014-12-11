@@ -436,8 +436,14 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 	case "poll":
 		FleetEditPollHandler(w, r, fleet)
 		break
+	case "editdetails":
+		FleetEditEditDetailsHandler(w, r, fleet)
+		break
 	case "addmember":
 		FleetEditAddMemberHandler(w, r, fleet)
+		break
+	case "editmember":
+		FleetEditEditMemberHandler(w, r, fleet)
 		break
 	case "removemember":
 		FleetEditRemoveMemberHandler(w, r, fleet)
@@ -464,6 +470,52 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 
 func FleetEditPollHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
+
+	response["result"] = "success"
+	response["error"] = nil
+	response["fleet"] = fleet
+
+	SendJSONResponse(w, response)
+}
+
+func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
+	response := make(map[string]interface{})
+
+	sitesFinished, err := strconv.ParseInt(r.FormValue("fleetDetailsSitesFinishedEdit"), 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse sitesFinished in FleetEditEditDetailsHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	payoutComplete, err := strconv.ParseBool(r.FormValue("fleetDetailsPayoutCompleteEdit"))
+	if err != nil {
+		logger.Errorf("Failed to parse payoutComplete in FleetEditEditDetailsHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	fleet.SitesFinished = int(sitesFinished)
+	fleet.PayoutComplete = payoutComplete
+
+	fleet, err = database.SaveFleet(fleet)
+	if err != nil {
+		logger.Errorf("Failed to save fleet in FleetEditEditDetailsHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
 
 	response["result"] = "success"
 	response["error"] = nil
@@ -530,10 +582,104 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 	SendJSONResponse(w, response)
 }
 
+func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
+	response := make(map[string]interface{})
+
+	memberId, err := strconv.ParseInt(r.FormValue("fleetMemberMemberId"), 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse memberId in FleetEditEditMemberHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	fleetRole, err := strconv.ParseInt(r.FormValue("fleetMemberRoleEdit"), 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse fleetRole in FleetEditEditMemberHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	siteModifier, err := strconv.ParseInt(r.FormValue("fleetMemberSiteModiferEdit"), 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse siteModifier in FleetEditEditMemberHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	paymentModifier, err := strconv.ParseFloat(r.FormValue("fleetMemberPaymentModifierEdit"), 64)
+	if err != nil {
+		logger.Errorf("Failed to parse paymentModifier in FleetEditEditMemberHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	payoutComplete, err := strconv.ParseBool(r.FormValue("fleetMemberPayoutCompleteEdit"))
+	if err != nil {
+		logger.Errorf("Failed to parse payoutComplete in FleetEditEditDetailsHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	fleetMember, err := database.LoadFleetMember(fleet.Id, memberId)
+	if err != nil {
+		logger.Errorf("Failed to load player in FleetEditEditDetailsHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	fleetMember.Role = models.FleetRole(fleetRole)
+	fleetMember.SiteModifier = int(siteModifier)
+	fleetMember.PaymentModifier = paymentModifier
+	fleetMember.PayoutComplete = payoutComplete
+
+	fleet.Members[fleetMember.Name] = fleetMember
+
+	fleet, err = database.SaveFleet(fleet)
+	if err != nil {
+		logger.Errorf("Failed to save fleet in FleetEditEditDetailsHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	response["result"] = "success"
+	response["error"] = nil
+	response["fleet"] = fleet
+
+	SendJSONResponse(w, response)
+}
+
 func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
-	memberId, err := strconv.ParseInt(r.FormValue("memberId"), 10, 64)
+	memberId, err := strconv.ParseInt(r.FormValue("removeMemberId"), 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse memberId in FleetEditRemoveMemberHandler: [%v]", err)
 
