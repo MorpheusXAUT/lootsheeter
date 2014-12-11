@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS `fleetmembers` (
   `fleet_id` bigint(20) NOT NULL,
   `player_id` bigint(20) NOT NULL,
   `role` int(10) NOT NULL DEFAULT '0',
+  `ship` varchar(50) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `site_modifier` int(10) NOT NULL DEFAULT '0',
   `payment_modifier` double NOT NULL DEFAULT '1',
   `payout` double NOT NULL DEFAULT '0',
@@ -47,8 +48,8 @@ CREATE TABLE IF NOT EXISTS `fleetmembers` (
   KEY `fk_fleetmembers_fleet` (`fleet_id`),
   KEY `fk_fleetmembers_report` (`report_id`),
   CONSTRAINT `fk_fleetmembers_fleet` FOREIGN KEY (`fleet_id`) REFERENCES `fleets` (`id`),
-  CONSTRAINT `fk_fleetmembers_report` FOREIGN KEY (`report_id`) REFERENCES `reports` (`id`),
-  CONSTRAINT `fk_fleetmembers_player` FOREIGN KEY (`player_id`) REFERENCES `players` (`id`)
+  CONSTRAINT `fk_fleetmembers_player` FOREIGN KEY (`player_id`) REFERENCES `players` (`id`),
+  CONSTRAINT `fk_fleetmembers_report` FOREIGN KEY (`report_id`) REFERENCES `reports` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
