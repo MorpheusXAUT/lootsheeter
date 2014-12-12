@@ -32,7 +32,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = "Login"
-	data["PageType"] = 5
+	data["PageType"] = 2
 	data["LoggedIn"] = loggedIn
 
 	state := GenerateRandomString(32)
@@ -119,7 +119,7 @@ func FleetListHandler(w http.ResponseWriter, r *http.Request) {
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = "Active Fleets"
-	data["PageType"] = 2
+	data["PageType"] = 3
 	data["LoggedIn"] = loggedIn
 
 	var fleets []*models.Fleet
@@ -176,7 +176,7 @@ func FleetListAllHandler(w http.ResponseWriter, r *http.Request) {
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = "All Fleets"
-	data["PageType"] = 2
+	data["PageType"] = 3
 	data["LoggedIn"] = loggedIn
 
 	var fleets []*models.Fleet
@@ -233,7 +233,7 @@ func FleetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = "Create Fleet"
-	data["PageType"] = 2
+	data["PageType"] = 3
 	data["LoggedIn"] = loggedIn
 
 	players, err := database.LoadAllPlayers()
@@ -348,7 +348,7 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = fmt.Sprintf("Details Fleet #%d", fleetId)
-	data["PageType"] = 2
+	data["PageType"] = 3
 	data["LoggedIn"] = loggedIn
 
 	fleet, err := database.LoadFleet(fleetId)
@@ -394,12 +394,12 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/*if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/fleet/%d", fleetId)) {
+	if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/fleet/%d", fleetId)) {
 		logger.Warnf("Received request to FleetEditHandler without proper referrer: %q", r.Referer())
 
 		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusBadRequest)
 		return
-	}*/
+	}
 
 	err = r.ParseForm()
 	if err != nil {
@@ -456,6 +456,7 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 		break
 	case "calculate":
 		FleetEditCalculateHandler(w, r, fleet)
+		break
 	case "finish":
 		FleetEditFinishHandler(w, r, fleet)
 		break
@@ -924,444 +925,6 @@ func FleetEditFinishHandler(w http.ResponseWriter, r *http.Request, fleet *model
 	SendJSONResponse(w, response)
 }
 
-func FleetFinishHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
-	vars := mux.Vars(r)
-	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse fleet ID %q in FleetFinishHandler: [%v]", vars["fleetid"], err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fleet, err := database.LoadFleet(fleetId)
-	if err != nil {
-		logger.Errorf("Failed to load fleet in FleetFinishHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if !IsFleetCommander(r, fleet) {
-		logger.Errorf("Request to finish fleet received by non-fleetcommander in FleetFinishHandler: [%v]", err)
-
-		http.Error(w, "Hurrdurr, bad boy! You're not the fleet commander, go away!", http.StatusInternalServerError)
-		return
-	}
-
-	fleet.FinishFleet()
-
-	fleet, err = database.SaveFleet(fleet)
-	if err != nil {
-		logger.Errorf("Failed to save fleet in FleetFinishHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
-}
-
-func FleetAddProfitHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
-	vars := mux.Vars(r)
-	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse fleet ID %q in FleetAddProfitHandler: [%v]", vars["fleetid"], err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/fleet/%d", fleetId)) {
-		logger.Warnf("Received request to FleetAddProfitHandler without proper referrer: %q", r.Referer())
-
-		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
-		return
-	}
-
-	fleet, err := database.LoadFleet(fleetId)
-	if err != nil {
-		logger.Errorf("Failed to load fleet in FleetAddProfitHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if !IsFleetCommander(r, fleet) {
-		logger.Errorf("Request to add profit received by non-fleetcommander in FleetAddProfitHandler: [%v]", err)
-
-		http.Error(w, "Hurrdurr, bad boy! You're not the fleet commander, go away!", http.StatusInternalServerError)
-		return
-	}
-
-	err = r.ParseForm()
-	if err != nil {
-		logger.Errorf("Failed to parse POST form in FleetAddProfitHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	rawProfit := r.FormValue("addprofit_textarea")
-	if len(rawProfit) == 0 {
-		logger.Warnf("Content of POST form in FleetAddProfitHandler was empty...")
-
-		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
-		return
-	}
-
-	var profit float64
-
-	profit = 0
-
-	if strings.Contains(strings.ToLower(rawProfit), "evepraisal") {
-		rowSplit := strings.Split(rawProfit, "\r\n")
-
-		for _, row := range rowSplit {
-			p, err := GetEvepraisalValue(row)
-			if err != nil {
-				logger.Errorf("Failed to parse evepraisal row in FleetAddProfitHandler: [%v]", err)
-
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			profit += p
-		}
-	} else {
-		p, err := GetPasteValue(rawProfit)
-		if err != nil {
-			logger.Errorf("Failed to parse paste in FleetAddProfitHandler: [%v]", err)
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		profit = p
-	}
-
-	fleet.AddProfit(profit)
-
-	_, err = database.SaveFleet(fleet)
-	if err != nil {
-		logger.Errorf("Failed to save fleet in FleetAddProfitHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
-	return
-}
-
-func FleetAddLossHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
-	vars := mux.Vars(r)
-	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse fleet ID %q in FleetAddLossHandler: [%v]", vars["fleetid"], err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/fleet/%d", fleetId)) {
-		logger.Warnf("Received request to FleetAddLossHandler without proper referrer: %q", r.Referer())
-
-		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
-		return
-	}
-
-	fleet, err := database.LoadFleet(fleetId)
-	if err != nil {
-		logger.Errorf("Failed to load fleet in FleetAddLossHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if !IsFleetCommander(r, fleet) {
-		logger.Errorf("Request to add loss received by non-fleetcommander in FleetAddLossHandler: [%v]", err)
-
-		http.Error(w, "Hurrdurr, bad boy! You're not the fleet commander, go away!", http.StatusInternalServerError)
-		return
-	}
-
-	err = r.ParseForm()
-	if err != nil {
-		logger.Errorf("Failed to parse POST form in FleetAddLossHandler: [%v]", vars["fleetid"], err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	rawLoss := r.FormValue("addloss_textarea")
-	if len(rawLoss) == 0 {
-		logger.Warnf("Content of POST form in FleetAddLossHandler was empty...")
-
-		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
-		return
-	}
-
-	var loss float64
-
-	loss = 0
-
-	if strings.Contains(strings.ToLower(rawLoss), "evepraisal") {
-		rowSplit := strings.Split(rawLoss, "\r\n")
-
-		for _, row := range rowSplit {
-			l, err := GetEvepraisalValue(row)
-			if err != nil {
-				logger.Errorf("Failed to parse evepraisal row in FleetAddLossHandler: [%v]", err)
-
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			loss += l
-		}
-	} else if strings.Contains(strings.ToLower(rawLoss), "zkillboard") {
-		rowSplit := strings.Split(rawLoss, "\r\n")
-
-		for _, row := range rowSplit {
-			l, err := GetzKillboardValue(row)
-			if err != nil {
-				logger.Errorf("Failed to parse zKillboard row in FleetAddLossHandler: [%v]", err)
-
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			loss += l
-		}
-	} else {
-		l, err := GetPasteValue(rawLoss)
-		if err != nil {
-			logger.Errorf("Failed to parse paste in FleetAddLossHandler: [%v]", err)
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		loss = l
-	}
-
-	fleet.AddLoss(loss)
-
-	_, err = database.SaveFleet(fleet)
-	if err != nil {
-		logger.Errorf("Failed to save fleet in FleetAddLossHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
-}
-
-func FleetDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-}
-
-func FleetAddMemberHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
-	vars := mux.Vars(r)
-	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse fleet ID %q in FleetAddMemberHandler: [%v]", vars["fleetid"], err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/fleet/%d", fleetId)) {
-		logger.Warnf("Received request to FleetAddMemberHandler without proper referrer: %q", r.Referer())
-
-		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
-		return
-	}
-
-	fleet, err := database.LoadFleet(fleetId)
-	if err != nil {
-		logger.Errorf("Failed to load fleet in FleetAddMemberHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if !IsFleetCommander(r, fleet) {
-		logger.Errorf("Request to add member received by non-fleetcommander in FleetAddMemberHandler: [%v]", err)
-
-		http.Error(w, "Hurrdurr, bad boy! You're not the fleet commander, go away!", http.StatusInternalServerError)
-		return
-	}
-
-	err = r.ParseForm()
-	if err != nil {
-		logger.Errorf("Failed to parse POST form in FleetAddMemberHandler: [%v]", vars["fleetid"], err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	memberId, err := strconv.ParseInt(r.FormValue("addmember_selectMember"), 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse memberId in FleetAddMemberHandler: [%v]", vars["fleetid"], err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	memberRole, err := strconv.ParseInt(r.FormValue("addmember_selectRole"), 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse memberRole in FleetAddMemberHandler: [%v]", vars["fleetid"], err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	player, err := database.LoadPlayer(memberId)
-	if err != nil {
-		logger.Errorf("Failed to load player in FleetAddMemberHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	member := models.NewFleetMember(-1, fleetId, player, models.FleetRole(memberRole), 0, 1, 0, false, -1)
-
-	fleet.AddMember(member)
-
-	fleet, err = database.SaveFleet(fleet)
-	if err != nil {
-		logger.Errorf("Failed to load player in FleetAddMemberHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusSeeOther)
-}
-
-func PlayerListHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
-	data := make(map[string]interface{})
-
-	data["PageTitle"] = "Players"
-	data["PageType"] = 3
-	data["LoggedIn"] = loggedIn
-
-	players, err := database.LoadAllPlayers()
-	if err != nil {
-		logger.Errorf("Failed to load all players in PlayerListHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	data["Players"] = players
-
-	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "players", data)
-	if err != nil {
-		logger.Errorf("Failed to execute template in PlayerListHandler: [%v]", err)
-	}
-}
-
-func PlayerDetailsHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
-	vars := mux.Vars(r)
-	playerId, err := strconv.ParseInt(vars["playerid"], 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse player ID %q in PlayerDetailsHandler: [%v]", vars["playerid"], err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	data := make(map[string]interface{})
-
-	data["PageTitle"] = fmt.Sprintf("Details Player #%d", playerId)
-	data["PageType"] = 3
-	data["LoggedIn"] = loggedIn
-
-	player, err := database.LoadPlayer(playerId)
-	if err != nil {
-		logger.Errorf("Failed to load details for player #%d in PlayerDetailsHandler: [%v]", playerId, err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	data["Player"] = player
-
-	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "playerdetails", data)
-	if err != nil {
-		logger.Errorf("Failed to execute template in PlayerDetailsHandler: [%v]", err)
-	}
-}
-
-func PlayerEditHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-}
-
-func PlayerDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-}
-
 func ReportListHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
@@ -1421,47 +984,6 @@ func ReportListAllHandler(w http.ResponseWriter, r *http.Request) {
 	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "reports", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in ReportListAllHandler: [%v]", err)
-	}
-}
-
-func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
-	vars := mux.Vars(r)
-	reportId, err := strconv.ParseInt(vars["reportid"], 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse report ID %q in ReportDetailsHandler: [%v]", vars["reportid"], err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	data := make(map[string]interface{})
-
-	data["PageTitle"] = fmt.Sprintf("Report #%d", reportId)
-	data["PageType"] = 4
-	data["LoggedIn"] = loggedIn
-
-	report, err := database.LoadReport(reportId)
-	if err != nil {
-		logger.Errorf("Failed to load details for report #%d in ReportDetailsHandler: [%v]", reportId, err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	report.CalculatePayouts()
-
-	data["Report"] = report
-
-	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "reportdetails", data)
-	if err != nil {
-		logger.Errorf("Failed to execute template in ReportDetailsHandler: [%v]", err)
 	}
 }
 
@@ -1566,7 +1088,7 @@ func ReportCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/report/%d", report.Id), http.StatusSeeOther)
 }
 
-func AdminMenuHandler(w http.ResponseWriter, r *http.Request) {
+func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
@@ -1574,14 +1096,157 @@ func AdminMenuHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	vars := mux.Vars(r)
+	reportId, err := strconv.ParseInt(vars["reportid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse report ID %q in ReportDetailsHandler: [%v]", vars["reportid"], err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	data := make(map[string]interface{})
 
-	data["PageTitle"] = "Admin Menu"
-	data["PageType"] = 6
+	data["PageTitle"] = fmt.Sprintf("Report #%d", reportId)
+	data["PageType"] = 4
 	data["LoggedIn"] = loggedIn
 
-	err := templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "adminmenu", data)
+	report, err := database.LoadReport(reportId)
 	if err != nil {
-		logger.Errorf("Failed to execute template in AdminMenuHandler: [%v]", err)
+		logger.Errorf("Failed to load details for report #%d in ReportDetailsHandler: [%v]", reportId, err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+
+	report.CalculatePayouts()
+
+	report, err = database.SaveReport(report)
+	if err != nil {
+		logger.Errorf("Failed to save report in ReportDetailsHandler: [%v]", reportId, err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data["Report"] = report
+
+	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "reportdetails", data)
+	if err != nil {
+		logger.Errorf("Failed to execute template in ReportDetailsHandler: [%v]", err)
+	}
+}
+
+func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	vars := mux.Vars(r)
+	reportId, err := strconv.ParseInt(vars["reportId"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse report ID %q in ReportEditHandler: [%v]", vars["reportId"], err)
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/report/%d", reportId)) {
+		logger.Warnf("Received request to ReportEditHandler without proper referrer: %q", r.Referer())
+
+		http.Redirect(w, r, fmt.Sprintf("/report/%d", reportId), http.StatusBadRequest)
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		logger.Errorf("Failed to parse form in ReportEditHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	command := r.FormValue("command")
+	if len(command) == 0 {
+		logger.Errorf("Received empty command int ReportEditHandler...", err)
+
+		http.Error(w, "Received empty command", http.StatusBadRequest)
+		return
+	}
+
+	report, err := database.LoadReport(reportId)
+	if err != nil {
+		logger.Errorf("Failed to load report in ReportEditHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !HasHigherAccessMask(r, int(models.AccessMaskJuniorFleetCommander)) {
+		logger.Warnf("Received request to ReportEditHandler without proper access...")
+
+		http.Redirect(w, r, fmt.Sprintf("/report/%d", reportId), http.StatusUnauthorized)
+		return
+	}
+
+	switch strings.ToLower(command) {
+	case "poll":
+		ReportEditPollHandler(w, r, report)
+		break
+	case "editdetails":
+		ReportEditDetailsHandler(w, r, report)
+		break
+	case "addfleet":
+		ReportEditAddFleetHandler(w, r, report)
+		break
+	case "editfleet":
+		ReportEditEditFleetHandler(w, r, report)
+		break
+	case "removefleet":
+		ReportEditRemoveFleetHandler(w, r, report)
+		break
+	case "calculate":
+		ReportEditCalculateHandler(w, r, report)
+		break
+	case "finish":
+		ReportEditFinishHandler(w, r, report)
+		break
+	default:
+		response := make(map[string]interface{})
+		response["result"] = "error"
+		response["error"] = "Invalid command"
+
+		SendJSONResponse(w, response)
+	}
+}
+
+func ReportEditPollHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+
+}
+
+func ReportEditDetailsHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+
+}
+
+func ReportEditAddFleetHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+
+}
+
+func ReportEditEditFleetHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+
+}
+
+func ReportEditRemoveFleetHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+
+}
+
+func ReportEditCalculateHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+
+}
+
+func ReportEditFinishHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+
 }

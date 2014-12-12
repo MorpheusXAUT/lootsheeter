@@ -74,60 +74,6 @@ var routes = []Route{
 		HandlerFunc: FleetEditHandler,
 	},
 	Route{
-		Name:        "FleetFinish",
-		Methods:     []string{"GET"},
-		Pattern:     "/fleet/{fleetid:[0-9]+}/finish",
-		HandlerFunc: FleetFinishHandler,
-	},
-	Route{
-		Name:        "FleetAddProfit",
-		Methods:     []string{"POST"},
-		Pattern:     "/fleet/{fleetid:[0-9]+}/addprofit",
-		HandlerFunc: FleetAddProfitHandler,
-	},
-	Route{
-		Name:        "FleetAddLoss",
-		Methods:     []string{"POST"},
-		Pattern:     "/fleet/{fleetid:[0-9]+}/addloss",
-		HandlerFunc: FleetAddLossHandler,
-	},
-	Route{
-		Name:        "FleetDelete",
-		Methods:     []string{"GET", "POST"},
-		Pattern:     "/fleet/{fleetid:[0-9]+}/delete",
-		HandlerFunc: FleetDeleteHandler,
-	},
-	Route{
-		Name:        "FleetAddMember",
-		Methods:     []string{"POST"},
-		Pattern:     "/fleet/{fleetid:[0-9]+}/addmember",
-		HandlerFunc: FleetAddMemberHandler,
-	},
-	Route{
-		Name:        "PlayerList",
-		Methods:     []string{"GET"},
-		Pattern:     "/players",
-		HandlerFunc: PlayerListHandler,
-	},
-	Route{
-		Name:        "PlayerDetails",
-		Methods:     []string{"GET"},
-		Pattern:     "/player/{playerid:[0-9]+}",
-		HandlerFunc: PlayerDetailsHandler,
-	},
-	Route{
-		Name:        "PlayerEdit",
-		Methods:     []string{"GET", "POST"},
-		Pattern:     "/player/{playerid:[0-9]+}/edit",
-		HandlerFunc: PlayerEditHandler,
-	},
-	Route{
-		Name:        "PlayerDelete",
-		Methods:     []string{"GET", "POST"},
-		Pattern:     "/player/{playerid:[0-9]+}/delete",
-		HandlerFunc: PlayerDeleteHandler,
-	},
-	Route{
 		Name:        "ReportList",
 		Methods:     []string{"GET"},
 		Pattern:     "/reports",
@@ -158,9 +104,9 @@ var routes = []Route{
 		HandlerFunc: ReportDetailsHandler,
 	},
 	Route{
-		Name:        "AdminMenu",
+		Name:        "ReportEdit",
 		Methods:     []string{"GET"},
-		Pattern:     "/admin",
-		HandlerFunc: AdminMenuHandler,
+		Pattern:     "/report/{reportid:[0-9]+}/edit",
+		HandlerFunc: ReportEditHandler,
 	},
 }
