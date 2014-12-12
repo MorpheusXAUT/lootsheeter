@@ -15,7 +15,7 @@
         	<div id="navbar" class="navbar-collapse collapse">
           		<ul class="nav navbar-nav">
             		<li {{ if eq .PageType 1 }} class="active" {{ end }}><a href="/">Home</a></li>
-					<li class="dropdown {{ if eq .PageType 2 }} active {{ end }}" >
+					<li class="dropdown {{ if eq .PageType 3 }} active {{ end }}" >
 						<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Fleets<span class="caret"></span></a>
 						<ul class="dropdown-menu" role="menu">
 							<li><a href="/fleets">Active Fleets</a></li>
@@ -24,7 +24,6 @@
 							<li><a href="/fleets/create">Create Fleet</a></li>
 						</ul>
 					</li>
-					<li {{ if eq .PageType 3 }} class="active" {{ end }}><a href="/players">Players</a></li>
 					<li class="dropdown {{ if eq .PageType 4 }} active {{ end }}">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Reports<span class="caret"></span></a>
 						<ul class="dropdown-menu" role="menu">
@@ -34,8 +33,7 @@
 							<li><a href="/reports/create">Create Report</a></li>
 							</ul>
 						</li>
-					{{ if not .LoggedIn }}<li {{ if eq .PageType 5 }} class="active" {{ end }}><a href="/login">Login</a></li>{{ else }}<li><a href="/logout">Logout</a></li>{{ end }}
-					<li {{ if eq .PageType 6 }} class="active" {{ end }}><a href="/admin">Admin</a></li>
+					{{ if not .LoggedIn }}<li {{ if eq .PageType 2 }} class="active" {{ end }}><a href="/login">Login</a></li>{{ else }}<li><a href="/logout">Logout</a></li>{{ end }}
           		</ul>
         	</div><!--/.nav-collapse -->
       	</div>

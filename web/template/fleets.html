@@ -33,7 +33,7 @@
 							<td>{{ $fleet.System }}{{ if gt (len $fleet.SystemNickname) 0}} ({{ $fleet.SystemNickname }}){{ end }}</td>
 							<td>{{ $fleet.StartTime }}</td>
 							<td>{{ if $fleet.IsFleetFinished }} {{ $fleet.EndTime }} {{ else }} --- {{ end }}</td>
-							<td><a href="/fleet/{{ $fleet.Id }}" class="btn btn-default">View</a>&nbsp;<a href="/fleet/{{ $fleet.Id }}/edit" class="btn btn-primary">Edit</a>&nbsp;<a href="/fleet/{{ $fleet.Id }}/delete" class="btn btn-danger">Delete</a></td>
+							<td><a href="/fleet/{{ $fleet.Id }}" class="btn btn-default">View</a></td>
 						</tr>
 						{{ end }}
 						{{ end }}
