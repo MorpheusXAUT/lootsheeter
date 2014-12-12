@@ -25,7 +25,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 	if loggedIn {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		http.Redirect(w, r, session.GetLoginRedirect(r), http.StatusSeeOther)
 		return
 	}
 
@@ -99,7 +99,7 @@ func LoginSSOHandler(w http.ResponseWriter, r *http.Request) {
 
 	session.SetIdentity(w, r, a, sh)
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, session.GetLoginRedirect(r), http.StatusSeeOther)
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -112,6 +112,7 @@ func FleetListHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
+		session.SetLoginRedirect(w, r, "/fleets")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -169,6 +170,7 @@ func FleetListAllHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
+		session.SetLoginRedirect(w, r, "/fleets/all")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -226,6 +228,7 @@ func FleetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
+		session.SetLoginRedirect(w, r, "/fleets/create")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -256,6 +259,7 @@ func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
+		session.SetLoginRedirect(w, r, "/fleets/create")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	}
 
@@ -329,19 +333,20 @@ func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
 	vars := mux.Vars(r)
 	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse fleet ID %q in FleetDetailsHandler: [%v]", vars["fleetid"], err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/fleet/%d", fleetId))
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
@@ -378,19 +383,20 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
 	vars := mux.Vars(r)
 	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse fleet ID %q in FleetEditHandler: [%v]", vars["fleetid"], err)
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/fleet/%d", fleetId))
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
@@ -482,6 +488,36 @@ func FleetEditPollHandler(w http.ResponseWriter, r *http.Request, fleet *models.
 func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
+	startTime, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", r.FormValue("fleetDetailsStartTimeEdit"))
+	if err != nil {
+		logger.Errorf("Failed to parse startTime in FleetEditEditDetailsHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	var endTime time.Time
+
+	if len(r.FormValue("fleetDetailsEndTimeEdit")) > 0 &&
+		!strings.EqualFold(r.FormValue("fleetDetailsEndTimeEdit"), "YYYY-MM-DD HH:MM:SS +0000 UTC") &&
+		!strings.EqualFold(r.FormValue("fleetDetailsEndTimeEdit"), "---") {
+		e, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", r.FormValue("fleetDetailsEndTimeEdit"))
+		if err != nil {
+			logger.Errorf("Failed to parse endTime in FleetEditEditDetailsHandler: [%v]", err)
+
+			response["result"] = "error"
+			response["error"] = err.Error()
+
+			SendJSONResponse(w, response)
+			return
+		}
+
+		endTime = e
+	}
+
 	sitesFinished, err := strconv.ParseInt(r.FormValue("fleetDetailsSitesFinishedEdit"), 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse sitesFinished in FleetEditEditDetailsHandler: [%v]", err)
@@ -504,6 +540,8 @@ func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *
 		return
 	}
 
+	fleet.StartTime = startTime
+	fleet.EndTime = endTime
 	fleet.SitesFinished = int(sitesFinished)
 	fleet.PayoutComplete = payoutComplete
 
@@ -929,6 +967,7 @@ func ReportListHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
+		session.SetLoginRedirect(w, r, "/reports")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -960,6 +999,7 @@ func ReportListAllHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
+		session.SetLoginRedirect(w, r, "/reports/all")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -991,6 +1031,7 @@ func ReportCreateHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
+		session.SetLoginRedirect(w, r, "/reports/create")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -1021,6 +1062,7 @@ func ReportCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
+		session.SetLoginRedirect(w, r, "/reports/create")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -1089,19 +1131,20 @@ func ReportCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
 	vars := mux.Vars(r)
 	reportId, err := strconv.ParseInt(vars["reportid"], 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse report ID %q in ReportDetailsHandler: [%v]", vars["reportid"], err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/report/%d", reportId))
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
@@ -1138,19 +1181,20 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
 	vars := mux.Vars(r)
 	reportId, err := strconv.ParseInt(vars["reportId"], 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse report ID %q in ReportEditHandler: [%v]", vars["reportId"], err)
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/report/%d", reportId))
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
