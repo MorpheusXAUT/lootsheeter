@@ -21,6 +21,7 @@ func TemplateFunctions(r *http.Request) template.FuncMap {
 		"FormatFloat":      func(f float64) string { return FormatFloat(f) },
 		"IsPositiveFloat":  func(f float64) bool { return IsPositiveFloat(f) },
 		"IsFleetCommander": func(fleet *models.Fleet) bool { return IsFleetCommander(r, fleet) },
+		"IsReportCreator":  func(report *models.Report) bool { return IsReportCreator(r, report) },
 		"HasAccessMask":    func(access int) bool { return HasAccessMask(r, access) },
 	}
 }
@@ -71,6 +72,19 @@ func IsFleetCommander(r *http.Request, fleet *models.Fleet) bool {
 	}
 }
 
+func IsReportCreator(r *http.Request, report *models.Report) bool {
+	player := session.GetPlayerFromRequest(r)
+	if player == nil {
+		return false
+	}
+
+	if strings.EqualFold(report.Creator.Name, player.Name) {
+		return true
+	} else {
+		return false
+	}
+}
+
 func HasAccessMask(r *http.Request, access int) bool {
 	player := session.GetPlayerFromRequest(r)
 	if player == nil {
@@ -78,4 +92,13 @@ func HasAccessMask(r *http.Request, access int) bool {
 	}
 
 	return player.AccessMask == models.AccessMask(access)
+}
+
+func HasHigherAccessMask(r *http.Request, access int) bool {
+	player := session.GetPlayerFromRequest(r)
+	if player == nil {
+		return false
+	}
+
+	return player.AccessMask >= models.AccessMask(access)
 }

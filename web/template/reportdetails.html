@@ -2,6 +2,8 @@
 	{{ template "header" . }}
 	{{ template "navigation" . }}
 	
+    {{ $ReportAdmin := or (IsReportCreator .Report) (HasAccessMask 256) }}
+    
 	<div class="container" role="main">
 		<div class="page-header">
 			<h1>Details for report #{{ .Report.Id }}</h1>
@@ -24,7 +26,7 @@
 							</thead>
 							<tbody>
 								<tr>
-									<td>{{ .Report.CreatedBy.Name }}</td>
+									<td>{{ .Report.Creator.Name }}</td>
 									<td>{{ FormatFloat .Report.TotalPayout }} ISK</td>
 									<td>{{ len .Report.Fleets }}</td>
 									<td>{{ .Report.StartRange }}</td>
@@ -34,10 +36,12 @@
 							</tbody>
 						</table>
 						<p align="center">
+                        	{{ if $ReportAdmin }}
 							<a href="#" class="btn btn-primary">Edit</a>
 							{{ if not .Report.PayoutComplete }}
 							<a href="/report/{{ .Report.Id }}/finish" class="btn btn-danger">Finish Report</a>
 							{{ end }}
+                            {{ end }}
 						</p>
 					</div>
 					<div class="panel-heading">
@@ -80,13 +84,17 @@
 								<tr>
 									<th>Name</th>
 									<th>Payout</th>
+                                    <th>Payout Complete</th>
+                                    <th>Action</th>
 								</tr>
 							</thead>
 							<tbody>
 								{{ range $name, $payout := .Report.Payouts }}
 								<tr>
 									<td>{{ $name }}</td>
-									<td>{{ FormatFloat $payout }} ISK</td>
+									<td>{{ FormatFloat $payout.TotalPayout }} ISK</td>
+                                    <td>{{ if $payout.PayoutComplete }} Done {{ else }} Outstanding {{ end }}</td>
+                                    <td><a href="#" class="btn btn-success">Mark as paid</a></td>
 								</tr>
 								{{ end }}
 							</tbody>
@@ -97,5 +105,7 @@
 		</div>
 	</div>
 	
+    <script src="/js/reportdetails.js"></script>
+    
 	{{ template "footer" . }}
 {{ end }}

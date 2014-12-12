@@ -69,7 +69,10 @@ func (s *Session) DestroySession(w http.ResponseWriter, r *http.Request) {
 		MaxAge: -1,
 	})
 
-	delete(s.players, characterName)
+	_, ok := s.players[characterName]
+	if !ok {
+		delete(s.players, characterName)
+	}
 }
 
 func (s *Session) GetPlayerFromRequest(r *http.Request) *models.Player {
