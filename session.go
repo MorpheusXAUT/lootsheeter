@@ -180,6 +180,23 @@ func (s *Session) GetCorporationName(r *http.Request) string {
 	return session.Values["corporation_name"].(string)
 }
 
+func (s *Session) SetLoginRedirect(w http.ResponseWriter, r *http.Request, redirect string) {
+	session, _ := s.store.Get(r, "login")
+
+	session.Values["redirect"] = redirect
+
+	session.Save(r, w)
+}
+
+func (s *Session) GetLoginRedirect(r *http.Request) string {
+	session, _ := s.store.Get(r, "login")
+	if session.IsNew {
+		return "/"
+	}
+
+	return session.Values["redirect"].(string)
+}
+
 func (s *Session) SetSSOState(w http.ResponseWriter, r *http.Request, state string) {
 	session, _ := s.store.Get(r, "login")
 
