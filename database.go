@@ -806,7 +806,7 @@ func (db *Database) SaveReport(report *models.Report) (*models.Report, error) {
 
 	_, err := db.LoadReport(report.Id)
 	if err != nil {
-		result, err := db.db.Exec("INSERT INTO reports(created_by, total_payout, startrange, endrange, payout_complete) VALUES (?, ?, ?, ?, ?)", report.CreatedBy.Id, report.TotalPayout, report.StartRange, report.EndRange, reportPayoutCompleteEnum)
+		result, err := db.db.Exec("INSERT INTO reports(created_by, total_payout, startrange, endrange, payout_complete) VALUES (?, ?, ?, ?, ?)", report.Creator.Id, report.TotalPayout, report.StartRange, report.EndRange, reportPayoutCompleteEnum)
 		if err != nil {
 			return report, err
 		}
@@ -829,7 +829,10 @@ func (db *Database) SaveReport(report *models.Report) (*models.Report, error) {
 			fleet = f
 		}
 	} else {
-
+		_, err := db.db.Exec("UPDATE reports SET created_by=?, total_payout=?, startrange=?, endrange=?, payout_complete=? WHERE id = ?", report.Creator.Id, report.TotalPayout, report.StartRange, report.EndRange, reportPayoutCompleteEnum, report.Id)
+		if err != nil {
+			return report, err
+		}
 	}
 
 	return report, nil
