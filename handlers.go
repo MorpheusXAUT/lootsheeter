@@ -646,8 +646,6 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
-	logger.Printf("%#+v", r.Form)
-
 	memberId, err := strconv.ParseInt(r.FormValue("fleetMemberMemberId"), 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse memberId in FleetEditEditMemberHandler: [%v]", err)
@@ -713,20 +711,12 @@ func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *m
 		SendJSONResponse(w, response)
 		return
 	}
-
-	logger.Printf("%#+v", fleetMember)
-
 	fleetMember.Role = models.FleetRole(fleetRole)
 	fleetMember.SiteModifier = int(siteModifier)
 	fleetMember.PaymentModifier = paymentModifier
 	fleetMember.PayoutComplete = payoutComplete
 
-	logger.Printf("%#+v", fleetMember)
-	logger.Printf("%#+v", fleet.Members)
-
 	fleet.Members[fleetMember.Name] = fleetMember
-
-	logger.Printf("%#+v", fleet.Members)
 
 	fleet, err = database.SaveFleet(fleet)
 	if err != nil {
