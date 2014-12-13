@@ -273,9 +273,9 @@ func ParseFleetRole(ship string, fleetBoss bool) (models.FleetRole, error) {
 		return models.FleetRoleFleetCommander, nil
 	}
 
-	role, err := database.LoadShipRole(ship)
+	role, err := database.QueryShipRole(ship)
 	if err != nil {
-		return models.FleetRoleUnknown, nil
+		return models.FleetRoleUnknown, err
 	}
 
 	return role, nil

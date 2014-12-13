@@ -144,10 +144,10 @@ func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.C
 	corp, err := database.LoadCorporationFromName(a.GetCorporationName())
 	if err != nil {
 		c, err := database.SaveCorporation(&models.Corporation{
-			Id:     -1,
-			Name:   a.GetCorporationName(),
-			CorpId: a.GetCorporationId(),
-			Ticker: sh.Ticker})
+			Id:            -1,
+			Name:          a.GetCorporationName(),
+			CorporationId: a.GetCorporationId(),
+			Ticker:        sh.Ticker})
 		if err != nil {
 			logger.Errorf("Failed to save new corporation in session: [%v]", err)
 			return

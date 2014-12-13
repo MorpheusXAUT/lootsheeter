@@ -146,7 +146,7 @@ func FleetListHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		f, err := database.LoadAllFleetsFromCorpId(corporation.Id)
+		f, err := database.LoadAllFleetsForCorporation(corporation.Id)
 		if err != nil {
 			logger.Errorf("Failed to load all fleets in FleetListHandler: [%v]", err)
 
@@ -204,7 +204,7 @@ func FleetListAllHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		f, err := database.LoadAllFleetsFromCorpId(corporation.Id)
+		f, err := database.LoadAllFleetsForCorporation(corporation.Id)
 		if err != nil {
 			logger.Errorf("Failed to load all fleets in FleetListAllHandler: [%v]", err)
 
@@ -763,7 +763,7 @@ func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet 
 
 	fleet.RemoveMember(member.Name)
 
-	err = database.RemoveFleetMember(fleet.Id, memberId)
+	err = database.DeleteFleetMember(fleet.Id, memberId)
 	if err != nil {
 		logger.Errorf("Failed to remove fleet member in FleetEditRemoveMemberHandler: [%v]", err)
 

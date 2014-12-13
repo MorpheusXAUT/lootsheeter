@@ -21,8 +21,7 @@ CREATE TABLE IF NOT EXISTS `corporations` (
   `corporation_id` bigint(20) NOT NULL,
   `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `ticker` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `corp_cut` double NOT NULL DEFAULT '0',
-  `active` enum('Y','N') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'Y',
+  `corporation_cut` double NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
   UNIQUE KEY `corp_id` (`corporation_id`)
@@ -61,7 +60,8 @@ CREATE TABLE IF NOT EXISTS `fleetroles` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `ship` varchar(75) NOT NULL,
   `fleet_role` int(10) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ship` (`ship`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Data exporting was unselected.
@@ -77,12 +77,11 @@ CREATE TABLE IF NOT EXISTS `fleets` (
   `profit` double NOT NULL DEFAULT '0',
   `losses` double NOT NULL DEFAULT '0',
   `sites_finished` int(10) NOT NULL DEFAULT '0',
-  `start` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `end` timestamp NULL DEFAULT NULL,
+  `starttime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `endtime` timestamp NULL DEFAULT NULL,
   `corporation_payout` double NOT NULL DEFAULT '0',
   `payout_complete` enum('Y','N') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'N',
   `report_id` bigint(20) DEFAULT NULL,
-  `active` enum('Y','N') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'Y',
   PRIMARY KEY (`id`),
   KEY `fk_fleets_report` (`report_id`),
   KEY `fk_fleets_corporation` (`corporation_id`),
@@ -112,8 +111,7 @@ CREATE TABLE IF NOT EXISTS `players` (
   `player_id` bigint(20) NOT NULL,
   `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `corporation_id` bigint(20) NOT NULL,
-  `access` int(10) NOT NULL DEFAULT '0',
-  `active` enum('Y','N') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'Y',
+  `accessmask` int(10) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `player_id` (`player_id`),
   UNIQUE KEY `name` (`name`),
@@ -127,14 +125,14 @@ CREATE TABLE IF NOT EXISTS `players` (
 -- Dumping structure for table lootsheeter.reports
 CREATE TABLE IF NOT EXISTS `reports` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `created_by` bigint(20) NOT NULL,
+  `creator` bigint(20) NOT NULL,
   `total_payout` double NOT NULL DEFAULT '0',
-  `startrange` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `endrange` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `starttime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `endtime` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `payout_complete` enum('Y','N') NOT NULL DEFAULT 'N',
   PRIMARY KEY (`id`),
-  KEY `fk_reports_player` (`created_by`),
-  CONSTRAINT `fk_reports_player` FOREIGN KEY (`created_by`) REFERENCES `players` (`id`)
+  KEY `fk_reports_player` (`creator`),
+  CONSTRAINT `fk_reports_player` FOREIGN KEY (`creator`) REFERENCES `players` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Data exporting was unselected.
