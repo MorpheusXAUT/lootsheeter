@@ -854,3 +854,14 @@ func (db *Database) QueryShipRole(ship string) (models.FleetRole, error) {
 
 	return models.FleetRole(fleetMemberRole), nil
 }
+
+func (db *Database) SaveLootPaste(fleetId int64, rawPaste string, value float64, pasteType string) error {
+	logger.Tracef("Saving raw loot paste to database...")
+
+	_, err := db.db.Exec("INSERT INTO lootpastes(fleet_id, raw_paste, value, paste_type) VALUES(?, ?, ?, ?)", fleetId, rawPaste, value, pasteType)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

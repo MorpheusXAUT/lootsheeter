@@ -831,9 +831,20 @@ func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 		profit = p
 	}
 
+	err := database.SaveLootPaste(fleet.Id, rawProfit, profit, "P")
+	if err != nil {
+		logger.Errorf("Failed to save loot paste in FleetEditAddMemberHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
 	fleet.AddProfit(profit)
 
-	fleet, err := database.SaveFleet(fleet)
+	fleet, err = database.SaveFleet(fleet)
 	if err != nil {
 		logger.Errorf("Failed to save fleet in FleetEditAddMemberHandler: [%v]", err)
 
@@ -918,9 +929,20 @@ func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *mode
 		loss = l
 	}
 
+	err := database.SaveLootPaste(fleet.Id, rawLoss, loss, "L")
+	if err != nil {
+		logger.Errorf("Failed to save loot paste in FleetEditAddMemberHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
 	fleet.AddLoss(loss)
 
-	fleet, err := database.SaveFleet(fleet)
+	fleet, err = database.SaveFleet(fleet)
 	if err != nil {
 		logger.Errorf("Failed to save fleet in FleetEditAddLossHandler: [%v]", err)
 
