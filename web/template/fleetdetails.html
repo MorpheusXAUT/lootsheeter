@@ -187,8 +187,8 @@
 							<tbody>
 								{{ range $member := .Fleet.Members }}
 								<tr class="fleet-member-list-row" member="{{ $member.Id }}">
-									<form role="form-horizontal" id="fleetMemberList" member="{{ $member.Id }}">
-                                    	<input type="hidden" class="form-control" id="fleetMemberMemberId" name="fleetMemberMemberId" value="{{ $member.Id }}">
+									<form role="form-horizontal" class="fleet-member-list-form" member="{{ $member.Id }}">
+                                    	<input type="hidden" class="form-control" name="fleetMemberMemberId" value="{{ $member.Id }}">
 										<td>
 											{{ $member.Id }}
 										</td>
@@ -200,7 +200,7 @@
 												<h4><span class="label {{ $member.Role.LabelType }}">{{ $member.Role }}</span></h4>
 											</div>
 											<div id="fleetMemberRoleForm" member="{{ $member.Id }}" style="display: none;" class="fleet-member-list">
-												<select class="form-control" id="fleetMemberRoleEdit" name="fleetMemberRoleEdit">
+												<select class="form-control" name="fleetMemberRoleEdit">
 													<option value="4">Scout</option>
 													<option value="8">Salvage</option>
 													<option value="16">Logistics</option>
@@ -214,7 +214,7 @@
 												{{ $member.SiteModifier }}
 											</div>
 											<div id="fleetMemberSiteModifierForm" member="{{ $member.Id }}" style="display: none;" class="fleet-member-list">
-												<input type="number" class="form-control" id="fleetMemberSiteModiferEdit" name="fleetMemberSiteModiferEdit" value="{{ $member.SiteModifier }}">
+												<input type="number" class="form-control" name="fleetMemberSiteModiferEdit" value="{{ $member.SiteModifier }}">
 											</div>
 										</td>
 										<td>
@@ -222,7 +222,7 @@
 												{{ $member.PaymentModifier }}
 											</div>
 											<div id="fleetMemberPaymentModifierForm" member="{{ $member.Id }}" style="display: none;" class="fleet-member-list">
-												<input type="number" class="form-control" id="fleetMemberPaymentModifierEdit" name="fleetMemberPaymentModifierEdit" min="0" step="0.1" value="{{ $member.PaymentModifier }}">
+												<input type="number" class="form-control" name="fleetMemberPaymentModifierEdit" min="0" step="0.1" value="{{ $member.PaymentModifier }}">
 											</div>
 										</td>
 										<td class="text-right">
@@ -233,7 +233,7 @@
 												{{ if $member.PayoutComplete }} Done {{ else }} Outstanding {{ end }}
 											</div>
 											<div id="fleetMemberPayoutCompleteForm" member="{{ $member.Id }}" style="display: none;" class="fleet-member-list">
-												<select class="form-control" id="fleetMemberPayoutCompleteEdit" name="fleetMemberPayoutCompleteEdit">
+												<select class="form-control" name="fleetMemberPayoutCompleteEdit">
 													<option value="false">Outstanding</option>
 													<option value="true">Done</option>
 												</select>

@@ -62,7 +62,7 @@ $(document).ready(function(e) {
 	});
 	
 	$('a.fleet-member-list-save').click(function() {
-		$.getJSON('/fleet/'+$(this).attr('fleet')+'/edit?command=editmember', $('#fleetMemberList[member='+$(this).attr('member')+']').serialize(), function(data) {
+		$.getJSON('/fleet/'+$(this).attr('fleet')+'/edit?command=editmember', $('form.fleet-member-list-form[member='+$(this).attr('member')+']').serialize(), function(data) {
 			if (data.result === "success" && data.error === null) {
 				location.reload(true);
 			} else {
