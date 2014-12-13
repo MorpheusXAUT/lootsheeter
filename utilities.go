@@ -261,7 +261,7 @@ func ParseFleetCompositionRows(fleetId int64, rows []string) ([]*models.FleetMem
 		}
 
 		member := models.NewFleetMember(-1, fleetId, player, role, ship, 0, 1, 0, false, -1)
-		
+
 		members = append(members, member)
 	}
 
@@ -275,7 +275,7 @@ func ParseFleetRole(ship string, fleetBoss bool) (models.FleetRole, error) {
 
 	role, err := database.LoadShipRole(ship)
 	if err != nil {
-		return models.FleetRoleUnknown, nil 
+		return models.FleetRoleUnknown, nil
 	}
 
 	return role, nil

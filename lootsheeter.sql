@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS `corporations` (
   `corporation_id` bigint(20) NOT NULL,
   `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `ticker` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `corp_cut` double NOT NULL DEFAULT '0',
   `active` enum('Y','N') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'Y',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
@@ -55,6 +56,17 @@ CREATE TABLE IF NOT EXISTS `fleetmembers` (
 -- Data exporting was unselected.
 
 
+-- Dumping structure for table lootsheeter.fleetroles
+CREATE TABLE IF NOT EXISTS `fleetroles` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `ship` varchar(75) NOT NULL,
+  `fleet_role` int(10) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Data exporting was unselected.
+
+
 -- Dumping structure for table lootsheeter.fleets
 CREATE TABLE IF NOT EXISTS `fleets` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -77,6 +89,19 @@ CREATE TABLE IF NOT EXISTS `fleets` (
   CONSTRAINT `fk_fleets_corporation` FOREIGN KEY (`corporation_id`) REFERENCES `corporations` (`id`),
   CONSTRAINT `fk_fleets_report` FOREIGN KEY (`report_id`) REFERENCES `reports` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- Data exporting was unselected.
+
+
+-- Dumping structure for table lootsheeter.loot
+CREATE TABLE IF NOT EXISTS `loot` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `fleet_id` bigint(20) NOT NULL,
+  `raw_loot` text NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_loot_fleet` (`fleet_id`),
+  CONSTRAINT `fk_loot_fleet` FOREIGN KEY (`fleet_id`) REFERENCES `fleets` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Data exporting was unselected.
 
