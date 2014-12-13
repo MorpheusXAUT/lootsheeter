@@ -167,7 +167,7 @@ func GenerateRandomString(length int) string {
 }
 
 func FetchCharacterAffiliation(v models.SSOVerification) (models.CharacterAffiliation, error) {
-	assocReq, err := http.NewRequest("GET", fmt.Sprintf("https://api.testeveonline.com/eve/CharacterAffiliation.xml.aspx?ids=%d", v.CharacterId), nil)
+	assocReq, err := http.NewRequest("GET", fmt.Sprintf("https://api.eveonline.com/eve/CharacterAffiliation.xml.aspx?ids=%d", v.CharacterId), nil)
 
 	client := &http.Client{}
 	assocResp, err := client.Do(assocReq)
@@ -192,7 +192,7 @@ func FetchCharacterAffiliation(v models.SSOVerification) (models.CharacterAffili
 }
 
 func FetchCorporationSheet(a models.CharacterAffiliation) (models.CorporationSheet, error) {
-	sheetReq, err := http.NewRequest("GET", fmt.Sprintf("https://api.testeveonline.com/corp/CorporationSheet.xml.aspx?corporationID=%d", a.GetCorporationId()), nil)
+	sheetReq, err := http.NewRequest("GET", fmt.Sprintf("https://api.eveonline.com/corp/CorporationSheet.xml.aspx?corporationID=%d", a.GetCorporationId()), nil)
 
 	client := &http.Client{}
 	sheetResp, err := client.Do(sheetReq)

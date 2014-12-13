@@ -21,7 +21,7 @@ func FetchSSOToken(authorizationCode string) (models.SSOToken, error) {
 	verifyData.Set("grant_type", "authorization_code")
 	verifyData.Set("code", authorizationCode)
 
-	verifyReq, err := http.NewRequest("POST", "https://sisilogin.testeveonline.com/oauth/token", bytes.NewBufferString(verifyData.Encode()))
+	verifyReq, err := http.NewRequest("POST", "https://login.eveonline.com/oauth/token", bytes.NewBufferString(verifyData.Encode()))
 	verifyReq.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	verifyReq.Header.Add("Content-Length", strconv.Itoa(len(verifyData.Encode())))
 	verifyReq.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
@@ -49,7 +49,7 @@ func FetchSSOToken(authorizationCode string) (models.SSOToken, error) {
 }
 
 func FetchSSOVerification(t models.SSOToken) (models.SSOVerification, error) {
-	charReq, err := http.NewRequest("GET", "https://sisilogin.testeveonline.com/oauth/verify", nil)
+	charReq, err := http.NewRequest("GET", "https://login.eveonline.com/oauth/verify", nil)
 	charReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", t.AccessToken))
 
 	client := &http.Client{}
