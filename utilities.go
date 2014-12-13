@@ -220,7 +220,7 @@ func SendJSONResponse(w http.ResponseWriter, response map[string]interface{}) {
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
 		logger.Errorf("Failed to encode response to JSON: [%v]", err)
-		
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -231,4 +231,52 @@ func SendJSONResponse(w http.ResponseWriter, response map[string]interface{}) {
 	w.WriteHeader(http.StatusOK)
 
 	w.Write(jsonResponse)
+}
+
+func ParseFleetCompositionRows(fleetId int64, rows []string) ([]*models.FleetMember, error) {
+	members := make([]*models.FleetMember, 0)
+
+	for _, row := range rows {
+		splitRow := strings.Split(row, "\t")
+		if len(splitRow) != 7 {
+			return members, fmt.Errorf("Invalid fleet composition row: %q", row)
+		}
+
+		name := splitRow[0]
+		ship := splitRow[2]
+		fleetBoss := false
+
+		if strings.Contains(splitRow[4], "(Boss)") {
+			fleetBoss = true
+		}
+
+		player, err := database.LoadPlayerFromName(name)
+		if err != nil {
+			return members, err
+		}
+
+		role, err := ParseFleetRole(ship, fleetBoss)
+		if err != nil {
+			return members, err
+		}
+
+		member := models.NewFleetMember(-1, fleetId, player, role, ship, 0, 1, 0, false, -1)
+		
+		members = append(members, member)
+	}
+
+	return members, nil
+}
+
+func ParseFleetRole(ship string, fleetBoss bool) (models.FleetRole, error) {
+	if fleetBoss {
+		return models.FleetRoleFleetCommander, nil
+	}
+
+	role, err := database.LoadShipRole(ship)
+	if err != nil {
+		return models.FleetRoleUnknown, nil 
+	}
+
+	return role, nil
 }

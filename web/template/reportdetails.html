@@ -25,22 +25,40 @@
 								<th>Payout Complete</th>
 							</thead>
 							<tbody>
-								<tr>
-									<td>{{ .Report.Creator.Name }}</td>
-									<td>{{ FormatFloat .Report.TotalPayout }} ISK</td>
-									<td>{{ len .Report.Fleets }}</td>
-									<td>{{ .Report.StartRange }}</td>
-									<td>{{ .Report.EndRange }}</td>
-									<td class="{{ if .Report.PayoutComplete }} success {{ else }} danger {{ end }}">{{ if .Report.PayoutComplete }} Done {{ else }} Outstanding {{ end }}</td>
-								</tr>
+                            	<form role="form-horizontal" id="reportDetailsForm">
+                                    <tr>
+                                        <td>{{ .Report.Creator.Name }}</td>
+                                        <td>{{ FormatFloat .Report.TotalPayout }} ISK</td>
+                                        <td>{{ len .Report.Fleets }}</td>
+                                        <td>{{ .Report.StartRange }}</td>
+                                        <td>{{ .Report.EndRange }}</td>
+                                        <td class="{{ if .Report.PayoutComplete }} success {{ else }} danger {{ end }}">
+                                            <div id="reportDetailsPayoutComplete" report="{{ .Report.Id }}" class="report-details">
+                                                {{ if .Fleet.PayoutComplete }} Done {{ else }} Outstanding {{ end }}
+                                            </div>
+                                            <div id="reportDetailsPayoutCompleteForm" report="{{ .Report.Id }}" style="display: none;" class="report-details">
+                                                <select class="form-control" id="reportDetailsPayoutCompleteEdit" name="reportDetailsPayoutCompleteEdit">
+                                                    <option value="false">Outstanding</option>
+                                                    <option value="true">Done</option>
+                                                </select>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </form>
 							</tbody>
 						</table>
 						<p align="center">
                         	{{ if $ReportAdmin }}
-							<a href="#" class="btn btn-primary">Edit</a>
-							{{ if not .Report.PayoutComplete }}
-							<a href="/report/{{ .Report.Id }}/finish" class="btn btn-danger">Finish Report</a>
-							{{ end }}
+                            <div id="reportMemberActions" report="{{ .Report.Id }}" align="center" class="report-details">
+                                <a class="btn btn-primary report-details-toggle" report="{{ .Report.Id }}">Edit</a>
+                                {{ if not .Report.PayoutComplete }}
+								<a href="/report/{{ .Report.Id }}/finish" class="btn btn-danger">Finish Report</a>
+								{{ end }}
+                            </div>
+                            <div id="reportMemberActions" report="{{ .Report.Id }}" style="display: none;" align="center" class="report-details">
+                                <a class="btn btn-success report-details-save" report="{{ .Report.Id }}">Save</a>&nbsp;
+                                <a class="btn btn-danger report-details-toggle" report="{{ .Report.Id }}">Cancel</a>
+                            </div>
                             {{ end }}
 						</p>
 					</div>

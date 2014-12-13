@@ -192,16 +192,16 @@ func (db *Database) LoadAvailablePlayers(fleedId int64, corporationId int64) ([]
 func (db *Database) LoadFleetMember(fleetId int64, id int64) (*models.FleetMember, error) {
 	logger.Tracef("Querying database for fleet member with fid = %d and pid = %d...", fleetId, id)
 
-	row := db.db.QueryRow("SELECT fm.id AS fmid, fm.fleet_id AS fid, fm.player_id AS pid, fm.role AS fleetmember_role, fm.site_modifier AS fleetmember_site_modifier, fm.payment_modifier AS fleetmember_payment_modifier, fm.payout AS fleetmember_payout, fm.payout_complete AS fleetmember_payout_complete, fm.report_id AS rid FROM fleetmembers AS fm WHERE fm.fleet_id = ? AND fm.id = ?", fleetId, id)
+	row := db.db.QueryRow("SELECT fm.id AS fmid, fm.fleet_id AS fid, fm.player_id AS pid, fm.role AS fleetmember_role, fm.ship AS fleetmember_ship, fm.site_modifier AS fleetmember_site_modifier, fm.payment_modifier AS fleetmember_payment_modifier, fm.payout AS fleetmember_payout, fm.payout_complete AS fleetmember_payout_complete, fm.report_id AS rid FROM fleetmembers AS fm WHERE fm.fleet_id = ? AND fm.id = ?", fleetId, id)
 
 	var fmid, fid, pid, rid int64
 	var sqlRid sql.NullInt64
 	var fleetmemberRole, fleetmemberSiteModifier int
 	var fleetmemberPaymentModifier, fleetmemberPayout float64
-	var fleetmemberPayoutCompleteEnum string
+	var fleetmemberPayoutCompleteEnum, fleetMemberShip string
 	var fleetmemberPayoutComplete bool
 
-	err := row.Scan(&fmid, &fid, &pid, &fleetmemberRole, &fleetmemberSiteModifier, &fleetmemberPaymentModifier, &fleetmemberPayout, &fleetmemberPayoutCompleteEnum, &sqlRid)
+	err := row.Scan(&fmid, &fid, &pid, &fleetmemberRole, &fleetMemberShip, &fleetmemberSiteModifier, &fleetmemberPaymentModifier, &fleetmemberPayout, &fleetmemberPayoutCompleteEnum, &sqlRid)
 	if err != nil {
 		return &models.FleetMember{}, fmt.Errorf("Received error while scanning fleet member row: [%v]", err)
 	}
@@ -223,7 +223,7 @@ func (db *Database) LoadFleetMember(fleetId int64, id int64) (*models.FleetMembe
 		return &models.FleetMember{}, err
 	}
 
-	return models.NewFleetMember(fmid, fid, player, models.FleetRole(fleetmemberRole), fleetmemberSiteModifier, fleetmemberPaymentModifier, fleetmemberPayout, fleetmemberPayoutComplete, rid), nil
+	return models.NewFleetMember(fmid, fid, player, models.FleetRole(fleetmemberRole), fleetMemberShip, fleetmemberSiteModifier, fleetmemberPaymentModifier, fleetmemberPayout, fleetmemberPayoutComplete, rid), nil
 }
 
 func (db *Database) LoadAllFleetMembers(fleetId int64) ([]*models.FleetMember, error) {
@@ -231,7 +231,7 @@ func (db *Database) LoadAllFleetMembers(fleetId int64) ([]*models.FleetMember, e
 
 	fleetMembers := make([]*models.FleetMember, 0)
 
-	rows, err := db.db.Query("SELECT fm.id AS fmid, fm.fleet_id AS fid, fm.player_id AS pid, fm.role AS fleetmember_role, fm.site_modifier AS fleetmember_site_modifier, fm.payment_modifier AS fleetmember_payment_modifier, fm.payout AS fleetmember_payout, fm.payout_complete AS fleetmember_payout_complete, fm.report_id AS rid FROM fleetmembers AS fm WHERE fm.fleet_id = ?", fleetId)
+	rows, err := db.db.Query("SELECT fm.id AS fmid, fm.fleet_id AS fid, fm.player_id AS pid, fm.role AS fleetmember_role, fm.ship AS fleetmember_ship, fm.site_modifier AS fleetmember_site_modifier, fm.payment_modifier AS fleetmember_payment_modifier, fm.payout AS fleetmember_payout, fm.payout_complete AS fleetmember_payout_complete, fm.report_id AS rid FROM fleetmembers AS fm WHERE fm.fleet_id = ?", fleetId)
 	if err != nil {
 		return fleetMembers, err
 	}
@@ -241,10 +241,10 @@ func (db *Database) LoadAllFleetMembers(fleetId int64) ([]*models.FleetMember, e
 		var sqlRid sql.NullInt64
 		var fleetmemberRole, fleetmemberSiteModifier int
 		var fleetmemberPaymentModifier, fleetmemberPayout float64
-		var fleetmemberPayoutCompleteEnum string
+		var fleetmemberPayoutCompleteEnum, fleetMemberShip string
 		var fleetmemberPayoutComplete bool
 
-		err = rows.Scan(&fmid, &fid, &pid, &fleetmemberRole, &fleetmemberSiteModifier, &fleetmemberPaymentModifier, &fleetmemberPayout, &fleetmemberPayoutCompleteEnum, &sqlRid)
+		err = rows.Scan(&fmid, &fid, &pid, &fleetmemberRole, &fleetMemberShip, &fleetmemberSiteModifier, &fleetmemberPaymentModifier, &fleetmemberPayout, &fleetmemberPayoutCompleteEnum, &sqlRid)
 		if err != nil {
 			return fleetMembers, fmt.Errorf("Received error while scanning fleet member rows: [%v]", err)
 		}
@@ -266,7 +266,7 @@ func (db *Database) LoadAllFleetMembers(fleetId int64) ([]*models.FleetMember, e
 			return fleetMembers, err
 		}
 
-		fleetMembers = append(fleetMembers, models.NewFleetMember(fmid, fid, player, models.FleetRole(fleetmemberRole), fleetmemberSiteModifier, fleetmemberPaymentModifier, fleetmemberPayout, fleetmemberPayoutComplete, rid))
+		fleetMembers = append(fleetMembers, models.NewFleetMember(fmid, fid, player, models.FleetRole(fleetmemberRole), fleetMemberShip, fleetmemberSiteModifier, fleetmemberPaymentModifier, fleetmemberPayout, fleetmemberPayoutComplete, rid))
 	}
 
 	return fleetMembers, nil
@@ -644,6 +644,21 @@ func (db *Database) LoadAllReports() ([]*models.Report, error) {
 	}
 
 	return reports, nil
+}
+
+func (db *Database) LoadShipRole(ship string) (models.FleetRole, error) {
+	logger.Tracef("Querying database for role for ship %q...", ship)
+	
+	row := db.db.QueryRow("SELECT fleet_role FROM fleetroles WHERE ship LIKE ?", strings.ToLower(ship))
+	
+	var fleetMemberRole int
+	
+	err := row.Scan(&fleetMemberRole)
+	if err != nil {
+		return models.FleetRoleUnknown, err
+	}
+	
+	return models.FleetRole(fleetMemberRole), nil
 }
 
 func (db *Database) RemoveFleetMember(fleetId int64, memberId int64) error {

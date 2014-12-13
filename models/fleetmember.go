@@ -11,6 +11,7 @@ type FleetMember struct {
 	FleetId int64
 	*Player
 	Role            FleetRole
+	Ship            string
 	SiteModifier    int
 	PaymentModifier float64
 	Payout          float64
@@ -18,12 +19,13 @@ type FleetMember struct {
 	ReportId        int64
 }
 
-func NewFleetMember(id int64, fleetId int64, player *Player, role FleetRole, site int, payment float64, payout float64, complete bool, report int64) *FleetMember {
+func NewFleetMember(id int64, fleetId int64, player *Player, role FleetRole, ship string, site int, payment float64, payout float64, complete bool, report int64) *FleetMember {
 	member := &FleetMember{
 		Id:              id,
 		FleetId:         fleetId,
 		Player:          player,
 		Role:            role,
+		Ship:            ship,
 		SiteModifier:    site,
 		PaymentModifier: payment,
 		Payout:          payout,

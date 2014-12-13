@@ -187,7 +187,8 @@
 							<tbody>
 								{{ range $member := .Fleet.Members }}
 								<tr class="fleet-member-list-row" member="{{ $member.Id }}">
-									<form role="form-horizontal" id="fleetMemberList">
+									<form role="form-horizontal" id="fleetMemberList" member="{{ $member.Id }}">
+                                    	<input type="hidden" class="form-control" id="fleetMemberMemberId" name="fleetMemberMemberId" value="{{ $member.Id }}">
 										<td>
 											{{ $member.Id }}
 										</td>
@@ -245,7 +246,6 @@
 												<a class="btn btn-danger fleet-member-list-remove" member="{{ $member.Id }}" fleet="{{ $FleetID }}">Remove</a>
 											</div>
 											<div id="fleetMemberActionsForm" member="{{ $member.Id }}" style="display: none;" class="fleet-member-list">
-                                            	<input type="hidden" class="form-control" id="fleetMemberMemberId" name="fleetMemberMemberId" value="{{ $member.Id }}">
 												<a class="btn btn-success fleet-member-list-save" member="{{ $member.Id }}" fleet="{{ $FleetID }}">Save</a>&nbsp;
 												<a class="btn btn-danger fleet-member-list-toggle" member="{{ $member.Id }}">Cancel</a>
 											</div>
@@ -259,35 +259,35 @@
 						<p align="center">
 							<a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#addMemberForm">Add Member</a>
 							<form role="form-horizontal" id="addMemberForm" align="center" class="collapse">
-							<div class="form-group" align="center">
-								<label class="control-label" for="addMemberSelectMember">Members available</label>
-								<select class="form-control" style="width:50% !important" id="addMemberSelectMember" name="addMemberSelectMember">
-									{{ range $player := .AvailablePlayers }}
-										<option value="{{ $player.Id }}">{{ $player.Name }}</option>
-									{{ end }}
-								</select>
-							</div>
-							<div class="form-group" align="center">
-								<label class="control-label" for="addMemberSelectRole">Fleet Role</label>
-								<select class="form-control" style="width:50% !important" id="addMemberSelectRole" name="addMemberSelectRole">
-									<option value="4">Scout</option>
-									<option value="8">Salvage</option>
-									<option value="16">Logistics</option>
-									<option value="32">DPS</option>
-									<option value="64">Fleetcommander</option>
-								</select>
-							</div>
-							<div class="form-group">
-								<a class="btn btn-success add-member-submit" fleet="{{ .Fleet.Id }}">Submit</a>
-							</div><br />
-							<div class="form-group">
-								<label class="control-label" for="addMemberFleetComposition">Fleet Composition</label>
-								<textarea class="form-control" id="addMemberFleetComposition" name="addMemberFleetComposition" rows="5" placeholder="Paste the fleet composition in here to automatically add all members to fleet"></textarea>
-							</div>
-							<div class="form-group">
-								<a class="btn btn-success add-member-submit" fleet="{{ .Fleet.Id }}">Submit</a>
-							</div>
-						</form>
+                                <div class="form-group" align="center">
+                                    <label class="control-label" for="addMemberSelectMember">Members available</label>
+                                    <select class="form-control" style="width:50% !important" id="addMemberSelectMember" name="addMemberSelectMember">
+                                        {{ range $player := .AvailablePlayers }}
+                                            <option value="{{ $player.Id }}">{{ $player.Name }}</option>
+                                        {{ end }}
+                                    </select>
+                                </div>
+                                <div class="form-group" align="center">
+                                    <label class="control-label" for="addMemberSelectRole">Fleet Role</label>
+                                    <select class="form-control" style="width:50% !important" id="addMemberSelectRole" name="addMemberSelectRole">
+                                        <option value="4">Scout</option>
+                                        <option value="8">Salvage</option>
+                                        <option value="16">Logistics</option>
+                                        <option value="32">DPS</option>
+                                        <option value="64">Fleetcommander</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <a class="btn btn-success add-member-submit" fleet="{{ .Fleet.Id }}">Submit</a>
+                                </div><br />
+                                <div class="form-group">
+                                    <label class="control-label" for="addMemberFleetComposition">Fleet Composition</label>
+                                    <textarea class="form-control" id="addMemberFleetComposition" name="addMemberFleetComposition" rows="5" placeholder="Paste the fleet composition in here to automatically add all members to fleet"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <a class="btn btn-success add-member-submit" fleet="{{ .Fleet.Id }}">Submit</a>
+                                </div>
+							</form>
 						</p>
 					</div>
 				</div>

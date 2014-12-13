@@ -317,7 +317,7 @@ func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	commander := models.NewFleetMember(fleetCommanderId, fleet.Id, player, models.FleetRoleFleetCommander, 0, 1, 0, false, -1)
+	commander := models.NewFleetMember(fleetCommanderId, fleet.Id, player, models.FleetRoleFleetCommander, "", 0, 1, 0, false, -1)
 
 	fleet.AddMember(commander)
 
@@ -566,44 +566,66 @@ func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *
 func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
-	memberId, err := strconv.ParseInt(r.FormValue("addMemberSelectMember"), 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse memberId in FleetEditAddMemberHandler: [%v]", err)
+	fleetComposition := r.FormValue("addMemberFleetComposition")
+	if len(fleetComposition) > 0 {
+		fleetCompositionRows := strings.Split(fleetComposition, "\r\n")
 
-		response["result"] = "error"
-		response["error"] = err.Error()
+		members, err := ParseFleetCompositionRows(fleet.Id, fleetCompositionRows)
+		if err != nil {
+			logger.Errorf("Failed to parse fleet composition rows in FleetEditAddMemberHandler: [%v]", err)
 
-		SendJSONResponse(w, response)
-		return
+			response["result"] = "error"
+			response["error"] = err.Error()
+
+			SendJSONResponse(w, response)
+			return
+		}
+
+		for _, member := range members {
+			fleet.AddMember(member)
+		}
+	} else {
+		memberId, err := strconv.ParseInt(r.FormValue("addMemberSelectMember"), 10, 64)
+		if err != nil {
+			logger.Errorf("Failed to parse memberId in FleetEditAddMemberHandler: [%v]", err)
+
+			response["result"] = "error"
+			response["error"] = err.Error()
+
+			SendJSONResponse(w, response)
+			return
+		}
+
+		fleetRole, err := strconv.ParseInt(r.FormValue("addMemberSelectRole"), 10, 64)
+		if err != nil {
+			logger.Errorf("Failed to parse fleetRole in FleetEditAddMemberHandler: [%v]", err)
+
+			response["result"] = "error"
+			response["error"] = err.Error()
+
+			SendJSONResponse(w, response)
+			return
+		}
+
+		ship := r.FormValue("addMemberShip")
+
+		player, err := database.LoadPlayer(memberId)
+		if err != nil {
+			logger.Errorf("Failed to load player in FleetEditAddMemberHandler: [%v]", err)
+
+			response["result"] = "error"
+			response["error"] = err.Error()
+
+			SendJSONResponse(w, response)
+			return
+		}
+
+		fleetMember := models.NewFleetMember(-1, fleet.Id, player, models.FleetRole(fleetRole), ship, 0, 1, 0, false, -1)
+
+		fleet.AddMember(fleetMember)
 	}
 
-	fleetRole, err := strconv.ParseInt(r.FormValue("addMemberSelectRole"), 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse fleetRole in FleetEditAddMemberHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	player, err := database.LoadPlayer(memberId)
-	if err != nil {
-		logger.Errorf("Failed to load player in FleetEditAddMemberHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	fleetMember := models.NewFleetMember(-1, fleet.Id, player, models.FleetRole(fleetRole), 0, 1, 0, false, -1)
-
-	fleet.AddMember(fleetMember)
-
-	fleet, err = database.SaveFleet(fleet)
+	fleet, err := database.SaveFleet(fleet)
 	if err != nil {
 		logger.Errorf("Failed to save fleet in FleetEditAddMemberHandler: [%v]", err)
 
@@ -623,6 +645,8 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 
 func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
+
+	logger.Printf("%#+v", r.Form)
 
 	memberId, err := strconv.ParseInt(r.FormValue("fleetMemberMemberId"), 10, 64)
 	if err != nil {
@@ -670,7 +694,7 @@ func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *m
 
 	payoutComplete, err := strconv.ParseBool(r.FormValue("fleetMemberPayoutCompleteEdit"))
 	if err != nil {
-		logger.Errorf("Failed to parse payoutComplete in FleetEditEditDetailsHandler: [%v]", err)
+		logger.Errorf("Failed to parse payoutComplete in FleetEditEditMemberHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
@@ -681,7 +705,7 @@ func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *m
 
 	fleetMember, err := database.LoadFleetMember(fleet.Id, memberId)
 	if err != nil {
-		logger.Errorf("Failed to load player in FleetEditEditDetailsHandler: [%v]", err)
+		logger.Errorf("Failed to load fleet member in FleetEditEditMemberHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
@@ -690,16 +714,23 @@ func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *m
 		return
 	}
 
+	logger.Printf("%#+v", fleetMember)
+
 	fleetMember.Role = models.FleetRole(fleetRole)
 	fleetMember.SiteModifier = int(siteModifier)
 	fleetMember.PaymentModifier = paymentModifier
 	fleetMember.PayoutComplete = payoutComplete
 
+	logger.Printf("%#+v", fleetMember)
+	logger.Printf("%#+v", fleet.Members)
+
 	fleet.Members[fleetMember.Name] = fleetMember
+
+	logger.Printf("%#+v", fleet.Members)
 
 	fleet, err = database.SaveFleet(fleet)
 	if err != nil {
-		logger.Errorf("Failed to save fleet in FleetEditEditDetailsHandler: [%v]", err)
+		logger.Errorf("Failed to save fleet in FleetEditEditMemberHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
@@ -765,7 +796,7 @@ func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 
 	rawProfit := r.FormValue("addProfitRaw")
 	if len(rawProfit) == 0 {
-		logger.Errorf("Content of rawProfit in FleetAddProfitHandler was empty...")
+		logger.Errorf("Content of rawProfit in FleetEditAddProfitHandler was empty...")
 
 		response["result"] = "error"
 		response["error"] = fmt.Sprintf("Content of rawProfit was empty")
@@ -1182,7 +1213,7 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	reportId, err := strconv.ParseInt(vars["reportId"], 10, 64)
+	reportId, err := strconv.ParseInt(vars["reportid"], 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse report ID %q in ReportEditHandler: [%v]", vars["reportId"], err)
 
@@ -1268,29 +1299,71 @@ func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReportEditPollHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+	response := make(map[string]interface{})
 
+	response["result"] = "success"
+	response["error"] = nil
+	response["report"] = report
+
+	SendJSONResponse(w, response)
 }
 
 func ReportEditDetailsHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+	response := make(map[string]interface{})
 
+	response["result"] = "success"
+	response["error"] = nil
+	response["report"] = report
+
+	SendJSONResponse(w, response)
 }
 
 func ReportEditAddFleetHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+	response := make(map[string]interface{})
 
+	response["result"] = "success"
+	response["error"] = nil
+	response["report"] = report
+
+	SendJSONResponse(w, response)
 }
 
 func ReportEditEditFleetHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+	response := make(map[string]interface{})
 
+	response["result"] = "success"
+	response["error"] = nil
+	response["report"] = report
+
+	SendJSONResponse(w, response)
 }
 
 func ReportEditRemoveFleetHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+	response := make(map[string]interface{})
 
+	response["result"] = "success"
+	response["error"] = nil
+	response["report"] = report
+
+	SendJSONResponse(w, response)
 }
 
 func ReportEditCalculateHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+	response := make(map[string]interface{})
 
+	response["result"] = "success"
+	response["error"] = nil
+	response["report"] = report
+
+	SendJSONResponse(w, response)
 }
 
 func ReportEditFinishHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+	response := make(map[string]interface{})
 
+	response["result"] = "success"
+	response["error"] = nil
+	response["report"] = report
+
+	SendJSONResponse(w, response)
 }
