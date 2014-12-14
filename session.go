@@ -143,30 +143,40 @@ func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.C
 
 	corp, err := database.LoadCorporationFromName(a.GetCorporationName())
 	if err != nil {
-		c, err := database.SaveCorporation(&models.Corporation{
-			Id:            -1,
-			Name:          a.GetCorporationName(),
-			CorporationId: a.GetCorporationId(),
-			Ticker:        sh.Ticker})
-		if err != nil {
-			logger.Errorf("Failed to save new corporation in session: [%v]", err)
+		if len(a.GetCorporationName()) > 0 && a.GetCorporationId() > 0 {
+			c, err := database.SaveCorporation(&models.Corporation{
+				Id:            -1,
+				Name:          a.GetCorporationName(),
+				CorporationId: a.GetCorporationId(),
+				Ticker:        sh.Ticker})
+			if err != nil {
+				logger.Errorf("Failed to save new corporation in session: [%v]", err)
+				return
+			}
+
+			corp = c
+		} else {
+			logger.Errorf("Failed to save new corporation in session: name was empty or ID was < 0")
 			return
 		}
-
-		corp = c
 	}
 
 	_, err = database.LoadPlayerFromName(a.GetCharacterName())
 	if err != nil {
-		_, err = database.SavePlayer(&models.Player{
-			Id:         -1,
-			Name:       a.GetCharacterName(),
-			PlayerId:   a.GetCharacterId(),
-			Corp:       corp,
-			AccessMask: models.AccessMaskNone,
-		})
-		if err != nil {
-			logger.Errorf("Failed to save new player in session: [%v]", err)
+		if len(a.GetCharacterName()) > 0 && a.GetCharacterId() > 0 {
+			_, err = database.SavePlayer(&models.Player{
+				Id:         -1,
+				Name:       a.GetCharacterName(),
+				PlayerId:   a.GetCharacterId(),
+				Corp:       corp,
+				AccessMask: models.AccessMaskNone,
+			})
+			if err != nil {
+				logger.Errorf("Failed to save new player in session: [%v]", err)
+				return
+			}
+		} else {
+			logger.Errorf("Failed to save new player in session: name was empty or ID was < 0")
 			return
 		}
 	}
