@@ -97,7 +97,13 @@ func LoginSSOHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session.SetIdentity(w, r, a, sh)
+	err = session.SetIdentity(w, r, a, sh)
+	if err != nil {
+		logger.Errorf("Received error while setting identity in LoginSSOHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	http.Redirect(w, r, session.GetLoginRedirect(r), http.StatusSeeOther)
 }

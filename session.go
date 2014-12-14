@@ -2,6 +2,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -129,7 +130,7 @@ func (s *Session) IsLoggedIn(w http.ResponseWriter, r *http.Request) bool {
 	}
 }
 
-func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.CharacterAffiliation, sh models.CorporationSheet) {
+func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.CharacterAffiliation, sh models.CorporationSheet) error {
 	session, _ := s.store.Get(r, "player")
 
 	session.Values["character_id"] = a.GetCharacterId()
@@ -150,14 +151,12 @@ func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.C
 				CorporationId: a.GetCorporationId(),
 				Ticker:        sh.Ticker})
 			if err != nil {
-				logger.Errorf("Failed to save new corporation in session: [%v]", err)
-				return
+				return fmt.Errorf("Failed to save new corporation in session: [%v]", err)
 			}
 
 			corp = c
 		} else {
-			logger.Errorf("Failed to save new corporation in session: name was empty or ID was < 0")
-			return
+			return fmt.Errorf("Failed to save new corporation in session: name was empty or ID was < 0")
 		}
 	}
 
@@ -172,16 +171,14 @@ func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.C
 				AccessMask: models.AccessMaskNone,
 			})
 			if err != nil {
-				logger.Errorf("Failed to save new player in session: [%v]", err)
-				return
+				return fmt.Errorf("Failed to save new player in session: [%v]", err)
 			}
 		} else {
-			logger.Errorf("Failed to save new player in session: name was empty or ID was < 0")
-			return
+			return fmt.Errorf("Failed to save new player in session: name was empty or ID was < 0")
 		}
 	}
 
-	session.Save(r, w)
+	return session.Save(r, w)
 }
 
 func (s *Session) GetCorporationName(r *http.Request) string {
@@ -204,7 +201,12 @@ func (s *Session) GetLoginRedirect(r *http.Request) string {
 		return "/"
 	}
 
-	return session.Values["redirect"].(string)
+	redirect, ok := session.Values["redirect"]
+	if !ok {
+		return "/"
+	} else {
+		return redirect.(string)
+	}
 }
 
 func (s *Session) SetSSOState(w http.ResponseWriter, r *http.Request, state string) {
