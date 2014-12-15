@@ -18,12 +18,16 @@ var (
 )
 
 type Database struct {
-	db *sql.DB
+	db           *sql.DB
+	corporations map[int64]*models.Corporation
+	players      map[int64]*models.Player
 }
 
 func NewDatabase(d *sql.DB) *Database {
 	database := &Database{
-		db: d,
+		db:           d,
+		corporations: make(map[int64]*models.Corporation),
+		players:      make(map[int64]*models.Player),
 	}
 
 	return database
@@ -54,6 +58,12 @@ func InitialiseDatabase() {
 func (db *Database) LoadCorporation(id int64) (*models.Corporation, error) {
 	logger.Tracef("Querying database for corporation with cid = %d...", id)
 
+	corp, ok := db.corporations[id]
+	if ok {
+		logger.Tracef("Corporation with cid = %d found in cache, returning...", id)
+		return corp, nil
+	}
+
 	row := db.db.QueryRow("SELECT id, corporation_id, name, ticker, corporation_cut FROM corporations WHERE id = ?", id)
 
 	var cid, corporationID int64
@@ -65,11 +75,22 @@ func (db *Database) LoadCorporation(id int64) (*models.Corporation, error) {
 		return &models.Corporation{}, fmt.Errorf("Received error while scanning corporation row: [%v]", err)
 	}
 
-	return models.NewCorporation(cid, corporationID, corporationName, corporationTicker, corporationCut), nil
+	corp = models.NewCorporation(cid, corporationID, corporationName, corporationTicker, corporationCut)
+
+	db.corporations[id] = corp
+
+	return corp, nil
 }
 
 func (db *Database) LoadCorporationFromName(name string) (*models.Corporation, error) {
 	logger.Tracef("Querying database for corporation with name = %q...", name)
+
+	for _, corp := range db.corporations {
+		if strings.EqualFold(name, corp.Name) {
+			logger.Tracef("Corporation with name %q found in cache, returning...", name)
+			return corp, nil
+		}
+	}
 
 	row := db.db.QueryRow("SELECT id, corporation_id, name, ticker, corporation_cut FROM corporations WHERE name LIKE ?", name)
 
@@ -82,7 +103,11 @@ func (db *Database) LoadCorporationFromName(name string) (*models.Corporation, e
 		return &models.Corporation{}, fmt.Errorf("Received error while scanning corporation name row: [%v]", err)
 	}
 
-	return models.NewCorporation(cid, corporationID, corporationName, corporationTicker, corporationCut), nil
+	corp := models.NewCorporation(cid, corporationID, corporationName, corporationTicker, corporationCut)
+
+	db.corporations[corp.ID] = corp
+
+	return corp, nil
 }
 
 func (db *Database) SaveCorporation(corporation *models.Corporation) (*models.Corporation, error) {
@@ -108,11 +133,19 @@ func (db *Database) SaveCorporation(corporation *models.Corporation) (*models.Co
 		}
 	}
 
+	db.corporations[corporation.ID] = corporation
+
 	return corporation, nil
 }
 
 func (db *Database) LoadPlayer(id int64) (*models.Player, error) {
 	logger.Tracef("Querying database for player with pid = %d...", id)
+
+	player, ok := db.players[id]
+	if ok {
+		logger.Tracef("Player with pid = %d found in cache, returning...", id)
+		return player, nil
+	}
 
 	row := db.db.QueryRow("SELECT id, player_id, name, corporation_id, accessmask FROM players WHERE id = ?", id)
 
@@ -130,11 +163,22 @@ func (db *Database) LoadPlayer(id int64) (*models.Player, error) {
 		return &models.Player{}, err
 	}
 
-	return models.NewPlayer(pid, playerID, playerName, corp, models.AccessMask(playerAccessMask)), nil
+	player = models.NewPlayer(pid, playerID, playerName, corp, models.AccessMask(playerAccessMask))
+
+	db.players[id] = player
+
+	return player, nil
 }
 
 func (db *Database) LoadPlayerFromName(name string) (*models.Player, error) {
 	logger.Tracef("Querying database for player with player_name = %q...", name)
+
+	for _, player := range db.players {
+		if strings.EqualFold(name, player.Name) {
+			logger.Tracef("Player with name %q found in cache, returning...", name)
+			return player, nil
+		}
+	}
 
 	row := db.db.QueryRow("SELECT id, player_id, name, corporation_id, accessmask FROM players WHERE name LIKE ?", name)
 
@@ -152,7 +196,11 @@ func (db *Database) LoadPlayerFromName(name string) (*models.Player, error) {
 		return &models.Player{}, err
 	}
 
-	return models.NewPlayer(pid, playerID, playerName, corp, models.AccessMask(playerAccessMask)), nil
+	player := models.NewPlayer(pid, playerID, playerName, corp, models.AccessMask(playerAccessMask))
+
+	db.players[player.ID] = player
+
+	return player, nil
 }
 
 func (db *Database) LoadAllPlayers() ([]*models.Player, error) {
@@ -180,7 +228,11 @@ func (db *Database) LoadAllPlayers() ([]*models.Player, error) {
 			return players, err
 		}
 
-		players = append(players, models.NewPlayer(pid, playerID, playerName, corp, models.AccessMask(playerAccessMask)))
+		player := models.NewPlayer(pid, playerID, playerName, corp, models.AccessMask(playerAccessMask))
+
+		db.players[player.ID] = player
+
+		players = append(players, player)
 	}
 
 	return players, nil
@@ -211,7 +263,11 @@ func (db *Database) LoadAvailablePlayers(fleedID int64, corporationID int64) ([]
 			return players, err
 		}
 
-		players = append(players, models.NewPlayer(pid, playerID, playerName, corp, models.AccessMask(playerAccessMask)))
+		player := models.NewPlayer(pid, playerID, playerName, corp, models.AccessMask(playerAccessMask))
+
+		db.players[player.ID] = player
+
+		players = append(players, player)
 	}
 
 	return players, nil
@@ -239,6 +295,8 @@ func (db *Database) SavePlayer(player *models.Player) (*models.Player, error) {
 			return player, err
 		}
 	}
+
+	db.players[player.ID] = player
 
 	return player, nil
 }
@@ -871,4 +929,11 @@ func (db *Database) SaveLootPaste(fleetID int64, rawPaste string, value float64,
 	}
 
 	return nil
+}
+
+func (db *Database) RemovePlayerFromCache(id int64) {
+	_, ok := db.players[id]
+	if ok {
+		delete(db.players, id)
+	}
 }

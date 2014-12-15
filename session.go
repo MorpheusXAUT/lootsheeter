@@ -18,14 +18,12 @@ var (
 )
 
 type Session struct {
-	store   *sessions.FilesystemStore
-	players map[string]*models.Player
+	store *sessions.FilesystemStore
 }
 
 func NewSession() *Session {
 	session := &Session{
-		store:   sessions.NewFilesystemStore("web/sessions", []byte(securecookie.GenerateRandomKey(128))),
-		players: make(map[string]*models.Player),
+		store: sessions.NewFilesystemStore("web/sessions", []byte(securecookie.GenerateRandomKey(128))),
 	}
 
 	return session
@@ -55,7 +53,11 @@ func CleanSessions() {
 func (s *Session) DestroySession(w http.ResponseWriter, r *http.Request) {
 	session, _ := s.store.Get(r, "player")
 
-	characterName := session.Values["character_name"].(string)
+	playerIDInterface, ok := session.Values["playerID"]
+	if ok {
+		playerID := playerIDInterface.(int64)
+		database.RemovePlayerFromCache(playerID)
+	}
 
 	http.SetCookie(w, &http.Cookie{
 		Name:   "player",
@@ -69,31 +71,22 @@ func (s *Session) DestroySession(w http.ResponseWriter, r *http.Request) {
 		Path:   "/",
 		MaxAge: -1,
 	})
-
-	_, ok := s.players[characterName]
-	if ok {
-		delete(s.players, characterName)
-	}
 }
 
 func (s *Session) GetPlayerFromRequest(r *http.Request) *models.Player {
 	session, _ := s.store.Get(r, "player")
 
-	characterName, ok := session.Values["character_name"].(string)
+	playerIDInterface, ok := session.Values["playerID"]
 	if !ok {
 		return nil
 	}
 
-	player, ok := s.players[characterName]
-	if !ok {
-		p, err := database.LoadPlayerFromName(characterName)
-		if err != nil {
-			logger.Errorf("Failed to load player from database in session: [%v]", err)
-			return nil
-		}
+	playerID := playerIDInterface.(int64)
 
-		player = p
-		s.players[characterName] = p
+	player, err := database.LoadPlayer(playerID)
+	if err != nil {
+		logger.Errorf("Failed to load player from database in session: [%v]", err)
+		return nil
 	}
 
 	return player
@@ -119,10 +112,17 @@ func (s *Session) IsLoggedIn(w http.ResponseWriter, r *http.Request) bool {
 			Path:   "/",
 			MaxAge: -1,
 		})
-	} else {
-		if strings.EqualFold(session.Values["character_name"].(string), player.Name) {
-			return true
-		}
+
+		return false
+	}
+
+	characterName, ok := session.Values["characterName"]
+	if !ok {
+		return false
+	}
+
+	if strings.EqualFold(characterName.(string), player.Name) {
+		return true
 	}
 
 	return false
@@ -131,14 +131,14 @@ func (s *Session) IsLoggedIn(w http.ResponseWriter, r *http.Request) bool {
 func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.CharacterAffiliation, sh models.CorporationSheet) error {
 	session, _ := s.store.Get(r, "player")
 
-	session.Values["character_id"] = a.GetCharacterID()
-	session.Values["character_name"] = a.GetCharacterName()
-	session.Values["corporation_id"] = a.GetCorporationID()
-	session.Values["corporation_name"] = a.GetCorporationName()
-	session.Values["alliance_id"] = a.GetAllianceID()
-	session.Values["alliance_name"] = a.GetAllianceName()
-	session.Values["faction_id"] = a.GetFactionID()
-	session.Values["faction_name"] = a.GetFactionName()
+	session.Values["characterID"] = a.GetCharacterID()
+	session.Values["characterName"] = a.GetCharacterName()
+	session.Values["corporationID"] = a.GetCorporationID()
+	session.Values["corporationName"] = a.GetCorporationName()
+	session.Values["allianceID"] = a.GetAllianceID()
+	session.Values["allianceName"] = a.GetAllianceName()
+	session.Values["factionID"] = a.GetFactionID()
+	session.Values["factionName"] = a.GetFactionName()
 
 	corp, err := database.LoadCorporationFromName(a.GetCorporationName())
 	if err != nil {
@@ -158,7 +158,7 @@ func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.C
 		}
 	}
 
-	_, err = database.LoadPlayerFromName(a.GetCharacterName())
+	player, err := database.LoadPlayerFromName(a.GetCharacterName())
 	if err != nil {
 		if len(a.GetCharacterName()) > 0 && a.GetCharacterID() > 0 {
 			_, err = database.SavePlayer(&models.Player{
@@ -166,7 +166,7 @@ func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.C
 				Name:       a.GetCharacterName(),
 				PlayerID:   a.GetCharacterID(),
 				Corp:       corp,
-				AccessMask: models.AccessMaskNone,
+				AccessMask: models.AccessMaskMember,
 			})
 			if err != nil {
 				return fmt.Errorf("Failed to save new player in session: [%v]", err)
@@ -176,13 +176,21 @@ func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.C
 		}
 	}
 
+	session.Values["playerID"] = player.ID
+	session.Values["corpID"] = corp.ID
+
 	return session.Save(r, w)
 }
 
 func (s *Session) GetCorporationName(r *http.Request) string {
 	session, _ := s.store.Get(r, "player")
 
-	return session.Values["corporation_name"].(string)
+	corporationName, ok := session.Values["corporationName"]
+	if !ok {
+		return ""
+	}
+
+	return corporationName.(string)
 }
 
 func (s *Session) SetLoginRedirect(w http.ResponseWriter, r *http.Request, redirect string) {
@@ -199,18 +207,18 @@ func (s *Session) GetLoginRedirect(r *http.Request) string {
 		return "/"
 	}
 
-	redirect, ok := session.Values["redirect"]
+	redirectInterface, ok := session.Values["redirect"]
 	if !ok {
 		return "/"
 	}
 
-	return redirect.(string)
+	return redirectInterface.(string)
 }
 
 func (s *Session) SetSSOState(w http.ResponseWriter, r *http.Request, state string) {
 	session, _ := s.store.Get(r, "login")
 
-	session.Values["sso_state"] = state
+	session.Values["ssoState"] = state
 
 	session.Save(r, w)
 }
@@ -221,5 +229,10 @@ func (s *Session) GetSSOState(r *http.Request) string {
 		return ""
 	}
 
-	return session.Values["sso_state"].(string)
+	stateInterface, ok := session.Values["ssoState"]
+	if !ok {
+		return ""
+	}
+
+	return stateInterface.(string)
 }
