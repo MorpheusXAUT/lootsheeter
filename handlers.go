@@ -437,13 +437,6 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
-		logger.Warnf("Received request to FleetEditHandler without proper access...")
-
-		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetID), http.StatusUnauthorized)
-		return
-	}
-
 	switch strings.ToLower(command) {
 	case "poll":
 		FleetEditPollHandler(w, r, fleet)
@@ -493,6 +486,16 @@ func FleetEditPollHandler(w http.ResponseWriter, r *http.Request, fleet *models.
 
 func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
+
+	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetEditEditDetailsHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
 
 	startTime, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", r.FormValue("fleetDetailsStartTimeEdit"))
 	if err != nil {
@@ -571,6 +574,16 @@ func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *
 
 func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
+
+	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetEditAddMemberHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
 
 	fleetComposition := r.FormValue("addMemberFleetComposition")
 	if len(fleetComposition) > 0 {
@@ -651,6 +664,16 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 
 func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
+
+	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetEditEditMemberHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
 
 	memberID, err := strconv.ParseInt(r.FormValue("fleetMemberMemberID"), 10, 64)
 	if err != nil {
@@ -745,6 +768,16 @@ func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *m
 func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
+	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetEditRemoveMemberHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
 	memberID, err := strconv.ParseInt(r.FormValue("removeMemberID"), 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse memberID in FleetEditRemoveMemberHandler: [%v]", err)
@@ -789,6 +822,16 @@ func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet 
 
 func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
+
+	if !IsFleetCommander(r, fleet) && !HasFleetRole(r, fleet, 8) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetEditAddProfitHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
 
 	rawProfit := r.FormValue("addProfitRaw")
 	if len(rawProfit) == 0 {
@@ -870,6 +913,16 @@ func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 
 func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
+
+	if !IsFleetCommander(r, fleet) && !HasFleetRole(r, fleet, 8) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetEditAddLossHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
 
 	rawLoss := r.FormValue("addLossRaw")
 	if len(rawLoss) == 0 {
@@ -969,6 +1022,16 @@ func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *mode
 func FleetEditCalculateHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
+	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetEditCalculateHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
 	fleet.CalculatePayouts()
 
 	fleet, err := database.SaveFleet(fleet)
@@ -991,6 +1054,16 @@ func FleetEditCalculateHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 
 func FleetEditFinishHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
+
+	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetEditFinishHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
 
 	fleet.FinishFleet()
 

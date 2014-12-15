@@ -130,21 +130,25 @@
 							</tbody>
 						</table>
 						<p align="center">
-							{{ if $FleetAdmin }}
 							<div id="fleetMemberActions" fleet="{{ .Fleet.ID }}" align="center" class="fleet-details">
+								{{ if $FleetAdmin }}
                                 <a class="btn btn-primary fleet-details-toggle" fleet="{{ .Fleet.ID }}">Edit</a>
+								{{ end }}
                                 {{ if not .Fleet.IsFleetFinished }}
-                                <a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#addProfitForm">Add Profit</a>
+								{{ if or $FleetAdmin (HasFleetRole .Fleet 8) }}
+								<a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#addProfitForm">Add Profit</a>
+								{{ end }}
+								{{ if $FleetAdmin }}
                                 <a class="btn btn-warning collapse-data-btn" data-toggle="collapse" href="#addLossForm">Add Loss</a>
                                 <a class="btn btn-info fleet-details-calculate" fleet="{{ .Fleet.ID }}">Calculate Payouts</a>
                                 <a class="btn btn-danger fleet-details-finish" fleet="{{ .Fleet.ID }}">Finish Fleet</a>
                                 {{ end }}
+								{{ end }}
                             </div>
                             <div id="fleetMemberActionsForm" fleet="{{ .Fleet.ID }}" style="display: none;" align="center" class="fleet-details">
                                 <a class="btn btn-success fleet-details-save" fleet="{{ .Fleet.ID }}">Save</a>&nbsp;
                                 <a class="btn btn-danger fleet-details-toggle" fleet="{{ .Fleet.ID }}">Cancel</a>
                             </div>
-							{{ end }}
 						</p>
 						<form role="form-horizontal" id="addProfitForm" align="center" class="collapse">
 							<div class="form-group">
@@ -256,6 +260,7 @@
 								{{ end }}
 							</tbody>
 						</table>
+						{{ if $FleetAdmin }}
 						<p align="center">
 							<a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#addMemberForm">Add Member</a>
 							<form role="form-horizontal" id="addMemberForm" align="center" class="collapse">
@@ -289,6 +294,7 @@
                                 </div>
 							</form>
 						</p>
+						{{ end }}
 					</div>
 				</div>
 			</div>

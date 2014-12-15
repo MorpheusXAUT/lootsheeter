@@ -69,7 +69,7 @@ func (db *Database) LoadCorporation(id int64) (*models.Corporation, error) {
 }
 
 func (db *Database) LoadCorporationFromName(name string) (*models.Corporation, error) {
-	logger.Tracef("Querying database for corporation with name = %s...", name)
+	logger.Tracef("Querying database for corporation with name = %q...", name)
 
 	row := db.db.QueryRow("SELECT id, corporation_id, name, ticker, corporation_cut FROM corporations WHERE name LIKE ?", name)
 
