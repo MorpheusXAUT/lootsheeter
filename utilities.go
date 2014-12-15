@@ -37,42 +37,25 @@ func GetEvepraisalValue(raw string) (float64, error) {
 			return 0, err
 		}
 
-		var jsonInterface interface{}
-		err = json.Unmarshal(jsonContent, &jsonInterface)
+		var evePraisal models.EvePraisal
+		err = json.Unmarshal(jsonContent, &evePraisal)
 		if err != nil {
 			return 0, err
 		}
 
-		jsonMap, ok := jsonInterface.(map[string]interface{})
-		if ok {
-			jsonTotals, ok := jsonMap["totals"].(map[string]interface{})
-			if ok {
-				jsonBuyValue, ok := jsonTotals["buy"].(float64)
-				if ok {
-					return jsonBuyValue, nil
-				} else {
-					return 0, fmt.Errorf("Failed to convert JSON into jsonBuyValue for evepraisal")
-				}
-			} else {
-				return 0, fmt.Errorf("Failed to convert JSON into jsonTotals for evepraisal")
-			}
-		} else {
-			return 0, fmt.Errorf("Failed to convert JSON into jsonMap for evepraisal")
-		}
-	} else {
-		return 0, fmt.Errorf("Invalid evepraisal link, cannot parse")
+		return evePraisal.GetTotalBuyValue(), nil
 	}
 
-	return 0, fmt.Errorf("Failed to parse JSON response from evepraisal")
+	return 0, fmt.Errorf("Invalid evepraisal link, cannot parse")
 }
 
-func GetzKillboardValue(raw string) (float64, error) {
+func GetZKillboardValue(raw string) (float64, error) {
 	url := strings.TrimRight(strings.ToLower(raw), "/")
 
 	if strings.HasPrefix(url, "https://zkillboard.com/kill/") {
-		killId := url[strings.LastIndex(url, "/")+1 : len(url)]
+		killID := url[strings.LastIndex(url, "/")+1 : len(url)]
 
-		resp, err := http.Get(fmt.Sprintf("https://zkillboard.com/api/killID/%s", killId))
+		resp, err := http.Get(fmt.Sprintf("https://zkillboard.com/api/killID/%s", killID))
 		if err != nil {
 			return 0, err
 		}
@@ -84,43 +67,16 @@ func GetzKillboardValue(raw string) (float64, error) {
 			return 0, err
 		}
 
-		var jsonInterface interface{}
-		err = json.Unmarshal(jsonContent, &jsonInterface)
+		var zKillboard models.ZKillboard
+		err = json.Unmarshal(jsonContent, &zKillboard)
 		if err != nil {
 			return 0, err
 		}
 
-		jsonArray, ok := jsonInterface.([]interface{})
-		if ok {
-			jsonMap, ok := jsonArray[0].(map[string]interface{})
-			if ok {
-				jsonZkb, ok := jsonMap["zkb"].(map[string]interface{})
-				if ok {
-					jsonTotalValue, ok := jsonZkb["totalValue"].(string)
-					if ok {
-						value, err := strconv.ParseFloat(jsonTotalValue, 64)
-						if err != nil {
-							return 0, err
-						}
-
-						return value, nil
-					} else {
-						return 0, fmt.Errorf("Failed to convert JSON into jsonTotalValue for zKillboard")
-					}
-				} else {
-					return 0, fmt.Errorf("Failed to convert JSON into jsonZkb for zKillboard")
-				}
-			} else {
-				return 0, fmt.Errorf("Failed to convert JSON into jsonMap for zKillboard")
-			}
-		} else {
-			return 0, fmt.Errorf("Failed to convert JSON into jsonArray for zKillboard")
-		}
-	} else {
-		return 0, fmt.Errorf("Invalid zKillboard link, cannot parse")
+		return zKillboard.GetTotalValue()
 	}
 
-	return 0, nil
+	return 0, fmt.Errorf("Invalid zKillboard link, cannot parse")
 }
 
 func GetPasteValue(raw string) (float64, error) {
@@ -144,9 +100,9 @@ func GetPasteValue(raw string) (float64, error) {
 	}
 
 	reg := regexp.MustCompile("Result #([0-9]+)")
-	resultId := reg.FindStringSubmatch(string(body))
+	resultID := reg.FindStringSubmatch(string(body))
 
-	value, err := GetEvepraisalValue(fmt.Sprintf("http://evepraisal.com/e/%s.json", resultId[1]))
+	value, err := GetEvepraisalValue(fmt.Sprintf("http://evepraisal.com/e/%s.json", resultID[1]))
 	if err != nil {
 		return 0, err
 	}
@@ -167,7 +123,7 @@ func GenerateRandomString(length int) string {
 }
 
 func FetchCharacterAffiliation(v models.SSOVerification) (models.CharacterAffiliation, error) {
-	assocReq, err := http.NewRequest("GET", fmt.Sprintf("https://api.eveonline.com/eve/CharacterAffiliation.xml.aspx?ids=%d", v.CharacterId), nil)
+	assocReq, err := http.NewRequest("GET", fmt.Sprintf("https://api.eveonline.com/eve/CharacterAffiliation.xml.aspx?ids=%d", v.CharacterID), nil)
 
 	client := &http.Client{}
 	assocResp, err := client.Do(assocReq)
@@ -192,7 +148,7 @@ func FetchCharacterAffiliation(v models.SSOVerification) (models.CharacterAffili
 }
 
 func FetchCorporationSheet(a models.CharacterAffiliation) (models.CorporationSheet, error) {
-	sheetReq, err := http.NewRequest("GET", fmt.Sprintf("https://api.eveonline.com/corp/CorporationSheet.xml.aspx?corporationID=%d", a.GetCorporationId()), nil)
+	sheetReq, err := http.NewRequest("GET", fmt.Sprintf("https://api.eveonline.com/corp/CorporationSheet.xml.aspx?corporationID=%d", a.GetCorporationID()), nil)
 
 	client := &http.Client{}
 	sheetResp, err := client.Do(sheetReq)
@@ -233,8 +189,8 @@ func SendJSONResponse(w http.ResponseWriter, response map[string]interface{}) {
 	w.Write(jsonResponse)
 }
 
-func ParseFleetCompositionRows(fleetId int64, rows []string) ([]*models.FleetMember, error) {
-	members := make([]*models.FleetMember, 0)
+func ParseFleetCompositionRows(fleetID int64, rows []string) ([]*models.FleetMember, error) {
+	var members []*models.FleetMember
 
 	for _, row := range rows {
 		splitRow := strings.Split(row, "\t")
@@ -260,7 +216,7 @@ func ParseFleetCompositionRows(fleetId int64, rows []string) ([]*models.FleetMem
 			return members, err
 		}
 
-		member := models.NewFleetMember(-1, fleetId, player, role, ship, 0, 1, 0, false, -1)
+		member := models.NewFleetMember(-1, fleetID, player, role, ship, 0, 1, 0, false, -1)
 
 		members = append(members, member)
 	}

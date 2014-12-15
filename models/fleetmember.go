@@ -7,8 +7,8 @@ import (
 )
 
 type FleetMember struct {
-	Id      int64
-	FleetId int64
+	ID      int64
+	FleetID int64
 	*Player
 	Role            FleetRole
 	Ship            string
@@ -16,13 +16,13 @@ type FleetMember struct {
 	PaymentModifier float64
 	Payout          float64
 	PayoutComplete  bool
-	ReportId        int64
+	ReportID        int64
 }
 
-func NewFleetMember(id int64, fleetId int64, player *Player, role FleetRole, ship string, site int, payment float64, payout float64, complete bool, report int64) *FleetMember {
+func NewFleetMember(id int64, fleetID int64, player *Player, role FleetRole, ship string, site int, payment float64, payout float64, complete bool, report int64) *FleetMember {
 	member := &FleetMember{
-		Id:              id,
-		FleetId:         fleetId,
+		ID:              id,
+		FleetID:         fleetID,
 		Player:          player,
 		Role:            role,
 		Ship:            ship,
@@ -30,7 +30,7 @@ func NewFleetMember(id int64, fleetId int64, player *Player, role FleetRole, shi
 		PaymentModifier: payment,
 		Payout:          payout,
 		PayoutComplete:  complete,
-		ReportId:        report,
+		ReportID:        report,
 	}
 
 	return member

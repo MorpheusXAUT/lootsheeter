@@ -26,9 +26,9 @@ func main() {
 	if strings.EqualFold(config.MySqlUser, "") ||
 		strings.EqualFold(config.MySqlPassword, "") ||
 		strings.EqualFold(config.MySqlDatabase, "") ||
-		strings.EqualFold(config.SSOClientId, "") ||
+		strings.EqualFold(config.SSOClientID, "") ||
 		strings.EqualFold(config.SSOClientSecret, "") ||
-		strings.EqualFold(config.SSOCallbackUrl, "") {
+		strings.EqualFold(config.SSOCallbackURL, "") {
 		flag.Usage()
 	}
 
@@ -38,7 +38,7 @@ func main() {
 
 	InitialiseSessions()
 
-	SetupRouter(true)
+	SetupRouter()
 
 	HandleRequests()
 }

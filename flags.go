@@ -9,16 +9,16 @@ import (
 
 type Config struct {
 	DebugLevel      int
-	HttpPort        int
-	HttpHost        string
+	HTTPPort        int
+	HTTPHost        string
 	MySqlUser       string
 	MySqlPassword   string
 	MySqlDatabase   string
 	MySqlHost       string
 	MySqlPort       int
-	SSOClientId     string
+	SSOClientID     string
 	SSOClientSecret string
-	SSOCallbackUrl  string
+	SSOCallbackURL  string
 }
 
 var (
@@ -34,12 +34,14 @@ func ParseConfigFlags() (*Config, error) {
 	mysqlDatabaseFlag := flag.String("mysqldatabase", "", "Database to use with the MySQL server")
 	mysqlHostFlag := flag.String("mysqlhost", "localhost", "Hostname of the MySQL server")
 	mysqlPortFlag := flag.Int("mysqlport", 3306, "Port of the MySQL server")
-	ssoClientIdFlag := flag.String("ssoid", "", "EVE Online Application Client ID")
+	ssoClientIDFlag := flag.String("ssoid", "", "EVE Online Application Client ID")
 	ssoClientSecretFlag := flag.String("ssosecret", "", "EVE Online Application Client Secret")
-	ssoCallbackUrlFlag := flag.String("ssocallback", "", "EVE Online Application Callback URL")
+	ssoCallbackURLFlag := flag.String("ssocallback", "", "EVE Online Application Callback URL")
 	configFileFlag := flag.String("config", "", "Config file to parse commandline parameters from")
 
 	flag.Parse()
+
+	var conf *Config
 
 	if len(*configFileFlag) > 0 {
 		configFile, err := os.Open(*configFileFlag)
@@ -49,29 +51,25 @@ func ParseConfigFlags() (*Config, error) {
 
 		decoder := json.NewDecoder(configFile)
 
-		var conf *Config
-
 		err = decoder.Decode(&conf)
 		if err != nil {
 			return &Config{}, err
 		}
-
-		return conf, nil
 	} else {
-		conf := &Config{
+		conf = &Config{
 			DebugLevel:      *debugLevelFlag,
-			HttpPort:        *httpPortFlag,
-			HttpHost:        *httpHostFlag,
+			HTTPPort:        *httpPortFlag,
+			HTTPHost:        *httpHostFlag,
 			MySqlUser:       *mysqlUserFlag,
 			MySqlPassword:   *mysqlPasswordFlag,
 			MySqlDatabase:   *mysqlDatabaseFlag,
 			MySqlHost:       *mysqlHostFlag,
 			MySqlPort:       *mysqlPortFlag,
-			SSOClientId:     *ssoClientIdFlag,
+			SSOClientID:     *ssoClientIDFlag,
 			SSOClientSecret: *ssoClientSecretFlag,
-			SSOCallbackUrl:  *ssoCallbackUrlFlag,
+			SSOCallbackURL:  *ssoCallbackURLFlag,
 		}
-
-		return conf, nil
 	}
+
+	return conf, nil
 }

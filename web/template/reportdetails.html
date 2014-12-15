@@ -6,7 +6,7 @@
     
 	<div class="container" role="main">
 		<div class="page-header">
-			<h1>Details for report #{{ .Report.Id }}</h1>
+			<h1>Details for report #{{ .Report.ID }}</h1>
 		</div>
 		<div class="row">
 			<div class="col-md">
@@ -33,10 +33,10 @@
                                         <td>{{ .Report.StartRange }}</td>
                                         <td>{{ .Report.EndRange }}</td>
                                         <td class="{{ if .Report.PayoutComplete }} success {{ else }} danger {{ end }}">
-                                            <div id="reportDetailsPayoutComplete" report="{{ .Report.Id }}" class="report-details">
+                                            <div id="reportDetailsPayoutComplete" report="{{ .Report.ID }}" class="report-details">
                                                 {{ if .Fleet.PayoutComplete }} Done {{ else }} Outstanding {{ end }}
                                             </div>
-                                            <div id="reportDetailsPayoutCompleteForm" report="{{ .Report.Id }}" style="display: none;" class="report-details">
+                                            <div id="reportDetailsPayoutCompleteForm" report="{{ .Report.ID }}" style="display: none;" class="report-details">
                                                 <select class="form-control" id="reportDetailsPayoutCompleteEdit" name="reportDetailsPayoutCompleteEdit">
                                                     <option value="false">Outstanding</option>
                                                     <option value="true">Done</option>
@@ -49,15 +49,15 @@
 						</table>
 						<p align="center">
                         	{{ if $ReportAdmin }}
-                            <div id="reportMemberActions" report="{{ .Report.Id }}" align="center" class="report-details">
-                                <a class="btn btn-primary report-details-toggle" report="{{ .Report.Id }}">Edit</a>
+                            <div id="reportMemberActions" report="{{ .Report.ID }}" align="center" class="report-details">
+                                <a class="btn btn-primary report-details-toggle" report="{{ .Report.ID }}">Edit</a>
                                 {{ if not .Report.PayoutComplete }}
-								<a href="/report/{{ .Report.Id }}/finish" class="btn btn-danger">Finish Report</a>
+								<a href="/report/{{ .Report.ID }}/finish" class="btn btn-danger">Finish Report</a>
 								{{ end }}
                             </div>
-                            <div id="reportMemberActions" report="{{ .Report.Id }}" style="display: none;" align="center" class="report-details">
-                                <a class="btn btn-success report-details-save" report="{{ .Report.Id }}">Save</a>&nbsp;
-                                <a class="btn btn-danger report-details-toggle" report="{{ .Report.Id }}">Cancel</a>
+                            <div id="reportMemberActions" report="{{ .Report.ID }}" style="display: none;" align="center" class="report-details">
+                                <a class="btn btn-success report-details-save" report="{{ .Report.ID }}">Save</a>&nbsp;
+                                <a class="btn btn-danger report-details-toggle" report="{{ .Report.ID }}">Cancel</a>
                             </div>
                             {{ end }}
 						</p>
@@ -81,13 +81,13 @@
 							<tbody>
 								{{ range $fleet := .Report.Fleets }}
 								<tr>
-									<td><a href="/fleet/{{ $fleet.Id }}">{{ $fleet.Id }}</a></td>
+									<td><a href="/fleet/{{ $fleet.ID }}">{{ $fleet.ID }}</a></td>
 									<td>{{ $fleet.Name }}</td>
 									<td>{{ $fleet.System }}</td>
 									<td>{{ $fleet.StartTime }}</td>
 									<td>{{ $fleet.EndTime }}</td>
 									<td>{{ FormatFloat $fleet.GetSurplus }} ISK</td>
-									<td><a href="/fleet/{{ $fleet.Id }}" class="btn btn-default">View</a></td>
+									<td><a href="/fleet/{{ $fleet.ID }}" class="btn btn-default">View</a></td>
 								</tr>
 								{{ end }}
 							</tbody>

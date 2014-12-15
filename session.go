@@ -119,36 +119,34 @@ func (s *Session) IsLoggedIn(w http.ResponseWriter, r *http.Request) bool {
 			Path:   "/",
 			MaxAge: -1,
 		})
-
-		return false
 	} else {
 		if strings.EqualFold(session.Values["character_name"].(string), player.Name) {
 			return true
-		} else {
-			return false
 		}
 	}
+
+	return false
 }
 
 func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.CharacterAffiliation, sh models.CorporationSheet) error {
 	session, _ := s.store.Get(r, "player")
 
-	session.Values["character_id"] = a.GetCharacterId()
+	session.Values["character_id"] = a.GetCharacterID()
 	session.Values["character_name"] = a.GetCharacterName()
-	session.Values["corporation_id"] = a.GetCorporationId()
+	session.Values["corporation_id"] = a.GetCorporationID()
 	session.Values["corporation_name"] = a.GetCorporationName()
-	session.Values["alliance_id"] = a.GetAllianceId()
+	session.Values["alliance_id"] = a.GetAllianceID()
 	session.Values["alliance_name"] = a.GetAllianceName()
-	session.Values["faction_id"] = a.GetFactionId()
+	session.Values["faction_id"] = a.GetFactionID()
 	session.Values["faction_name"] = a.GetFactionName()
 
 	corp, err := database.LoadCorporationFromName(a.GetCorporationName())
 	if err != nil {
-		if len(a.GetCorporationName()) > 0 && a.GetCorporationId() > 0 {
+		if len(a.GetCorporationName()) > 0 && a.GetCorporationID() > 0 {
 			c, err := database.SaveCorporation(&models.Corporation{
-				Id:            -1,
+				ID:            -1,
 				Name:          a.GetCorporationName(),
-				CorporationId: a.GetCorporationId(),
+				CorporationID: a.GetCorporationID(),
 				Ticker:        sh.Ticker})
 			if err != nil {
 				return fmt.Errorf("Failed to save new corporation in session: [%v]", err)
@@ -162,11 +160,11 @@ func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.C
 
 	_, err = database.LoadPlayerFromName(a.GetCharacterName())
 	if err != nil {
-		if len(a.GetCharacterName()) > 0 && a.GetCharacterId() > 0 {
+		if len(a.GetCharacterName()) > 0 && a.GetCharacterID() > 0 {
 			_, err = database.SavePlayer(&models.Player{
-				Id:         -1,
+				ID:         -1,
 				Name:       a.GetCharacterName(),
-				PlayerId:   a.GetCharacterId(),
+				PlayerID:   a.GetCharacterID(),
 				Corp:       corp,
 				AccessMask: models.AccessMaskNone,
 			})
@@ -204,9 +202,9 @@ func (s *Session) GetLoginRedirect(r *http.Request) string {
 	redirect, ok := session.Values["redirect"]
 	if !ok {
 		return "/"
-	} else {
-		return redirect.(string)
 	}
+
+	return redirect.(string)
 }
 
 func (s *Session) SetSSOState(w http.ResponseWriter, r *http.Request, state string) {

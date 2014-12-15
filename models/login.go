@@ -14,7 +14,7 @@ type SSOToken struct {
 }
 
 type SSOVerification struct {
-	CharacterId        int64     `json:"CharacterID"`
+	CharacterID        int64     `json:"CharacterID"`
 	CharacterName      string    `json:"CharacterName"`
 	ExpiresOn          time.Time `json:"ExpiresOn"`
 	Scopes             string    `json:"Scopes"`
@@ -28,41 +28,41 @@ type CharacterAffiliation struct {
 }
 
 type CharacterAffiliationRow struct {
-	CharacterId     int64  `xml:"characterID,attr"`
+	CharacterID     int64  `xml:"characterID,attr"`
 	CharacterName   string `xml:"characterName,attr"`
-	CorporationId   int64  `xml:"corporationID,attr"`
+	CorporationID   int64  `xml:"corporationID,attr"`
 	CorporationName string `xml:"corporationName,attr"`
-	AllianceId      int64  `xml:"allianceID,attr"`
+	AllianceID      int64  `xml:"allianceID,attr"`
 	AllianceName    string `xml:"allianceName,attr"`
-	FactionId       int64  `xml:"factionID,attr"`
+	FactionID       int64  `xml:"factionID,attr"`
 	FactionName     string `xml:"factionName,attr"`
 }
 
 type CorporationSheet struct {
 	XMLName         xml.Name `xml:"eveapi"`
-	CorporationId   int64    `xml:"result>corporationID"`
+	CorporationID   int64    `xml:"result>corporationID"`
 	CorporationName string   `xml:"result>corporationName"`
 	Ticker          string   `xml:"result>ticker"`
 	CEOId           int64    `xml:"result>ceoID"`
 	CEOName         string   `xml:"result>ceoName"`
-	StationId       int64    `xml:"result>stationID"`
+	StationID       int64    `xml:"result>stationID"`
 	StationName     string   `xml:"result>stationName"`
 	Description     string   `xml:"result>description"`
 	Homepage        string   `xml:"result>url"`
-	AllianceId      int64    `xml:"result>allianceID"`
+	AllianceID      int64    `xml:"result>allianceID"`
 	AllianceName    string   `xml:"result>allianceName"`
-	FactionId       int64    `xml:"result>factionID"`
+	FactionID       int64    `xml:"result>factionID"`
 	TaxRate         float64  `xml:"result>taxRate"`
 	MemberCount     int64    `xml:"result>memberCount"`
 	Shares          int64    `xml:"result>shares"`
 }
 
-func (a CharacterAffiliation) GetCharacterId() int64 {
+func (a CharacterAffiliation) GetCharacterID() int64 {
 	if len(a.Rows) == 0 {
 		return -1
 	}
 
-	return a.Rows[0].CharacterId
+	return a.Rows[0].CharacterID
 }
 
 func (a CharacterAffiliation) GetCharacterName() string {
@@ -73,12 +73,12 @@ func (a CharacterAffiliation) GetCharacterName() string {
 	return a.Rows[0].CharacterName
 }
 
-func (a CharacterAffiliation) GetCorporationId() int64 {
+func (a CharacterAffiliation) GetCorporationID() int64 {
 	if len(a.Rows) == 0 {
 		return -1
 	}
 
-	return a.Rows[0].CorporationId
+	return a.Rows[0].CorporationID
 }
 
 func (a CharacterAffiliation) GetCorporationName() string {
@@ -89,12 +89,12 @@ func (a CharacterAffiliation) GetCorporationName() string {
 	return a.Rows[0].CorporationName
 }
 
-func (a CharacterAffiliation) GetAllianceId() int64 {
+func (a CharacterAffiliation) GetAllianceID() int64 {
 	if len(a.Rows) == 0 {
 		return -1
 	}
 
-	return a.Rows[0].AllianceId
+	return a.Rows[0].AllianceID
 }
 
 func (a CharacterAffiliation) GetAllianceName() string {
@@ -105,12 +105,12 @@ func (a CharacterAffiliation) GetAllianceName() string {
 	return a.Rows[0].AllianceName
 }
 
-func (a CharacterAffiliation) GetFactionId() int64 {
+func (a CharacterAffiliation) GetFactionID() int64 {
 	if len(a.Rows) == 0 {
 		return -1
 	}
 
-	return a.Rows[0].FactionId
+	return a.Rows[0].FactionID
 }
 
 func (a CharacterAffiliation) GetFactionName() string {

@@ -7,8 +7,8 @@ import (
 )
 
 type Fleet struct {
-	Id                int64
-	CorporationId     int64
+	ID                int64
+	CorporationID     int64
 	Name              string
 	Members           map[string]*FleetMember
 	System            string
@@ -20,13 +20,13 @@ type Fleet struct {
 	SitesFinished     int
 	CorporationPayout float64
 	PayoutComplete    bool
-	ReportId          int64
+	ReportID          int64
 }
 
 func NewFleet(id int64, corp int64, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time, payout float64, complete bool, report int64) *Fleet {
 	fleet := &Fleet{
-		Id:                id,
-		CorporationId:     corp,
+		ID:                id,
+		CorporationID:     corp,
 		Name:              name,
 		Members:           make(map[string]*FleetMember),
 		System:            system,
@@ -38,7 +38,7 @@ func NewFleet(id int64, corp int64, name string, system string, systemNick strin
 		EndTime:           end,
 		CorporationPayout: payout,
 		PayoutComplete:    complete,
-		ReportId:          report,
+		ReportID:          report,
 	}
 
 	return fleet
@@ -83,7 +83,7 @@ func (fleet *Fleet) FleetCommander() *FleetMember {
 
 func (fleet *Fleet) AddMember(member *FleetMember) error {
 	if fleet.HasMember(member.Player.Name) {
-		return fmt.Errorf("Member %q already exists in fleet, cannot add twice")
+		return fmt.Errorf("Member %q already exists in fleet, cannot add twice", member.Player.Name)
 	}
 
 	fleet.Members[member.Name] = member
@@ -93,7 +93,7 @@ func (fleet *Fleet) AddMember(member *FleetMember) error {
 
 func (fleet *Fleet) RemoveMember(player string) error {
 	if !fleet.HasMember(player) {
-		return fmt.Errorf("Member %q does not exists in fleet, cannot remove")
+		return fmt.Errorf("Member %q does not exists in fleet, cannot remove", player)
 	}
 
 	delete(fleet.Members, player)
@@ -103,7 +103,7 @@ func (fleet *Fleet) RemoveMember(player string) error {
 
 func (fleet *Fleet) SetMemberSiteModifier(player string, modifier int) error {
 	if !fleet.HasMember(player) {
-		return fmt.Errorf("Member %q does not exists in fleet, cannot set site modifier")
+		return fmt.Errorf("Member %q does not exists in fleet, cannot set site modifier", player)
 	}
 
 	fleet.Members[player].SiteModifier = modifier
@@ -113,7 +113,7 @@ func (fleet *Fleet) SetMemberSiteModifier(player string, modifier int) error {
 
 func (fleet *Fleet) GetMemberSiteModifier(player string) (int, error) {
 	if !fleet.HasMember(player) {
-		return 0, fmt.Errorf("Member %q does not exists in fleet, cannot get site modifier")
+		return 0, fmt.Errorf("Member %q does not exists in fleet, cannot get site modifier", player)
 	}
 
 	return fleet.Members[player].SiteModifier, nil
@@ -121,7 +121,7 @@ func (fleet *Fleet) GetMemberSiteModifier(player string) (int, error) {
 
 func (fleet *Fleet) GetMemberSitesFinished(player string) (int, error) {
 	if !fleet.HasMember(player) {
-		return 0, fmt.Errorf("Member %q does not exists in fleet, cannot get sites finished")
+		return 0, fmt.Errorf("Member %q does not exists in fleet, cannot get sites finished", player)
 	}
 
 	modifier, err := fleet.GetMemberSiteModifier(player)
@@ -134,7 +134,7 @@ func (fleet *Fleet) GetMemberSitesFinished(player string) (int, error) {
 
 func (fleet *Fleet) GetMemberPaymentModifier(player string) (float64, error) {
 	if !fleet.HasMember(player) {
-		return 0, fmt.Errorf("Member %q does not exists in fleet, cannot get payment modifier")
+		return 0, fmt.Errorf("Member %q does not exists in fleet, cannot get payment modifier", player)
 	}
 
 	return fleet.Members[player].PaymentModifier, nil

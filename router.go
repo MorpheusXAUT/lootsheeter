@@ -13,10 +13,10 @@ var (
 	router *mux.Router
 )
 
-func SetupRouter(strictSlash bool) {
-	logger.Infof("Setting up new routers (StrictSlash: %v)...", strictSlash)
+func SetupRouter() {
+	logger.Infof("Setting up new router...")
 
-	router = mux.NewRouter().StrictSlash(strictSlash)
+	router = mux.NewRouter().StrictSlash(true)
 
 	for _, route := range routes {
 		var handler http.Handler
@@ -33,10 +33,10 @@ func SetupRouter(strictSlash bool) {
 }
 
 func HandleRequests() {
-	logger.Infof("Listening for requests on %q...", net.JoinHostPort(config.HttpHost, strconv.Itoa(config.HttpPort)))
+	logger.Infof("Listening for requests on %q...", net.JoinHostPort(config.HTTPHost, strconv.Itoa(config.HTTPPort)))
 
 	http.Handle("/", router)
-	err := http.ListenAndServe(net.JoinHostPort(config.HttpHost, strconv.Itoa(config.HttpPort)), nil)
+	err := http.ListenAndServe(net.JoinHostPort(config.HTTPHost, strconv.Itoa(config.HTTPPort)), nil)
 
 	logger.Fatalf("Received error while listening for requests: [%v]", err)
 }

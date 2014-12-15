@@ -6,7 +6,7 @@ import (
 )
 
 type Report struct {
-	Id             int64
+	ID             int64
 	TotalPayout    float64
 	StartRange     time.Time
 	EndRange       time.Time
@@ -18,7 +18,7 @@ type Report struct {
 
 func NewReport(id int64, payout float64, start time.Time, end time.Time, complete bool, creator *Player, fleets []*Fleet) *Report {
 	report := &Report{
-		Id:             id,
+		ID:             id,
 		TotalPayout:    payout,
 		StartRange:     start,
 		EndRange:       end,
@@ -43,7 +43,7 @@ func (report *Report) CalculatePayouts() {
 				report.Payouts[member.Name] = NewReportPayout(member.Player, false)
 			}
 
-			report.Payouts[member.Name].AddPayout(NewFleetMemberPayout(fleet.Id, member.Player.Id, member.Payout, member.PayoutComplete))
+			report.Payouts[member.Name].AddPayout(NewFleetMemberPayout(fleet.ID, member.Player.ID, member.Payout, member.PayoutComplete))
 
 			report.TotalPayout += member.Payout
 		}

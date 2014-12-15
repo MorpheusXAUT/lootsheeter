@@ -19,7 +19,7 @@
 								<div class="col-sm-10">
 									<select class="form-control" id="selectFleetCommander" name="selectFleetCommander">
 									{{ range $player := .Players }}
-										<option value="{{ $player.Id }}">{{ $player.Name }}</option>
+										<option value="{{ $player.ID }}">{{ $player.Name }}</option>
 									{{ end }}
 									</select>
 								</div>

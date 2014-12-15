@@ -29,7 +29,7 @@
                                         {{ range $fleet := .Fleets }}
                                         <tr>
                                             <td>
-                                                {{ $fleet.Id }}
+                                                {{ $fleet.ID }}
                                             </td>
                                             <td>
                                                 {{ $fleet.Name }}
@@ -44,7 +44,7 @@
                                                 {{ FormatFloat $fleet.GetSurplus }} ISK
                                             </td>
                                             <td>
-                                                <input type="checkbox" value="{{ $fleet.Id }}" name="fleetsInclude">
+                                                <input type="checkbox" value="{{ $fleet.ID }}" name="fleetsInclude">
                                             </td>
                                         <tr>
                                         {{ end }}

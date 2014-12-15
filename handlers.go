@@ -40,8 +40,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	session.SetSSOState(w, r, state)
 
 	data["SSOState"] = state
-	data["SSOClientId"] = config.SSOClientId
-	data["SSOCallbackUrl"] = config.SSOCallbackUrl
+	data["SSOClientID"] = config.SSOClientID
+	data["SSOCallbackURL"] = config.SSOCallbackURL
 
 	templates.ExecuteTemplate(w, "login", data)
 }
@@ -152,7 +152,7 @@ func FleetListHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		f, err := database.LoadAllFleetsForCorporation(corporation.Id)
+		f, err := database.LoadAllFleetsForCorporation(corporation.ID)
 		if err != nil {
 			logger.Errorf("Failed to load all fleets in FleetListHandler: [%v]", err)
 
@@ -210,7 +210,7 @@ func FleetListAllHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		f, err := database.LoadAllFleetsForCorporation(corporation.Id)
+		f, err := database.LoadAllFleetsForCorporation(corporation.ID)
 		if err != nil {
 			logger.Errorf("Failed to load all fleets in FleetListAllHandler: [%v]", err)
 
@@ -277,7 +277,7 @@ func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fleetCommanderId, err := strconv.ParseInt(r.FormValue("selectFleetCommander"), 10, 64)
+	fleetCommanderID, err := strconv.ParseInt(r.FormValue("selectFleetCommander"), 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse commander ID in FleetCreateFormHandler: [%v]", err)
 
@@ -305,9 +305,9 @@ func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fleet := models.NewFleet(-1, corporation.Id, fleetName, fleetSystem, fleetSystemNickname, 0, 0, 0, time.Now(), time.Time{}, 0, false, -1)
+	fleet := models.NewFleet(-1, corporation.ID, fleetName, fleetSystem, fleetSystemNickname, 0, 0, 0, time.Now(), time.Time{}, 0, false, -1)
 
-	player, err := database.LoadPlayer(fleetCommanderId)
+	player, err := database.LoadPlayer(fleetCommanderID)
 	if err != nil {
 		logger.Errorf("Failed to load fleet commander in FleetCreateFormHandler: [%v]", err)
 
@@ -323,7 +323,7 @@ func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	commander := models.NewFleetMember(fleetCommanderId, fleet.Id, player, models.FleetRoleFleetCommander, "", 0, 1, 0, false, -1)
+	commander := models.NewFleetMember(fleetCommanderID, fleet.ID, player, models.FleetRoleFleetCommander, "", 0, 1, 0, false, -1)
 
 	fleet.AddMember(commander)
 
@@ -335,12 +335,12 @@ func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleet.Id), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleet.ID), http.StatusSeeOther)
 }
 
 func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
+	fleetID, err := strconv.ParseInt(vars["fleetid"], 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse fleet ID %q in FleetDetailsHandler: [%v]", vars["fleetid"], err)
 
@@ -351,20 +351,20 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
-		session.SetLoginRedirect(w, r, fmt.Sprintf("/fleet/%d", fleetId))
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/fleet/%d", fleetID))
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	data := make(map[string]interface{})
 
-	data["PageTitle"] = fmt.Sprintf("Details Fleet #%d", fleetId)
+	data["PageTitle"] = fmt.Sprintf("Details Fleet #%d", fleetID)
 	data["PageType"] = 3
 	data["LoggedIn"] = loggedIn
 
-	fleet, err := database.LoadFleet(fleetId)
+	fleet, err := database.LoadFleet(fleetID)
 	if err != nil {
-		logger.Errorf("Failed to load details for fleet #%d in FleetDetailsHandler: [%v]", fleetId, err)
+		logger.Errorf("Failed to load details for fleet #%d in FleetDetailsHandler: [%v]", fleetID, err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -372,9 +372,9 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["Fleet"] = fleet
 
-	availablePlayers, err := database.LoadAvailablePlayers(fleetId, fleet.CorporationId)
+	availablePlayers, err := database.LoadAvailablePlayers(fleetID, fleet.CorporationID)
 	if err != nil {
-		logger.Errorf("Failed to load available players in FleetDetailsHandler: [%v]", fleetId, err)
+		logger.Errorf("Failed to load available players for fleet #%d in FleetDetailsHandler: [%v]", fleetID, err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -390,7 +390,7 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	fleetId, err := strconv.ParseInt(vars["fleetid"], 10, 64)
+	fleetID, err := strconv.ParseInt(vars["fleetid"], 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse fleet ID %q in FleetEditHandler: [%v]", vars["fleetid"], err)
 
@@ -401,15 +401,15 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
-		session.SetLoginRedirect(w, r, fmt.Sprintf("/fleet/%d", fleetId))
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/fleet/%d", fleetID))
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
-	if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/fleet/%d", fleetId)) {
+	if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/fleet/%d", fleetID)) {
 		logger.Warnf("Received request to FleetEditHandler without proper referrer: %q", r.Referer())
 
-		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusBadRequest)
+		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetID), http.StatusBadRequest)
 		return
 	}
 
@@ -423,13 +423,13 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 
 	command := r.FormValue("command")
 	if len(command) == 0 {
-		logger.Errorf("Received empty command int FleetEditHandler...", err)
+		logger.Errorf("Received empty command int FleetEditHandler...")
 
 		http.Error(w, "Received empty command", http.StatusBadRequest)
 		return
 	}
 
-	fleet, err := database.LoadFleet(fleetId)
+	fleet, err := database.LoadFleet(fleetID)
 	if err != nil {
 		logger.Errorf("Failed to load fleet in FleetEditHandler: [%v]", err)
 
@@ -440,7 +440,7 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
 		logger.Warnf("Received request to FleetEditHandler without proper access...")
 
-		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetId), http.StatusUnauthorized)
+		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetID), http.StatusUnauthorized)
 		return
 	}
 
@@ -576,7 +576,7 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 	if len(fleetComposition) > 0 {
 		fleetCompositionRows := strings.Split(fleetComposition, "\r\n")
 
-		members, err := ParseFleetCompositionRows(fleet.Id, fleetCompositionRows)
+		members, err := ParseFleetCompositionRows(fleet.ID, fleetCompositionRows)
 		if err != nil {
 			logger.Errorf("Failed to parse fleet composition rows in FleetEditAddMemberHandler: [%v]", err)
 
@@ -591,9 +591,9 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 			fleet.AddMember(member)
 		}
 	} else {
-		memberId, err := strconv.ParseInt(r.FormValue("addMemberSelectMember"), 10, 64)
+		memberID, err := strconv.ParseInt(r.FormValue("addMemberSelectMember"), 10, 64)
 		if err != nil {
-			logger.Errorf("Failed to parse memberId in FleetEditAddMemberHandler: [%v]", err)
+			logger.Errorf("Failed to parse memberID in FleetEditAddMemberHandler: [%v]", err)
 
 			response["result"] = "error"
 			response["error"] = err.Error()
@@ -615,7 +615,7 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 
 		ship := r.FormValue("addMemberShip")
 
-		player, err := database.LoadPlayer(memberId)
+		player, err := database.LoadPlayer(memberID)
 		if err != nil {
 			logger.Errorf("Failed to load player in FleetEditAddMemberHandler: [%v]", err)
 
@@ -626,7 +626,7 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 			return
 		}
 
-		fleetMember := models.NewFleetMember(-1, fleet.Id, player, models.FleetRole(fleetRole), ship, 0, 1, 0, false, -1)
+		fleetMember := models.NewFleetMember(-1, fleet.ID, player, models.FleetRole(fleetRole), ship, 0, 1, 0, false, -1)
 
 		fleet.AddMember(fleetMember)
 	}
@@ -652,9 +652,9 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
-	memberId, err := strconv.ParseInt(r.FormValue("fleetMemberMemberId"), 10, 64)
+	memberID, err := strconv.ParseInt(r.FormValue("fleetMemberMemberID"), 10, 64)
 	if err != nil {
-		logger.Errorf("Failed to parse memberId in FleetEditEditMemberHandler: [%v]", err)
+		logger.Errorf("Failed to parse memberID in FleetEditEditMemberHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
@@ -707,7 +707,7 @@ func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *m
 		return
 	}
 
-	fleetMember, err := database.LoadFleetMember(fleet.Id, memberId)
+	fleetMember, err := database.LoadFleetMember(fleet.ID, memberID)
 	if err != nil {
 		logger.Errorf("Failed to load fleet member in FleetEditEditMemberHandler: [%v]", err)
 
@@ -745,9 +745,9 @@ func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *m
 func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
-	memberId, err := strconv.ParseInt(r.FormValue("removeMemberId"), 10, 64)
+	memberID, err := strconv.ParseInt(r.FormValue("removeMemberID"), 10, 64)
 	if err != nil {
-		logger.Errorf("Failed to parse memberId in FleetEditRemoveMemberHandler: [%v]", err)
+		logger.Errorf("Failed to parse memberID in FleetEditRemoveMemberHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
@@ -756,7 +756,7 @@ func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet 
 		return
 	}
 
-	member, err := database.LoadFleetMember(fleet.Id, memberId)
+	member, err := database.LoadFleetMember(fleet.ID, memberID)
 	if err != nil {
 		logger.Errorf("Failed to load fleet member in FleetEditRemoveMemberHandler: [%v]", err)
 
@@ -769,7 +769,7 @@ func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet 
 
 	fleet.RemoveMember(member.Name)
 
-	err = database.DeleteFleetMember(fleet.Id, memberId)
+	err = database.DeleteFleetMember(fleet.ID, memberID)
 	if err != nil {
 		logger.Errorf("Failed to remove fleet member in FleetEditRemoveMemberHandler: [%v]", err)
 
@@ -837,7 +837,7 @@ func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 		profit = p
 	}
 
-	err := database.SaveLootPaste(fleet.Id, rawProfit, profit, "P")
+	err := database.SaveLootPaste(fleet.ID, rawProfit, profit, "P")
 	if err != nil {
 		logger.Errorf("Failed to save loot paste in FleetEditAddMemberHandler: [%v]", err)
 
@@ -907,7 +907,7 @@ func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *mode
 		rowSplit := strings.Split(rawLoss, "\r\n")
 
 		for _, row := range rowSplit {
-			l, err := GetzKillboardValue(row)
+			l, err := GetZKillboardValue(row)
 			if err != nil {
 				logger.Errorf("Failed to parse zKillboard row in FleetEditAddLossHandler: [%v]", err)
 
@@ -935,7 +935,7 @@ func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *mode
 		loss = l
 	}
 
-	err := database.SaveLootPaste(fleet.Id, rawLoss, loss, "L")
+	err := database.SaveLootPaste(fleet.ID, rawLoss, loss, "L")
 	if err != nil {
 		logger.Errorf("Failed to save loot paste in FleetEditAddMemberHandler: [%v]", err)
 
@@ -1132,12 +1132,12 @@ func ReportCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fleets := make([]*models.Fleet, 0)
+	var fleets []*models.Fleet
 	startTime := time.Now()
 	endTime := time.Time{}
 
 	for _, fleet := range fleetsInclude {
-		fleetId, err := strconv.ParseInt(fleet, 10, 64)
+		fleetID, err := strconv.ParseInt(fleet, 10, 64)
 		if err != nil {
 			logger.Errorf("Failed to parse fleet ID in ReportCreateFormHandler: [%v]", err)
 
@@ -1145,7 +1145,7 @@ func ReportCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		f, err := database.LoadFleet(fleetId)
+		f, err := database.LoadFleet(fleetID)
 		if err != nil {
 			logger.Errorf("Failed to load fleet in ReportCreateFormHandler: [%v]", err)
 
@@ -1176,12 +1176,12 @@ func ReportCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/report/%d", report.Id), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/report/%d", report.ID), http.StatusSeeOther)
 }
 
 func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	reportId, err := strconv.ParseInt(vars["reportid"], 10, 64)
+	reportID, err := strconv.ParseInt(vars["reportid"], 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse report ID %q in ReportDetailsHandler: [%v]", vars["reportid"], err)
 
@@ -1192,20 +1192,20 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
-		session.SetLoginRedirect(w, r, fmt.Sprintf("/report/%d", reportId))
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/report/%d", reportID))
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	data := make(map[string]interface{})
 
-	data["PageTitle"] = fmt.Sprintf("Report #%d", reportId)
+	data["PageTitle"] = fmt.Sprintf("Report #%d", reportID)
 	data["PageType"] = 4
 	data["LoggedIn"] = loggedIn
 
-	report, err := database.LoadReport(reportId)
+	report, err := database.LoadReport(reportID)
 	if err != nil {
-		logger.Errorf("Failed to load details for report #%d in ReportDetailsHandler: [%v]", reportId, err)
+		logger.Errorf("Failed to load details for report #%d in ReportDetailsHandler: [%v]", reportID, err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1215,7 +1215,7 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	report, err = database.SaveReport(report)
 	if err != nil {
-		logger.Errorf("Failed to save report in ReportDetailsHandler: [%v]", reportId, err)
+		logger.Errorf("Failed to save report #%d in ReportDetailsHandler: [%v]", reportID, err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1231,9 +1231,9 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	reportId, err := strconv.ParseInt(vars["reportid"], 10, 64)
+	reportID, err := strconv.ParseInt(vars["reportid"], 10, 64)
 	if err != nil {
-		logger.Errorf("Failed to parse report ID %q in ReportEditHandler: [%v]", vars["reportId"], err)
+		logger.Errorf("Failed to parse report ID %q in ReportEditHandler: [%v]", vars["reportID"], err)
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -1242,15 +1242,15 @@ func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
-		session.SetLoginRedirect(w, r, fmt.Sprintf("/report/%d", reportId))
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/report/%d", reportID))
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
-	if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/report/%d", reportId)) {
+	if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/report/%d", reportID)) {
 		logger.Warnf("Received request to ReportEditHandler without proper referrer: %q", r.Referer())
 
-		http.Redirect(w, r, fmt.Sprintf("/report/%d", reportId), http.StatusBadRequest)
+		http.Redirect(w, r, fmt.Sprintf("/report/%d", reportID), http.StatusBadRequest)
 		return
 	}
 
@@ -1264,13 +1264,13 @@ func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 
 	command := r.FormValue("command")
 	if len(command) == 0 {
-		logger.Errorf("Received empty command int ReportEditHandler...", err)
+		logger.Errorf("Received empty command int ReportEditHandler...")
 
 		http.Error(w, "Received empty command", http.StatusBadRequest)
 		return
 	}
 
-	report, err := database.LoadReport(reportId)
+	report, err := database.LoadReport(reportID)
 	if err != nil {
 		logger.Errorf("Failed to load report in ReportEditHandler: [%v]", err)
 
@@ -1281,7 +1281,7 @@ func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 	if !HasHigherAccessMask(r, int(models.AccessMaskJuniorFleetCommander)) {
 		logger.Warnf("Received request to ReportEditHandler without proper access...")
 
-		http.Redirect(w, r, fmt.Sprintf("/report/%d", reportId), http.StatusUnauthorized)
+		http.Redirect(w, r, fmt.Sprintf("/report/%d", reportID), http.StatusUnauthorized)
 		return
 	}
 

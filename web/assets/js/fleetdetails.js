@@ -82,7 +82,7 @@ $(document).ready(function(e) {
 	});
 	
 	$('a.fleet-member-list-remove').click(function() {
-		$.getJSON('/fleet/'+$(this).attr('fleet')+'/edit?command=removemember', 'removeMemberId='+$(this).attr('member')+'', function(data) {
+		$.getJSON('/fleet/'+$(this).attr('fleet')+'/edit?command=removemember', 'removeMemberID='+$(this).attr('member')+'', function(data) {
 			if (data.result === "success" && data.error === null) {
 				location.reload(true);
 			} else {

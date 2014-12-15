@@ -2,17 +2,17 @@
 package models
 
 type Player struct {
-	Id       int64
-	PlayerId int64
+	ID       int64
+	PlayerID int64
 	Name     string
 	Corp     *Corporation
 	AccessMask
 }
 
-func NewPlayer(id int64, playerId int64, name string, corp *Corporation, access AccessMask) *Player {
+func NewPlayer(id int64, playerID int64, name string, corp *Corporation, access AccessMask) *Player {
 	player := &Player{
-		Id:         id,
-		PlayerId:   playerId,
+		ID:         id,
+		PlayerID:   playerID,
 		Name:       name,
 		Corp:       corp,
 		AccessMask: access,

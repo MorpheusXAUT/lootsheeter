@@ -18,11 +18,13 @@ var (
 
 func TemplateFunctions(r *http.Request) template.FuncMap {
 	return template.FuncMap{
-		"FormatFloat":      func(f float64) string { return FormatFloat(f) },
-		"IsPositiveFloat":  func(f float64) bool { return IsPositiveFloat(f) },
-		"IsFleetCommander": func(fleet *models.Fleet) bool { return IsFleetCommander(r, fleet) },
-		"IsReportCreator":  func(report *models.Report) bool { return IsReportCreator(r, report) },
-		"HasAccessMask":    func(access int) bool { return HasAccessMask(r, access) },
+		"FormatFloat":                 func(f float64) string { return FormatFloat(f) },
+		"IsPositiveFloat":             func(f float64) bool { return IsPositiveFloat(f) },
+		"FloatEquals":                 func(f1 float64, f2 float64) bool { return FloatEquals(f1, f2) },
+		"IsFleetCommander":            func(fleet *models.Fleet) bool { return IsFleetCommander(r, fleet) },
+		"IsReportCreator":             func(report *models.Report) bool { return IsReportCreator(r, report) },
+		"HasAccessMask":               func(access int) bool { return HasAccessMask(r, access) },
+		"GetFleetRolePaymentModifier": func(role *models.FleetRole) float64 { return GetFleetRolePaymentModifier(role) },
 	}
 }
 
@@ -59,6 +61,10 @@ func IsPositiveFloat(f float64) bool {
 	return f > 0
 }
 
+func FloatEquals(f1 float64, f2 float64) bool {
+	return f1 == f2
+}
+
 func IsFleetCommander(r *http.Request, fleet *models.Fleet) bool {
 	player := session.GetPlayerFromRequest(r)
 	if player == nil {
@@ -67,9 +73,9 @@ func IsFleetCommander(r *http.Request, fleet *models.Fleet) bool {
 
 	if strings.EqualFold(fleet.FleetCommander().Name, player.Name) {
 		return true
-	} else {
-		return false
 	}
+
+	return false
 }
 
 func IsReportCreator(r *http.Request, report *models.Report) bool {
@@ -80,9 +86,9 @@ func IsReportCreator(r *http.Request, report *models.Report) bool {
 
 	if strings.EqualFold(report.Creator.Name, player.Name) {
 		return true
-	} else {
-		return false
 	}
+
+	return false
 }
 
 func HasAccessMask(r *http.Request, access int) bool {
@@ -101,4 +107,8 @@ func HasHigherAccessMask(r *http.Request, access int) bool {
 	}
 
 	return player.AccessMask >= models.AccessMask(access)
+}
+
+func GetFleetRolePaymentModifier(role *models.FleetRole) float64 {
+	return role.PaymentRate()
 }

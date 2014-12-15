@@ -28,12 +28,12 @@
 						{{ range $fleet := .Fleets }}
 						{{ if or $ShowAll (not $fleet.IsFleetFinished) }}
 						<tr>
-							<td><a href="/fleet/{{ $fleet.Id }}">{{ $fleet.Id }}</a></td>
+							<td><a href="/fleet/{{ $fleet.ID }}">{{ $fleet.ID }}</a></td>
 							<td>{{ $fleet.Name }}</td>
 							<td>{{ $fleet.System }}{{ if gt (len $fleet.SystemNickname) 0}} ({{ $fleet.SystemNickname }}){{ end }}</td>
 							<td>{{ $fleet.StartTime }}</td>
 							<td>{{ if $fleet.IsFleetFinished }} {{ $fleet.EndTime }} {{ else }} --- {{ end }}</td>
-							<td><a href="/fleet/{{ $fleet.Id }}" class="btn btn-default">View</a></td>
+							<td><a href="/fleet/{{ $fleet.ID }}" class="btn btn-default">View</a></td>
 						</tr>
 						{{ end }}
 						{{ end }}

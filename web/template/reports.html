@@ -27,11 +27,11 @@
 						{{ range $report := .Reports }}
 						{{ if or $ShowAll (not $report.PayoutComplete) }}
 						<tr>
-							<td><a href="/report/{{ $report.Id }}">{{ $report.Id }}</a></td>
+							<td><a href="/report/{{ $report.ID }}">{{ $report.ID }}</a></td>
 							<td>{{ $report.StartRange }}</td>
 							<td>{{ $report.EndRange }}</td>
 							<td>{{ len $report.Fleets }}</td>
-							<td><a href="/report/{{ $report.Id }}" class="btn btn-default">View</a></td>
+							<td><a href="/report/{{ $report.ID }}" class="btn btn-default">View</a></td>
 						</tr>
 						{{ end }}
 						{{ end }}

@@ -15,7 +15,7 @@ import (
 )
 
 func FetchSSOToken(authorizationCode string) (models.SSOToken, error) {
-	auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", config.SSOClientId, config.SSOClientSecret)))
+	auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", config.SSOClientID, config.SSOClientSecret)))
 
 	verifyData := url.Values{}
 	verifyData.Set("grant_type", "authorization_code")
