@@ -9,6 +9,7 @@ import (
 
 type Config struct {
 	DebugLevel      int
+	DebugTemplates  bool
 	HTTPPort        int
 	HTTPHost        string
 	MySqlUser       string
@@ -27,6 +28,7 @@ var (
 
 func ParseConfigFlags() (*Config, error) {
 	debugLevelFlag := flag.Int("debug", 3, "Sets the debug level (0-9), lower number displays more messages")
+	debugTemplatesFlag := flag.Bool("debugtemplates", false, "Toggles a complete rebuild for all templates on each request")
 	httpPortFlag := flag.Int("port", 3000, "Port for the webserver to bind to")
 	httpHostFlag := flag.String("host", "0.0.0.0", "Hostname for the webserver to bind to")
 	mysqlUserFlag := flag.String("mysqluser", "", "Username for authenticating to the MySQL server")
@@ -58,6 +60,7 @@ func ParseConfigFlags() (*Config, error) {
 	} else {
 		conf = &Config{
 			DebugLevel:      *debugLevelFlag,
+			DebugTemplates:  *debugTemplatesFlag,
 			HTTPPort:        *httpPortFlag,
 			HTTPHost:        *httpHostFlag,
 			MySqlUser:       *mysqlUserFlag,

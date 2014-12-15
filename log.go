@@ -22,7 +22,7 @@ func WebLogger(inner http.Handler, name string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		if config.DebugLevel == 1 {
+		if config.DebugTemplates {
 			templates = template.Must(template.New("").Funcs(TemplateFunctions(nil)).ParseGlob("web/template/*"))
 		}
 
