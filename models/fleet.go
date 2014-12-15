@@ -101,6 +101,14 @@ func (fleet *Fleet) RemoveMember(player string) error {
 	return nil
 }
 
+func (fleet *Fleet) GetMemberRole(player string) (FleetRole, error) {
+	if !fleet.HasMember(player) {
+		return FleetRoleUnknown, fmt.Errorf("Member %q does not exists in fleet, cannot get role", player)
+	}
+
+	return fleet.Members[player].Role, nil
+}
+
 func (fleet *Fleet) SetMemberSiteModifier(player string, modifier int) error {
 	if !fleet.HasMember(player) {
 		return fmt.Errorf("Member %q does not exists in fleet, cannot set site modifier", player)
