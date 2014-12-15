@@ -71,7 +71,7 @@ func (s *Session) DestroySession(w http.ResponseWriter, r *http.Request) {
 	})
 
 	_, ok := s.players[characterName]
-	if !ok {
+	if ok {
 		delete(s.players, characterName)
 	}
 }
