@@ -92,11 +92,13 @@ CREATE TABLE IF NOT EXISTS `fleets` (
 -- Data exporting was unselected.
 
 
--- Dumping structure for table lootsheeter.loot
-CREATE TABLE IF NOT EXISTS `loot` (
+-- Dumping structure for table lootsheeter.lootpastes
+CREATE TABLE IF NOT EXISTS `lootpastes` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `fleet_id` bigint(20) NOT NULL,
-  `raw_loot` text NOT NULL,
+  `raw_paste` text NOT NULL,
+  `value` double NOT NULL DEFAULT '0',
+  `paste_type` enum('P','L') NOT NULL DEFAULT 'P',
   PRIMARY KEY (`id`),
   KEY `fk_loot_fleet` (`fleet_id`),
   CONSTRAINT `fk_loot_fleet` FOREIGN KEY (`fleet_id`) REFERENCES `fleets` (`id`)
