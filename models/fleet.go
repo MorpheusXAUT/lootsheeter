@@ -8,7 +8,7 @@ import (
 
 type Fleet struct {
 	ID                int64
-	CorporationID     int64
+	Corporation       *Corporation
 	Name              string
 	Members           map[string]*FleetMember
 	System            string
@@ -23,10 +23,10 @@ type Fleet struct {
 	ReportID          int64
 }
 
-func NewFleet(id int64, corp int64, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time, payout float64, complete bool, report int64) *Fleet {
+func NewFleet(id int64, corp *Corporation, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time, payout float64, complete bool, report int64) *Fleet {
 	fleet := &Fleet{
 		ID:                id,
-		CorporationID:     corp,
+		Corporation:       corp,
 		Name:              name,
 		Members:           make(map[string]*FleetMember),
 		System:            system,
@@ -154,7 +154,12 @@ func (fleet *Fleet) CalculatePayouts() {
 	var payout float64
 
 	totalPoints = 0
-	corpPayment = (fleet.Profit - fleet.Losses) * 0.28
+	corpPayment = 0
+
+	if fleet.Corporation.CorporationCut > 0 {
+		corpPayment = (fleet.Profit - fleet.Losses) * (fleet.Corporation.CorporationCut / 100)
+	}
+
 	payout = fleet.Profit - corpPayment - fleet.Losses
 
 	fleet.CorporationPayout = corpPayment

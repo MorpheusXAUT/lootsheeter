@@ -305,7 +305,7 @@ func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fleet := models.NewFleet(-1, corporation.ID, fleetName, fleetSystem, fleetSystemNickname, 0, 0, 0, time.Now(), time.Time{}, 0, false, -1)
+	fleet := models.NewFleet(-1, corporation, fleetName, fleetSystem, fleetSystemNickname, 0, 0, 0, time.Now(), time.Time{}, 0, false, -1)
 
 	player, err := database.LoadPlayer(fleetCommanderID)
 	if err != nil {
@@ -372,7 +372,7 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	data["Fleet"] = fleet
 
-	availablePlayers, err := database.LoadAvailablePlayers(fleetID, fleet.CorporationID)
+	availablePlayers, err := database.LoadAvailablePlayers(fleetID, fleet.Corporation.ID)
 	if err != nil {
 		logger.Errorf("Failed to load available players for fleet #%d in FleetDetailsHandler: [%v]", fleetID, err)
 
@@ -854,7 +854,7 @@ func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 		for _, row := range rowSplit {
 			p, err := GetEvepraisalValue(row)
 			if err != nil {
-				logger.Errorf("Failed to parse evepraisal row in FleetEditAddMemberHandler: [%v]", err)
+				logger.Errorf("Failed to parse evepraisal row in FleetEditAddProfitHandler: [%v]", err)
 
 				response["result"] = "error"
 				response["error"] = err.Error()
@@ -868,7 +868,7 @@ func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 	} else {
 		p, err := GetPasteValue(rawProfit)
 		if err != nil {
-			logger.Errorf("Failed to parse paste in FleetEditAddMemberHandler: [%v]", err)
+			logger.Errorf("Failed to parse paste in FleetEditAddProfitHandler: [%v]", err)
 
 			response["result"] = "error"
 			response["error"] = err.Error()
@@ -880,9 +880,20 @@ func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 		profit = p
 	}
 
-	err := database.SaveLootPaste(fleet.ID, rawProfit, profit, "P")
+	player := session.GetPlayerFromRequest(r)
+	if player == nil {
+		logger.Errorf("Failed to get player from request in FleetEditAddProfitHandler...")
+
+		response["result"] = "error"
+		response["error"] = "Failed to load player, cannot submit loot paste"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	err := database.SaveLootPaste(fleet.ID, player.ID, rawProfit, profit, "P")
 	if err != nil {
-		logger.Errorf("Failed to save loot paste in FleetEditAddMemberHandler: [%v]", err)
+		logger.Errorf("Failed to save loot paste in FleetEditAddProfitHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
@@ -895,7 +906,7 @@ func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 
 	fleet, err = database.SaveFleet(fleet)
 	if err != nil {
-		logger.Errorf("Failed to save fleet in FleetEditAddMemberHandler: [%v]", err)
+		logger.Errorf("Failed to save fleet in FleetEditAddProfitHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
@@ -988,9 +999,20 @@ func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *mode
 		loss = l
 	}
 
-	err := database.SaveLootPaste(fleet.ID, rawLoss, loss, "L")
+	player := session.GetPlayerFromRequest(r)
+	if player == nil {
+		logger.Errorf("Failed to get player from request in FleetEditAddLossHandler...")
+
+		response["result"] = "error"
+		response["error"] = "Failed to load player, cannot submit loot paste"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	err := database.SaveLootPaste(fleet.ID, player.ID, rawLoss, loss, "L")
 	if err != nil {
-		logger.Errorf("Failed to save loot paste in FleetEditAddMemberHandler: [%v]", err)
+		logger.Errorf("Failed to save loot paste in FleetEditAddLossHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()

@@ -463,12 +463,17 @@ func (db *Database) LoadFleet(id int64) (*models.Fleet, error) {
 		rid = -1
 	}
 
+	corporation, err := db.LoadCorporation(cid)
+	if err != nil {
+		return &models.Fleet{}, err
+	}
+
 	fleetMembers, err := db.LoadAllFleetMembers(fid)
 	if err != nil {
 		return &models.Fleet{}, err
 	}
 
-	fleet := models.NewFleet(fid, cid, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
+	fleet := models.NewFleet(fid, corporation, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
 
 	for _, member := range fleetMembers {
 		err = fleet.AddMember(member)
@@ -520,12 +525,17 @@ func (db *Database) LoadAllFleets() ([]*models.Fleet, error) {
 			fleetPayoutComplete = false
 		}
 
+		corporation, err := db.LoadCorporation(cid)
+		if err != nil {
+			return fleets, err
+		}
+
 		fleetMembers, err := db.LoadAllFleetMembers(fid)
 		if err != nil {
 			return fleets, err
 		}
 
-		fleet := models.NewFleet(fid, cid, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
+		fleet := models.NewFleet(fid, corporation, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
 
 		for _, member := range fleetMembers {
 			err = fleet.AddMember(member)
@@ -580,12 +590,17 @@ func (db *Database) LoadAllFleetsForCorporation(corporationID int64) ([]*models.
 			fleetPayoutComplete = false
 		}
 
+		corporation, err := db.LoadCorporation(cid)
+		if err != nil {
+			return fleets, err
+		}
+
 		fleetMembers, err := db.LoadAllFleetMembers(fid)
 		if err != nil {
 			return fleets, err
 		}
 
-		fleet := models.NewFleet(fid, cid, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
+		fleet := models.NewFleet(fid, corporation, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
 
 		for _, member := range fleetMembers {
 			err = fleet.AddMember(member)
@@ -640,12 +655,17 @@ func (db *Database) LoadAllFleetsForReport(reportID int64) ([]*models.Fleet, err
 			fleetPayoutComplete = false
 		}
 
+		corporation, err := db.LoadCorporation(cid)
+		if err != nil {
+			return fleets, err
+		}
+
 		fleetMembers, err := db.LoadAllFleetMembers(fid)
 		if err != nil {
 			return fleets, err
 		}
 
-		fleet := models.NewFleet(fid, cid, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
+		fleet := models.NewFleet(fid, corporation, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
 
 		for _, member := range fleetMembers {
 			err = fleet.AddMember(member)
@@ -700,12 +720,17 @@ func (db *Database) LoadAllFleetsWithoutReports() ([]*models.Fleet, error) {
 			fleetPayoutComplete = false
 		}
 
+		corporation, err := db.LoadCorporation(cid)
+		if err != nil {
+			return fleets, err
+		}
+
 		fleetMembers, err := db.LoadAllFleetMembers(fid)
 		if err != nil {
 			return fleets, err
 		}
 
-		fleet := models.NewFleet(fid, cid, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
+		fleet := models.NewFleet(fid, corporation, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, rid)
 
 		for _, member := range fleetMembers {
 			err = fleet.AddMember(member)
@@ -747,7 +772,7 @@ func (db *Database) SaveFleet(fleet *models.Fleet) (*models.Fleet, error) {
 
 	_, err := db.LoadFleet(fleet.ID)
 	if err != nil {
-		result, err := db.db.Exec("INSERT INTO fleets(name, corporation_id, system, system_nickname, profit, losses, sites_finished, starttime, endtime, corporation_payout, payout_complete, report_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fleet.Name, fleet.CorporationID, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleetEndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString, fleetReportID)
+		result, err := db.db.Exec("INSERT INTO fleets(name, corporation_id, system, system_nickname, profit, losses, sites_finished, starttime, endtime, corporation_payout, payout_complete, report_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fleet.Name, fleet.Corporation.ID, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleetEndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString, fleetReportID)
 		if err != nil {
 			return fleet, err
 		}
@@ -759,7 +784,7 @@ func (db *Database) SaveFleet(fleet *models.Fleet) (*models.Fleet, error) {
 
 		fleet.ID = id
 	} else {
-		_, err := db.db.Exec("UPDATE fleets SET name=?, corporation_id=?, system=?, system_nickname=?, profit=?, losses=?, sites_finished=?, starttime=?, endtime=?, corporation_payout=?, payout_complete=?, report_id=? WHERE id=?", fleet.Name, fleet.CorporationID, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleetEndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString, fleetReportID, fleet.ID)
+		_, err := db.db.Exec("UPDATE fleets SET name=?, corporation_id=?, system=?, system_nickname=?, profit=?, losses=?, sites_finished=?, starttime=?, endtime=?, corporation_payout=?, payout_complete=?, report_id=? WHERE id=?", fleet.Name, fleet.Corporation.ID, fleet.System, fleet.SystemNickname, fleet.Profit, fleet.Losses, fleet.SitesFinished, fleet.StartTime, fleetEndTime, fleet.CorporationPayout, fleetPayoutCompleteEnumString, fleetReportID, fleet.ID)
 		if err != nil {
 			return fleet, err
 		}
@@ -920,10 +945,10 @@ func (db *Database) QueryShipRole(ship string) (models.FleetRole, error) {
 	return models.FleetRole(fleetMemberRole), nil
 }
 
-func (db *Database) SaveLootPaste(fleetID int64, rawPaste string, value float64, pasteType string) error {
+func (db *Database) SaveLootPaste(fleetID int64, playerID int64, rawPaste string, value float64, pasteType string) error {
 	logger.Tracef("Saving raw loot paste to database...")
 
-	_, err := db.db.Exec("INSERT INTO lootpastes(fleet_id, raw_paste, value, paste_type) VALUES(?, ?, ?, ?)", fleetID, rawPaste, value, pasteType)
+	_, err := db.db.Exec("INSERT INTO lootpastes(fleet_id, pasted_by, raw_paste, value, paste_type) VALUES(?, ?, ?, ?)", fleetID, playerID, rawPaste, value, pasteType)
 	if err != nil {
 		return err
 	}
