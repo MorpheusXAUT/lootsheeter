@@ -64,7 +64,7 @@ func (db *Database) LoadCorporation(id int64) (*models.Corporation, error) {
 		return corp, nil
 	}
 
-	row := db.db.QueryRow("SELECT id, corporation_id, name, ticker, corporation_cut FROM corporations WHERE id = ?", id)
+	row := db.db.QueryRow("SELECT id, corporation_id, name, ticker, corporation_cut FROM corporations WHERE id = ? ORDER BY name", id)
 
 	var cid, corporationID int64
 	var corporationName, corporationTicker string
@@ -208,7 +208,7 @@ func (db *Database) LoadAllPlayers() ([]*models.Player, error) {
 
 	var players []*models.Player
 
-	rows, err := db.db.Query("SELECT id, player_id, name, corporation_id, accessmask FROM players")
+	rows, err := db.db.Query("SELECT id, player_id, name, corporation_id, accessmask FROM players ORDER BY name")
 	if err != nil {
 		return players, fmt.Errorf("Received error while querying for all players: [%v]", err)
 	}
@@ -243,7 +243,7 @@ func (db *Database) LoadAvailablePlayers(fleedID int64, corporationID int64) ([]
 
 	var players []*models.Player
 
-	rows, err := db.db.Query("SELECT id, player_id, name, corporation_id, accessmask FROM players WHERE corporation_id = ? AND id NOT IN (SELECT player_id FROM fleetmembers WHERE fleet_id = ?)", corporationID, fleedID)
+	rows, err := db.db.Query("SELECT id, player_id, name, corporation_id, accessmask FROM players WHERE corporation_id = ? AND id NOT IN (SELECT player_id FROM fleetmembers WHERE fleet_id = ?) ORDER BY name", corporationID, fleedID)
 	if err != nil {
 		return players, fmt.Errorf("Received error while querying for available players: [%v]", err)
 	}
@@ -343,7 +343,7 @@ func (db *Database) LoadAllFleetMembers(fleetID int64) ([]*models.FleetMember, e
 
 	var fleetMembers []*models.FleetMember
 
-	rows, err := db.db.Query("SELECT id, fleet_id, player_id, role, ship, site_modifier, payment_modifier, payout, payout_complete, report_id FROM fleetmembers WHERE fleet_id = ?", fleetID)
+	rows, err := db.db.Query("SELECT f.id, fleet_id, f.player_id, role, ship, site_modifier, payment_modifier, payout, payout_complete, report_id FROM fleetmembers AS f INNER JOIN players AS p ON f.player_id = p.id WHERE fleet_id = ? ORDER BY p.Name", fleetID)
 	if err != nil {
 		return fleetMembers, err
 	}
