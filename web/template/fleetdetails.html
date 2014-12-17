@@ -4,6 +4,7 @@
 
 	{{ $FleetID := .Fleet.ID}}
 	{{ $FleetAdmin := or (IsFleetCommander .Fleet) (HasAccessMask 256) }}
+    {{ $FleetFinished := .Fleet.IsFleetFinished }}
 	
 	<div class="container" role="main">
 		<div class="page-header">
@@ -86,7 +87,7 @@
                                         </th>
                                         <td>
                                         	<div id="fleetDetailsEndTime" fleet="{{ .Fleet.ID }}" class="fleet-details">
-                                                {{ if .Fleet.IsFleetFinished }} {{ .Fleet.EndTime }} {{ else }} --- {{ end }}
+                                                {{ if $FleetFinished }} {{ .Fleet.EndTime }} {{ else }} --- {{ end }}
                                             </div>
                                             <div id="fleetDetailsEndTimeForm" fleet="{{ .Fleet.ID }}" style="display: none;" class="fleet-details">
 												<input type="text" class="form-control" id="fleetDetailsEndTimeEdit" name="fleetDetailsEndTimeEdit" value="{{ if .Fleet.IsFleetFinished }}{{ .Fleet.EndTime }}{{ else }}YYYY-MM-DD HH:MM:SS +0000 UTC{{ end }}">
@@ -134,7 +135,7 @@
 								{{ if $FleetAdmin }}
                                 <a class="btn btn-primary fleet-details-toggle" fleet="{{ .Fleet.ID }}">Edit</a>
 								{{ end }}
-                                {{ if not .Fleet.IsFleetFinished }}
+                                {{ if not $FleetFinished }}
 								{{ if or $FleetAdmin (HasFleetRole .Fleet 8) }}
 								<a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#addProfitForm">Add Profit</a>
 								{{ end }}
@@ -183,7 +184,7 @@
 									<th>Payment modifier</th>
 									<th>Payout</th>
 									<th>Payout Complete</th>
-									{{ if $FleetAdmin }}
+									{{ if and $FleetAdmin (not $FleetFinished) }}
 									<th>Action</th>
 									{{ end }}
 								</tr>
@@ -243,7 +244,7 @@
 												</select>
 											</div>
 										</td>
-										{{ if $FleetAdmin }}
+										{{ if and $FleetAdmin (not $FleetFinished) }}
 										<td>
 											<div id="fleetMemberActions" member="{{ $member.ID }}" class="fleet-member-list">
 												<a class="btn btn-primary fleet-member-list-toggle" member="{{ $member.ID }}">Edit</a>
@@ -260,7 +261,7 @@
 								{{ end }}
 							</tbody>
 						</table>
-						{{ if $FleetAdmin }}
+						{{ if and $FleetAdmin (not $FleetFinished) }}
 						<p align="center">
 							<a class="btn btn-success collapse-data-btn" data-toggle="collapse" href="#addMemberForm">Add Member</a>
 							<form role="form-horizontal" id="addMemberForm" align="center" class="collapse">
