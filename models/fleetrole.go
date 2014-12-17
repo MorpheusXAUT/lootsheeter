@@ -37,9 +37,9 @@ func (role FleetRole) String() string {
 func (role FleetRole) LabelType() string {
 	switch role {
 	case FleetRoleUnknown:
-		return ""
+		return "label-danger"
 	case FleetRoleNone:
-		return ""
+		return "label-danger"
 	case FleetRoleScout:
 		return "label-default"
 	case FleetRoleSalvage:

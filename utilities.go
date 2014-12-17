@@ -231,7 +231,11 @@ func ParseFleetRole(ship string, fleetBoss bool) (models.FleetRole, error) {
 
 	role, err := database.QueryShipRole(ship)
 	if err != nil {
-		return models.FleetRoleUnknown, err
+		if strings.EqualFold(err.Error(), "sql: no rows in result set") {
+			return models.FleetRoleNone, nil
+		} else {
+			return models.FleetRoleUnknown, err
+		}
 	}
 
 	return role, nil
