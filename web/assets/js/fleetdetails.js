@@ -1,4 +1,8 @@
 $(document).ready(function(e) {
+	$(function() {
+		$('#addMemberSelectMember').filterByText($('#addMemberSelectMemberSearch'), true);
+	});
+	
 	$('a[data-toggle=collapse]').click(function() {
 		$(this).toggleClass('active');
 	});
