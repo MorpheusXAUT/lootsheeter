@@ -22,6 +22,7 @@ func TemplateFunctions(r *http.Request) template.FuncMap {
 		"IsPositiveFloat":             func(f float64) bool { return IsPositiveFloat(f) },
 		"FloatEquals":                 func(f1 float64, f2 float64) bool { return FloatEquals(f1, f2) },
 		"HasFleetRole":                func(fleet *models.Fleet, roleInt int) bool { return HasFleetRole(r, fleet, roleInt) },
+		"MemberHasFleetRole":          func(member *models.FleetMember, roleInt int) bool { return MemberHasFleetRole(member, roleInt) },
 		"IsFleetCommander":            func(fleet *models.Fleet) bool { return IsFleetCommander(r, fleet) },
 		"IsReportCreator":             func(report *models.Report) bool { return IsReportCreator(r, report) },
 		"HasAccessMask":               func(access int) bool { return HasAccessMask(r, access) },
@@ -78,6 +79,10 @@ func HasFleetRole(r *http.Request, fleet *models.Fleet, roleInt int) bool {
 	}
 
 	return role == models.FleetRole(roleInt)
+}
+
+func MemberHasFleetRole(member *models.FleetMember, roleInt int) bool {
+	return member.Role == models.FleetRole(roleInt)
 }
 
 func IsFleetCommander(r *http.Request, fleet *models.Fleet) bool {
