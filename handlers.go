@@ -574,6 +574,7 @@ func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *
 
 func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
+	var errors []string
 
 	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
 		logger.Warnf("Received request to FleetEditAddMemberHandler without proper access...")
@@ -601,6 +602,13 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 		}
 
 		for _, member := range members {
+			if member.Role == models.FleetRoleFleetCommander && fleet.FleetCommander() != nil && !strings.EqualFold(member.Name, fleet.FleetCommander().Name) {
+				logger.Errorf("Tried to add second fleet commander to fleet in FleetEditAddMemberHandler...")
+
+				errors = append(errors, "Cannot add two fleet commanders to the same fleet!")
+				continue
+			}
+
 			fleet.AddMember(member)
 		}
 	} else {
@@ -621,6 +629,16 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 
 			response["result"] = "error"
 			response["error"] = err.Error()
+
+			SendJSONResponse(w, response)
+			return
+		}
+
+		if models.FleetRole(fleetRole) == models.FleetRoleFleetCommander && fleet.FleetCommander() != nil {
+			logger.Errorf("Tried to add second fleet commander to fleet in FleetEditAddMemberHandler...")
+
+			response["result"] = "error"
+			response["error"] = "Cannot add two fleet commanders to the same fleet!"
 
 			SendJSONResponse(w, response)
 			return
@@ -650,6 +668,14 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 
 		response["result"] = "error"
 		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	if len(errors) > 0 {
+		response["result"] = "error"
+		response["error"] = strings.Join(errors, ";")
 
 		SendJSONResponse(w, response)
 		return
