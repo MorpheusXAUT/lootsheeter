@@ -25,6 +25,7 @@ func TemplateFunctions(r *http.Request) template.FuncMap {
 		"MemberHasFleetRole":          func(member *models.FleetMember, roleInt int) bool { return MemberHasFleetRole(member, roleInt) },
 		"IsFleetCommander":            func(fleet *models.Fleet) bool { return IsFleetCommander(r, fleet) },
 		"IsReportCreator":             func(report *models.Report) bool { return IsReportCreator(r, report) },
+		"IsPlayerName":                func(name string) bool { return IsPlayerName(r, name) },
 		"HasAccessMask":               func(access int) bool { return HasAccessMask(r, access) },
 		"GetFleetRolePaymentModifier": func(role *models.FleetRole) float64 { return GetFleetRolePaymentModifier(role) },
 	}
@@ -105,6 +106,19 @@ func IsReportCreator(r *http.Request, report *models.Report) bool {
 	}
 
 	if strings.EqualFold(report.Creator.Name, player.Name) {
+		return true
+	}
+
+	return false
+}
+
+func IsPlayerName(r *http.Request, name string) bool {
+	player := session.GetPlayerFromRequest(r)
+	if player == nil {
+		return false
+	}
+
+	if strings.EqualFold(name, player.Name) {
 		return true
 	}
 
