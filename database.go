@@ -64,18 +64,18 @@ func (db *Database) LoadCorporation(id int64) (*models.Corporation, error) {
 		return corp, nil
 	}
 
-	row := db.db.QueryRow("SELECT id, corporation_id, name, ticker, corporation_cut FROM corporations WHERE id = ? ORDER BY name", id)
+	row := db.db.QueryRow("SELECT id, corporation_id, name, ticker, corporation_cut, api_keyid, api_keycode FROM corporations WHERE id = ?", id)
 
-	var cid, corporationID int64
-	var corporationName, corporationTicker string
+	var cid, corporationID, corporationAPIKeyID int64
+	var corporationName, corporationTicker, corporationAPIKeyCode string
 	var corporationCut float64
 
-	err := row.Scan(&cid, &corporationID, &corporationName, &corporationTicker, &corporationCut)
+	err := row.Scan(&cid, &corporationID, &corporationName, &corporationTicker, &corporationCut, &corporationAPIKeyID, &corporationAPIKeyCode)
 	if err != nil {
 		return &models.Corporation{}, fmt.Errorf("Received error while scanning corporation row: [%v]", err)
 	}
 
-	corp = models.NewCorporation(cid, corporationID, corporationName, corporationTicker, corporationCut)
+	corp = models.NewCorporation(cid, corporationID, corporationName, corporationTicker, corporationCut, corporationAPIKeyID, corporationAPIKeyCode)
 
 	db.corporations[id] = corp
 
@@ -92,22 +92,52 @@ func (db *Database) LoadCorporationFromName(name string) (*models.Corporation, e
 		}
 	}
 
-	row := db.db.QueryRow("SELECT id, corporation_id, name, ticker, corporation_cut FROM corporations WHERE name LIKE ?", name)
+	row := db.db.QueryRow("SELECT id, corporation_id, name, ticker, corporation_cut, api_keyid, api_keycode FROM corporations WHERE name LIKE ?", name)
 
-	var cid, corporationID int64
-	var corporationName, corporationTicker string
+	var cid, corporationID, corporationAPIKeyID int64
+	var corporationName, corporationTicker, corporationAPIKeyCode string
 	var corporationCut float64
 
-	err := row.Scan(&cid, &corporationID, &corporationName, &corporationTicker, &corporationCut)
+	err := row.Scan(&cid, &corporationID, &corporationName, &corporationTicker, &corporationCut, &corporationAPIKeyID, &corporationAPIKeyCode)
 	if err != nil {
 		return &models.Corporation{}, fmt.Errorf("Received error while scanning corporation name row: [%v]", err)
 	}
 
-	corp := models.NewCorporation(cid, corporationID, corporationName, corporationTicker, corporationCut)
+	corp := models.NewCorporation(cid, corporationID, corporationName, corporationTicker, corporationCut, corporationAPIKeyID, corporationAPIKeyCode)
 
 	db.corporations[corp.ID] = corp
 
 	return corp, nil
+}
+
+func (db *Database) LoadAllCorporations() ([]*models.Corporation, error) {
+	logger.Tracef("Querying database for all corporations...")
+
+	var corporations []*models.Corporation
+
+	rows, err := db.db.Query("SELECT id, corporation_id, name, ticker, corporation_cut, api_keyid, api_keycode FROM corporations ORDER BY name")
+	if err != nil {
+		return corporations, fmt.Errorf("Received error while querying for all corporations: [%v]", err)
+	}
+
+	for rows.Next() {
+		var cid, corporationID, corporationAPIKeyID int64
+		var corporationName, corporationTicker, corporationAPIKeyCode string
+		var corporationCut float64
+
+		err := rows.Scan(&cid, &corporationID, &corporationName, &corporationTicker, &corporationCut, &corporationAPIKeyID, &corporationAPIKeyCode)
+		if err != nil {
+			return corporations, fmt.Errorf("Received error while scanning corporations name row: [%v]", err)
+		}
+
+		corp := models.NewCorporation(cid, corporationID, corporationName, corporationTicker, corporationCut, corporationAPIKeyID, corporationAPIKeyCode)
+
+		db.corporations[corp.ID] = corp
+
+		corporations = append(corporations, corp)
+	}
+
+	return corporations, nil
 }
 
 func (db *Database) SaveCorporation(corporation *models.Corporation) (*models.Corporation, error) {
@@ -115,7 +145,7 @@ func (db *Database) SaveCorporation(corporation *models.Corporation) (*models.Co
 
 	_, err := db.LoadCorporation(corporation.ID)
 	if err != nil {
-		result, err := db.db.Exec("INSERT INTO corporations(corporation_id, name, ticker) VALUES (?, ?, ?)", corporation.CorporationID, corporation.Name, corporation.Ticker)
+		result, err := db.db.Exec("INSERT INTO corporations(corporation_id, name, ticker, api_keyid, api_keycode) VALUES (?, ?, ?, ?, ?)", corporation.CorporationID, corporation.Name, corporation.Ticker, corporation.APIID, corporation.APICode)
 		if err != nil {
 			return corporation, err
 		}
@@ -127,7 +157,7 @@ func (db *Database) SaveCorporation(corporation *models.Corporation) (*models.Co
 
 		corporation.ID = id
 	} else {
-		_, err := db.db.Exec("UPDATE corporations SET corporation_id=?, name=?, ticker=? WHERE id=?", corporation.CorporationID, corporation.Name, corporation.Ticker, corporation.ID)
+		_, err := db.db.Exec("UPDATE corporations SET corporation_id=?, name=?, ticker=?, api_keyid=?, api_keycode=? WHERE id=?", corporation.CorporationID, corporation.Name, corporation.Ticker, corporation.ID, corporation.APIID, corporation.APICode)
 		if err != nil {
 			return corporation, err
 		}
