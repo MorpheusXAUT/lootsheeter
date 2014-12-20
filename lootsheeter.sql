@@ -2,7 +2,7 @@
 -- Host:                         127.0.0.1
 -- Server version:               5.6.19-log - MySQL Community Server (GPL)
 -- Server OS:                    Win64
--- HeidiSQL Version:             9.1.0.4882
+-- HeidiSQL Version:             9.1.0.4883
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS `corporations` (
   `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `ticker` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL,
   `corporation_cut` double NOT NULL DEFAULT '0',
+  `api_keyid` int(8) NOT NULL DEFAULT '0',
+  `api_keycode` varchar(64) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
   UNIQUE KEY `corp_id` (`corporation_id`)
@@ -96,12 +98,15 @@ CREATE TABLE IF NOT EXISTS `fleets` (
 CREATE TABLE IF NOT EXISTS `lootpastes` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `fleet_id` bigint(20) NOT NULL,
+  `pasted_by` bigint(20) NOT NULL,
   `raw_paste` text NOT NULL,
   `value` double NOT NULL DEFAULT '0',
   `paste_type` enum('P','L') NOT NULL DEFAULT 'P',
   PRIMARY KEY (`id`),
   KEY `fk_loot_fleet` (`fleet_id`),
-  CONSTRAINT `fk_loot_fleet` FOREIGN KEY (`fleet_id`) REFERENCES `fleets` (`id`)
+  KEY `fk_loot_pasted` (`pasted_by`),
+  CONSTRAINT `fk_loot_fleet` FOREIGN KEY (`fleet_id`) REFERENCES `fleets` (`id`),
+  CONSTRAINT `fk_loot_pasted` FOREIGN KEY (`pasted_by`) REFERENCES `players` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Data exporting was unselected.
