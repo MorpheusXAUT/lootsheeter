@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `corporations` (
   `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   `ticker` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL,
   `corporation_cut` double NOT NULL DEFAULT '0',
-  `api_keyid` int(8) NOT NULL DEFAULT '0',
+  `api_keyid` int(10) NOT NULL DEFAULT '0',
   `api_keycode` varchar(64) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),

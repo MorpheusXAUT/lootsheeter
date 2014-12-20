@@ -36,6 +36,8 @@ func main() {
 
 	InitialiseDatabase()
 
+	InitialiseScheduler()
+
 	InitialiseSessions()
 
 	SetupRouter()
