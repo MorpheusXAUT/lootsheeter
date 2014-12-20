@@ -92,8 +92,15 @@ func IsFleetCommander(r *http.Request, fleet *models.Fleet) bool {
 		return false
 	}
 
-	if strings.EqualFold(fleet.FleetCommander().Name, player.Name) {
-		return true
+	fleetCommanders := fleet.FleetCommanders()
+	if len(fleetCommanders) == 0 {
+		return false
+	}
+
+	for _, commander := range fleetCommanders {
+		if strings.EqualFold(player.Name, commander.Name) {
+			return true
+		}
 	}
 
 	return false

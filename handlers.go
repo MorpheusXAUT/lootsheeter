@@ -586,6 +586,8 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 		return
 	}
 
+	fleetCommanders := fleet.FleetCommanders()
+
 	fleetComposition := r.FormValue("addMemberFleetComposition")
 	if len(fleetComposition) > 0 {
 		fleetCompositionRows := strings.Split(fleetComposition, "\r\n")
@@ -602,11 +604,22 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 		}
 
 		for _, member := range members {
-			if member.Role == models.FleetRoleFleetCommander && fleet.FleetCommander() != nil && !strings.EqualFold(member.Name, fleet.FleetCommander().Name) {
-				logger.Errorf("Tried to add second fleet commander to fleet in FleetEditAddMemberHandler...")
+			if member.Role == models.FleetRoleFleetCommander && len(fleetCommanders) > 0 {
+				secondCommander := true
 
-				errors = append(errors, "Cannot add two fleet commanders to the same fleet!")
-				continue
+				for _, commander := range fleetCommanders {
+					if strings.EqualFold(member.Name, commander.Name) {
+						secondCommander = false
+						break
+					}
+				}
+
+				if secondCommander {
+					logger.Errorf("Tried to add second fleet commander to fleet in FleetEditAddMemberHandler...")
+
+					errors = append(errors, "Cannot add two fleet commanders to the same fleet!")
+					continue
+				}
 			}
 
 			fleet.AddMember(member)
@@ -634,7 +647,7 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 			return
 		}
 
-		if models.FleetRole(fleetRole) == models.FleetRoleFleetCommander && fleet.FleetCommander() != nil {
+		if models.FleetRole(fleetRole) == models.FleetRoleFleetCommander && len(fleetCommanders) > 0 {
 			logger.Errorf("Tried to add second fleet commander to fleet in FleetEditAddMemberHandler...")
 
 			response["result"] = "error"
@@ -766,6 +779,19 @@ func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *m
 		SendJSONResponse(w, response)
 		return
 	}
+
+	fleetCommanders := fleet.FleetCommanders()
+
+	if fleetMember.Role == models.FleetRoleFleetCommander && models.FleetRole(fleetRole) != models.FleetRoleFleetCommander && len(fleetCommanders) <= 1 {
+		logger.Errorf("Tried to remove fleet commander without replacement in FleetEditEditMemberHandler...")
+
+		response["result"] = "error"
+		response["error"] = "Cannot remove the fleet commander without replacement from the member list!"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
 	fleetMember.Role = models.FleetRole(fleetRole)
 	fleetMember.SiteModifier = int(siteModifier)
 	fleetMember.PaymentModifier = paymentModifier
@@ -827,6 +853,18 @@ func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet 
 	}
 
 	fleet.RemoveMember(member.Name)
+
+	fleetCommanders := fleet.FleetCommanders()
+
+	if len(fleetCommanders) == 0 {
+		logger.Errorf("Tried to remove fleet commander in FleetEditRemoveMemberHandler...")
+
+		response["result"] = "error"
+		response["error"] = "Cannot remove the fleet commander from the member list!"
+
+		SendJSONResponse(w, response)
+		return
+	}
 
 	err = database.DeleteFleetMember(fleet.ID, memberID)
 	if err != nil {

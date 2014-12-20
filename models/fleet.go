@@ -71,14 +71,16 @@ func (fleet *Fleet) HasMember(player string) bool {
 	return ok
 }
 
-func (fleet *Fleet) FleetCommander() *FleetMember {
+func (fleet *Fleet) FleetCommanders() []*FleetMember {
+	var fleetCommanders []*FleetMember
+
 	for _, member := range fleet.Members {
 		if member.Role == FleetRoleFleetCommander {
-			return member
+			fleetCommanders = append(fleetCommanders, member)
 		}
 	}
 
-	return nil
+	return fleetCommanders
 }
 
 func (fleet *Fleet) AddMember(member *FleetMember) error {
