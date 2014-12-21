@@ -348,7 +348,7 @@ func (db *Database) LoadFleetMember(fleetID int64, id int64) (*models.FleetMembe
 		return &models.FleetMember{}, fmt.Errorf("Received error while scanning fleet member row: [%v]", err)
 	}
 
-	if strings.EqualFold(fleetmemberPayoutCompleteEnum, "y") {
+	if strings.EqualFold(fleetmemberPayoutCompleteEnum, "Y") {
 		fleetmemberPayoutComplete = true
 	} else {
 		fleetmemberPayoutComplete = false
@@ -391,7 +391,7 @@ func (db *Database) LoadAllFleetMembers(fleetID int64) ([]*models.FleetMember, e
 			return fleetMembers, fmt.Errorf("Received error while scanning fleet member rows: [%v]", err)
 		}
 
-		if strings.EqualFold(fleetmemberPayoutCompleteEnum, "y") {
+		if strings.EqualFold(fleetmemberPayoutCompleteEnum, "Y") {
 			fleetmemberPayoutComplete = true
 		} else {
 			fleetmemberPayoutComplete = false
@@ -417,6 +417,13 @@ func (db *Database) LoadAllFleetMembers(fleetID int64) ([]*models.FleetMember, e
 func (db *Database) SaveFleetMember(fleetID int64, member *models.FleetMember) (*models.FleetMember, error) {
 	logger.Tracef("Saving fleet member #%d to database...", member.ID)
 
+	var fleetmemberReportID sql.NullInt64
+
+	if member.ReportID > 0 {
+		fleetmemberReportID.Int64 = member.ReportID
+		fleetmemberReportID.Valid = true
+	}
+
 	var fleetmemberPayoutCompleteEnum string
 
 	if member.PayoutComplete {
@@ -427,7 +434,7 @@ func (db *Database) SaveFleetMember(fleetID int64, member *models.FleetMember) (
 
 	_, err := db.LoadFleetMember(fleetID, member.ID)
 	if err != nil {
-		result, err := db.db.Exec("INSERT INTO fleetmembers(fleet_id, player_id, role, site_modifier, payment_modifier, payout, payout_complete) VALUES (?, ?, ?, ?, ?, ?, ?)", fleetID, member.Player.ID, member.Role, member.SiteModifier, member.PaymentModifier, member.Payout, fleetmemberPayoutCompleteEnum)
+		result, err := db.db.Exec("INSERT INTO fleetmembers(fleet_id, player_id, role, site_modifier, payment_modifier, payout, payout_complete, report_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", fleetID, member.Player.ID, member.Role, member.SiteModifier, member.PaymentModifier, member.Payout, fleetmemberPayoutCompleteEnum, fleetmemberReportID)
 		if err != nil {
 			return member, err
 		}
@@ -439,7 +446,7 @@ func (db *Database) SaveFleetMember(fleetID int64, member *models.FleetMember) (
 
 		member.ID = id
 	} else {
-		_, err := db.db.Exec("UPDATE fleetmembers SET fleet_id=?, player_id=?, role=?, site_modifier=?, payment_modifier=?, payout=?, payout_complete=? WHERE id=?", fleetID, member.Player.ID, member.Role, member.SiteModifier, member.PaymentModifier, member.Payout, fleetmemberPayoutCompleteEnum, member.ID)
+		_, err := db.db.Exec("UPDATE fleetmembers SET fleet_id=?, player_id=?, role=?, site_modifier=?, payment_modifier=?, payout=?, payout_complete=?, report_id=? WHERE id=?", fleetID, member.Player.ID, member.Role, member.SiteModifier, member.PaymentModifier, member.Payout, fleetmemberPayoutCompleteEnum, fleetmemberReportID, member.ID)
 		if err != nil {
 			return member, err
 		}
@@ -943,6 +950,10 @@ func (db *Database) SaveReport(report *models.Report) (*models.Report, error) {
 		for _, fleet := range report.Fleets {
 			fleet.ReportID = report.ID
 
+			for _, member := range fleet.Members {
+				member.ReportID = report.ID
+			}
+
 			f, err := database.SaveFleet(fleet)
 			if err != nil {
 				return report, err
@@ -954,6 +965,69 @@ func (db *Database) SaveReport(report *models.Report) (*models.Report, error) {
 		_, err := db.db.Exec("UPDATE reports SET creator=?, total_payout=?, starttime=?, endtime=?, payout_complete=? WHERE id = ?", report.Creator.ID, report.TotalPayout, report.StartRange, report.EndRange, reportPayoutCompleteEnum, report.ID)
 		if err != nil {
 			return report, err
+		}
+
+		for _, fleet := range report.Fleets {
+			var payoutCompleteEnum string
+
+			if fleet.PayoutComplete {
+				payoutCompleteEnum = "Y"
+			} else {
+				payoutCompleteEnum = "N"
+			}
+
+			_, err := db.db.Exec("UPDATE fleets SET payout_complete = ? WHERE id = ? AND report_id = ?", payoutCompleteEnum, fleet.ID, report.ID)
+			if err != nil {
+				return report, err
+			}
+		}
+
+		fleetPayoutsComplete := make(map[int64][]bool)
+
+		for _, reportPayout := range report.Payouts {
+			for _, payout := range reportPayout.Payouts {
+				if _, ok := fleetPayoutsComplete[payout.FleetID]; !ok {
+					fleetPayoutsComplete[payout.FleetID] = make([]bool, 0)
+				}
+
+				fleetPayoutsComplete[payout.FleetID] = append(fleetPayoutsComplete[payout.FleetID], payout.PayoutComplete)
+
+				var payoutCompleteEnum string
+
+				if payout.PayoutComplete {
+					payoutCompleteEnum = "Y"
+				} else {
+					payoutCompleteEnum = "N"
+				}
+
+				_, err := db.db.Exec("UPDATE fleetmembers SET payout_complete = ? WHERE fleet_id = ? AND player_id = ? AND report_id = ?", payoutCompleteEnum, payout.FleetID, payout.PlayerID, report.ID)
+				if err != nil {
+					return report, err
+				}
+			}
+		}
+
+		for fleetID, payoutsComplete := range fleetPayoutsComplete {
+			payoutComplete := true
+
+			for _, complete := range payoutsComplete {
+				if !complete {
+					payoutComplete = false
+				}
+			}
+
+			var payoutCompleteEnum string
+
+			if payoutComplete {
+				payoutCompleteEnum = "Y"
+			} else {
+				payoutCompleteEnum = "N"
+			}
+
+			_, err := db.db.Exec("UPDATE fleets SET payout_complete = ? WHERE id = ? AND report_id = ?", payoutCompleteEnum, fleetID, report.ID)
+			if err != nil {
+				return report, err
+			}
 		}
 	}
 

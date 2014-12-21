@@ -35,7 +35,7 @@ func (pay *ReportPayout) AllPayoutsComplete() bool {
 	pay.PayoutComplete = true
 
 	for _, payout := range pay.Payouts {
-		if pay.PayoutComplete && !payout.PayoutComplete {
+		if !payout.PayoutComplete {
 			pay.PayoutComplete = false
 		}
 	}

@@ -3,10 +3,12 @@
 	{{ template "navigation" . }}
 	
     {{ $ReportAdmin := or (IsReportCreator .Report) (HasAccessMask 256) }}
+    {{ $ReportID := .Report.ID }}
+    {{ $ReportPayoutComplete := .Report.PayoutComplete }}
     
 	<div class="container" role="main">
 		<div class="page-header">
-			<h1>Details for report #{{ .Report.ID }}</h1>
+			<h1>Details for report #{{ $ReportID }}</h1>
 		</div>
 		<div class="row">
 			<div class="col-md">
@@ -25,39 +27,23 @@
 								<th>Payout Complete</th>
 							</thead>
 							<tbody>
-                            	<form role="form-horizontal" id="reportDetailsForm">
-                                    <tr>
-                                        <td>{{ .Report.Creator.Name }}</td>
-                                        <td>{{ FormatFloat .Report.TotalPayout }} ISK</td>
-                                        <td>{{ len .Report.Fleets }}</td>
-                                        <td>{{ .Report.StartRange }}</td>
-                                        <td>{{ .Report.EndRange }}</td>
-                                        <td class="{{ if .Report.PayoutComplete }} success {{ else }} danger {{ end }}">
-                                            <div id="reportDetailsPayoutComplete" report="{{ .Report.ID }}" class="report-details">
-                                                {{ if .Fleet.PayoutComplete }} Done {{ else }} Outstanding {{ end }}
-                                            </div>
-                                            <div id="reportDetailsPayoutCompleteForm" report="{{ .Report.ID }}" style="display: none;" class="report-details">
-                                                <select class="form-control" id="reportDetailsPayoutCompleteEdit" name="reportDetailsPayoutCompleteEdit">
-                                                    <option value="false">Outstanding</option>
-                                                    <option value="true">Done</option>
-                                                </select>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </form>
+                                <tr>
+                                    <td>{{ .Report.Creator.Name }}</td>
+                                    <td>{{ FormatFloat .Report.TotalPayout }} ISK</td>
+                                    <td>{{ len .Report.Fleets }}</td>
+                                    <td>{{ .Report.StartRange }}</td>
+                                    <td>{{ .Report.EndRange }}</td>
+                                    <td class="{{ if $ReportPayoutComplete }} success {{ else }} danger {{ end }}">{{ if $ReportPayoutComplete }} Done {{ else }} Outstanding {{ end }}</td>
+                                </tr>
 							</tbody>
 						</table>
 						<p align="center">
                         	{{ if $ReportAdmin }}
-                            <div id="reportMemberActions" report="{{ .Report.ID }}" align="center" class="report-details">
-                                <a class="btn btn-primary report-details-toggle" report="{{ .Report.ID }}">Edit</a>
-                                {{ if not .Report.PayoutComplete }}
-								<a href="/report/{{ .Report.ID }}/finish" class="btn btn-danger">Finish Report</a>
+                            <div id="reportMemberActions" report="{{ $ReportID }}" align="center" class="report-details">
+                                <a class="btn btn-primary report-details-toggle" report="{{ $ReportID }}">Edit</a>
+                                {{ if not $ReportPayoutComplete }}
+								<a href="/report/{{ $ReportID }}/finish" class="btn btn-danger">Finish Report</a>
 								{{ end }}
-                            </div>
-                            <div id="reportMemberActions" report="{{ .Report.ID }}" style="display: none;" align="center" class="report-details">
-                                <a class="btn btn-success report-details-save" report="{{ .Report.ID }}">Save</a>&nbsp;
-                                <a class="btn btn-danger report-details-toggle" report="{{ .Report.ID }}">Cancel</a>
                             </div>
                             {{ end }}
 						</p>
@@ -111,8 +97,8 @@
 								<tr>
 									<td>{{ $name }}</td>
 									<td>{{ FormatFloat $payout.TotalPayout }} ISK</td>
-                                    <td>{{ if $payout.PayoutComplete }} Done {{ else }} Outstanding {{ end }}</td>
-                                    <td><a href="#" class="btn btn-success">Mark as paid</a></td>
+                                    <td class="{{ if or $payout.PayoutComplete $ReportPayoutComplete }} success {{ else }} danger {{ end }}">{{ if or $payout.PayoutComplete $ReportPayoutComplete }} Done {{ else }} Outstanding {{ end }}</td>
+                                    <td><a class="btn btn-success report-player-paid" player="{{ $name }}" report="{{ $ReportID }}">Mark as paid</a></td>
 								</tr>
 								{{ end }}
 							</tbody>

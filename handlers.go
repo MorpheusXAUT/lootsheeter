@@ -1437,10 +1437,13 @@ func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !HasHigherAccessMask(r, int(models.AccessMaskJuniorFleetCommander)) {
-		logger.Warnf("Received request to ReportEditHandler without proper access...")
+	report.CalculatePayouts()
 
-		http.Redirect(w, r, fmt.Sprintf("/report/%d", reportID), http.StatusUnauthorized)
+	report, err = database.SaveReport(report)
+	if err != nil {
+		logger.Errorf("Failed to save report #%d in ReportEditHandler: [%v]", reportID, err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -1460,8 +1463,8 @@ func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 	case "removefleet":
 		ReportEditRemoveFleetHandler(w, r, report)
 		break
-	case "calculate":
-		ReportEditCalculateHandler(w, r, report)
+	case "playerpaid":
+		ReportEditPlayerPaidHandler(w, r, report)
 		break
 	case "finish":
 		ReportEditFinishHandler(w, r, report)
@@ -1525,8 +1528,59 @@ func ReportEditRemoveFleetHandler(w http.ResponseWriter, r *http.Request, report
 	SendJSONResponse(w, response)
 }
 
-func ReportEditCalculateHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+func ReportEditPlayerPaidHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
 	response := make(map[string]interface{})
+
+	if !IsReportCreator(r, report) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to ReportEditPlayerPaidHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	playerName := r.FormValue("playerName")
+	if len(playerName) == 0 {
+		logger.Errorf("Content of playerName in ReportEditPlayerPaidHandler was empty...")
+
+		response["result"] = "error"
+		response["error"] = fmt.Sprintf("Content of playerName was empty")
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	reportPayout, ok := report.Payouts[playerName]
+	if !ok {
+		logger.Errorf("Failed to find ReportPayout for player %q in ReportEditPlayerPaidHandler...", playerName)
+
+		response["result"] = "error"
+		response["error"] = fmt.Sprintf("Failed to find report payout for player")
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	reportPayout.PayoutComplete = true
+
+	for _, payout := range reportPayout.Payouts {
+		payout.PayoutComplete = true
+	}
+
+	report.Payouts[playerName] = reportPayout
+
+	report, err := database.SaveReport(report)
+	if err != nil {
+		logger.Errorf("Failed to save report in ReportEditPlayerPaidHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err
+
+		SendJSONResponse(w, response)
+		return
+	}
 
 	response["result"] = "success"
 	response["error"] = nil

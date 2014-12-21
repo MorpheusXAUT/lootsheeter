@@ -48,6 +48,8 @@ func (report *Report) CalculatePayouts() {
 			report.TotalPayout += member.Payout
 		}
 	}
+
+	report.AllPayoutsComplete()
 }
 
 func (report *Report) AllPayoutsComplete() bool {
@@ -58,7 +60,7 @@ func (report *Report) AllPayoutsComplete() bool {
 	report.PayoutComplete = true
 
 	for _, payout := range report.Payouts {
-		if report.PayoutComplete && !payout.AllPayoutsComplete() {
+		if !payout.AllPayoutsComplete() {
 			report.PayoutComplete = false
 		}
 	}
