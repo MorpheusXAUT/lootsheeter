@@ -1592,6 +1592,37 @@ func ReportEditPlayerPaidHandler(w http.ResponseWriter, r *http.Request, report 
 func ReportEditFinishHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
 	response := make(map[string]interface{})
 
+	if !IsReportCreator(r, report) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to ReportEditFinishHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	for _, reportPayout := range report.Payouts {
+		reportPayout.PayoutComplete = true
+
+		for _, payout := range reportPayout.Payouts {
+			payout.PayoutComplete = true
+		}
+	}
+
+	report.PayoutComplete = true
+
+	report, err := database.SaveReport(report)
+	if err != nil {
+		logger.Errorf("Failed to save report in ReportEditFinishHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err
+
+		SendJSONResponse(w, response)
+		return
+	}
+
 	response["result"] = "success"
 	response["error"] = nil
 	response["report"] = report

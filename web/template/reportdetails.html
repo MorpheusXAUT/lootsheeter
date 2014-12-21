@@ -38,13 +38,8 @@
 							</tbody>
 						</table>
 						<p align="center">
-                        	{{ if $ReportAdmin }}
-                            <div id="reportMemberActions" report="{{ $ReportID }}" align="center" class="report-details">
-                                <a class="btn btn-primary report-details-toggle" report="{{ $ReportID }}">Edit</a>
-                                {{ if not $ReportPayoutComplete }}
-								<a href="/report/{{ $ReportID }}/finish" class="btn btn-danger">Finish Report</a>
-								{{ end }}
-                            </div>
+                        	{{ if and $ReportAdmin (not $ReportPayoutComplete) }}
+                            <a class="btn btn-danger report-details-finish" report="{{ $ReportID }}">Finish Report</a>
                             {{ end }}
 						</p>
 					</div>
@@ -89,7 +84,9 @@
 									<th>Name</th>
 									<th>Payout</th>
                                     <th>Payout Complete</th>
+                                    {{ if and $ReportAdmin (not $ReportPayoutComplete) }}
                                     <th>Action</th>
+                                    {{ end }}
 								</tr>
 							</thead>
 							<tbody>
@@ -98,7 +95,9 @@
 									<td>{{ $name }}</td>
 									<td>{{ FormatFloat $payout.TotalPayout }} ISK</td>
                                     <td class="{{ if or $payout.PayoutComplete $ReportPayoutComplete }} success {{ else }} danger {{ end }}">{{ if or $payout.PayoutComplete $ReportPayoutComplete }} Done {{ else }} Outstanding {{ end }}</td>
+                                    {{ if and $ReportAdmin (not $ReportPayoutComplete) }}
                                     <td><a class="btn btn-success report-player-paid" player="{{ $name }}" report="{{ $ReportID }}">Mark as paid</a></td>
+                                    {{ end }}
 								</tr>
 								{{ end }}
 							</tbody>
