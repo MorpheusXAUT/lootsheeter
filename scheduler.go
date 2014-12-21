@@ -30,7 +30,9 @@ func NewScheduler() *Scheduler {
 func InitialiseScheduler() {
 	scheduler = NewScheduler()
 
-	scheduler.StartMemberImport(4 * time.Hour)
+	if config.SchedulerMemberTracking {
+		scheduler.StartMemberImport(4 * time.Hour)
+	}
 }
 
 func (s *Scheduler) StartMemberImport(interval time.Duration) {

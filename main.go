@@ -36,7 +36,7 @@ func main() {
 
 	InitialiseDatabase()
 
-	//InitialiseScheduler()
+	InitialiseScheduler()
 
 	InitialiseSessions()
 

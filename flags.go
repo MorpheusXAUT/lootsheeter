@@ -8,18 +8,19 @@ import (
 )
 
 type Config struct {
-	DebugLevel      int
-	DebugTemplates  bool
-	HTTPPort        int
-	HTTPHost        string
-	MySqlUser       string
-	MySqlPassword   string
-	MySqlDatabase   string
-	MySqlHost       string
-	MySqlPort       int
-	SSOClientID     string
-	SSOClientSecret string
-	SSOCallbackURL  string
+	DebugLevel              int
+	DebugTemplates          bool
+	HTTPPort                int
+	HTTPHost                string
+	MySqlUser               string
+	MySqlPassword           string
+	MySqlDatabase           string
+	MySqlHost               string
+	MySqlPort               int
+	SSOClientID             string
+	SSOClientSecret         string
+	SSOCallbackURL          string
+	SchedulerMemberTracking bool
 }
 
 var (
@@ -39,6 +40,7 @@ func ParseConfigFlags() (*Config, error) {
 	ssoClientIDFlag := flag.String("ssoid", "", "EVE Online Application Client ID")
 	ssoClientSecretFlag := flag.String("ssosecret", "", "EVE Online Application Client Secret")
 	ssoCallbackURLFlag := flag.String("ssocallback", "", "EVE Online Application Callback URL")
+	schedulerMemberTrackingFlag := flag.Bool("membertracking", false, "Enables automatic member list updates via the EVE API (requires corp API key)")
 	configFileFlag := flag.String("config", "", "Config file to parse commandline parameters from")
 
 	flag.Parse()
@@ -59,18 +61,19 @@ func ParseConfigFlags() (*Config, error) {
 		}
 	} else {
 		conf = &Config{
-			DebugLevel:      *debugLevelFlag,
-			DebugTemplates:  *debugTemplatesFlag,
-			HTTPPort:        *httpPortFlag,
-			HTTPHost:        *httpHostFlag,
-			MySqlUser:       *mysqlUserFlag,
-			MySqlPassword:   *mysqlPasswordFlag,
-			MySqlDatabase:   *mysqlDatabaseFlag,
-			MySqlHost:       *mysqlHostFlag,
-			MySqlPort:       *mysqlPortFlag,
-			SSOClientID:     *ssoClientIDFlag,
-			SSOClientSecret: *ssoClientSecretFlag,
-			SSOCallbackURL:  *ssoCallbackURLFlag,
+			DebugLevel:              *debugLevelFlag,
+			DebugTemplates:          *debugTemplatesFlag,
+			HTTPPort:                *httpPortFlag,
+			HTTPHost:                *httpHostFlag,
+			MySqlUser:               *mysqlUserFlag,
+			MySqlPassword:           *mysqlPasswordFlag,
+			MySqlDatabase:           *mysqlDatabaseFlag,
+			MySqlHost:               *mysqlHostFlag,
+			MySqlPort:               *mysqlPortFlag,
+			SSOClientID:             *ssoClientIDFlag,
+			SSOClientSecret:         *ssoClientSecretFlag,
+			SSOCallbackURL:          *ssoCallbackURLFlag,
+			SchedulerMemberTracking: *schedulerMemberTrackingFlag,
 		}
 	}
 
