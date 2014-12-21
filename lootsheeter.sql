@@ -132,6 +132,7 @@ CREATE TABLE IF NOT EXISTS `players` (
 -- Dumping structure for table lootsheeter.reports
 CREATE TABLE IF NOT EXISTS `reports` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `corporation_id` bigint(20) NOT NULL,
   `creator` bigint(20) NOT NULL,
   `total_payout` double NOT NULL DEFAULT '0',
   `starttime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -139,6 +140,8 @@ CREATE TABLE IF NOT EXISTS `reports` (
   `payout_complete` enum('Y','N') NOT NULL DEFAULT 'N',
   PRIMARY KEY (`id`),
   KEY `fk_reports_player` (`creator`),
+  KEY `fk_reports_corporation` (`corporation_id`),
+  CONSTRAINT `fk_reports_corporation` FOREIGN KEY (`corporation_id`) REFERENCES `corporations` (`id`),
   CONSTRAINT `fk_reports_player` FOREIGN KEY (`creator`) REFERENCES `players` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
