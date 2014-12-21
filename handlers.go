@@ -129,44 +129,20 @@ func FleetListHandler(w http.ResponseWriter, r *http.Request) {
 	data["PageType"] = 3
 	data["LoggedIn"] = loggedIn
 
-	var fleets []*models.Fleet
+	corporationID := session.GetCorpID(r)
 
-	if HasAccessMask(r, int(models.AccessMaskAdmin)) {
-		f, err := database.LoadAllFleets()
-		if err != nil {
-			logger.Errorf("Failed to load all fleets in FleetListHandler: [%v]", err)
+	fleets, err := database.LoadAllFleets(corporationID)
+	if err != nil {
+		logger.Errorf("Failed to load all fleets in FleetListHandler: [%v]", err)
 
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		fleets = f
-	} else {
-		corporationName := session.GetCorporationName(r)
-
-		corporation, err := database.LoadCorporationFromName(corporationName)
-		if err != nil {
-			logger.Errorf("Failed to load corporation in FleetListHandler: [%v]", err)
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		f, err := database.LoadAllFleetsForCorporation(corporation.ID)
-		if err != nil {
-			logger.Errorf("Failed to load all fleets in FleetListHandler: [%v]", err)
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		fleets = f
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	data["Fleets"] = fleets
 	data["ShowAll"] = false
 
-	err := templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleets", data)
+	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleets", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in FleetListHandler: [%v]", err)
 	}
@@ -187,44 +163,20 @@ func FleetListAllHandler(w http.ResponseWriter, r *http.Request) {
 	data["PageType"] = 3
 	data["LoggedIn"] = loggedIn
 
-	var fleets []*models.Fleet
+	corporationID := session.GetCorpID(r)
 
-	if HasAccessMask(r, int(models.AccessMaskAdmin)) {
-		f, err := database.LoadAllFleets()
-		if err != nil {
-			logger.Errorf("Failed to load all fleets in FleetListAllHandler: [%v]", err)
+	fleets, err := database.LoadAllFleets(corporationID)
+	if err != nil {
+		logger.Errorf("Failed to load all fleets in FleetListHandler: [%v]", err)
 
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		fleets = f
-	} else {
-		corporationName := session.GetCorporationName(r)
-
-		corporation, err := database.LoadCorporationFromName(corporationName)
-		if err != nil {
-			logger.Errorf("Failed to load corporation in FleetListAllHandler: [%v]", err)
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		f, err := database.LoadAllFleetsForCorporation(corporation.ID)
-		if err != nil {
-			logger.Errorf("Failed to load all fleets in FleetListAllHandler: [%v]", err)
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		fleets = f
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	data["Fleets"] = fleets
 	data["ShowAll"] = true
 
-	err := templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleets", data)
+	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleets", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in FleetListAllHandler: [%v]", err)
 	}
@@ -245,7 +197,9 @@ func FleetCreateHandler(w http.ResponseWriter, r *http.Request) {
 	data["PageType"] = 3
 	data["LoggedIn"] = loggedIn
 
-	players, err := database.LoadAllPlayers()
+	corporationID := session.GetCorpID(r)
+
+	players, err := database.LoadAllPlayers(corporationID)
 	if err != nil {
 		logger.Errorf("Failed to load all players in FleetCreateHandler: [%v]", err)
 
@@ -370,6 +324,13 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	corporationID := session.GetCorpID(r)
+
+	if fleet.Corporation.ID != corporationID {
+		http.Redirect(w, r, "/fleets", http.StatusSeeOther)
+		return
+	}
+
 	data["Fleet"] = fleet
 
 	availablePlayers, err := database.LoadAvailablePlayers(fleetID, fleet.Corporation.ID)
@@ -434,6 +395,13 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to load fleet in FleetEditHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	corporationID := session.GetCorpID(r)
+
+	if fleet.Corporation.ID != corporationID {
+		http.Redirect(w, r, "/fleets", http.StatusSeeOther)
 		return
 	}
 
@@ -1187,7 +1155,9 @@ func ReportListHandler(w http.ResponseWriter, r *http.Request) {
 	data["LoggedIn"] = loggedIn
 	data["ShowAll"] = false
 
-	reports, err := database.LoadAllReports()
+	corporationID := session.GetCorpID(r)
+
+	reports, err := database.LoadAllReports(corporationID)
 	if err != nil {
 		logger.Errorf("Failed to load all reports in ReportListHandler: [%v]", err)
 
@@ -1219,7 +1189,9 @@ func ReportListAllHandler(w http.ResponseWriter, r *http.Request) {
 	data["LoggedIn"] = loggedIn
 	data["ShowAll"] = true
 
-	reports, err := database.LoadAllReports()
+	corporationID := session.GetCorpID(r)
+
+	reports, err := database.LoadAllReports(corporationID)
 	if err != nil {
 		logger.Errorf("Failed to load all reports in ReportListAllHandler: [%v]", err)
 
@@ -1250,7 +1222,9 @@ func ReportCreateHandler(w http.ResponseWriter, r *http.Request) {
 	data["PageType"] = 4
 	data["LoggedIn"] = loggedIn
 
-	fleets, err := database.LoadAllFleetsWithoutReports()
+	corpID := session.GetCorpID(r)
+
+	fleets, err := database.LoadAllFleetsWithoutReports(corpID)
 	if err != nil {
 		logger.Errorf("Failed to load all reports in ReportCreateHandler: [%v]", err)
 
@@ -1323,9 +1297,19 @@ func ReportCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 		fleets = append(fleets, f)
 	}
 
+	corporationID := session.GetCorpID(r)
+
+	corporation, err := database.LoadCorporation(corporationID)
+	if err != nil {
+		logger.Errorf("Failed to load corporation in ReportCreateFormHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	player := session.GetPlayerFromRequest(r)
 
-	report := models.NewReport(-1, 0, startTime, endTime, false, player, fleets)
+	report := models.NewReport(-1, 0, startTime, endTime, false, corporation, player, fleets)
 
 	report, err = database.SaveReport(report)
 	if err != nil {
@@ -1367,6 +1351,13 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to load details for report #%d in ReportDetailsHandler: [%v]", reportID, err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	corporationID := session.GetCorpID(r)
+
+	if report.Corporation.ID != corporationID {
+		http.Redirect(w, r, "/reports", http.StatusSeeOther)
 		return
 	}
 
@@ -1434,6 +1425,13 @@ func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Errorf("Failed to load report in ReportEditHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	corporationID := session.GetCorpID(r)
+
+	if report.Corporation.ID != corporationID {
+		http.Redirect(w, r, "/reports", http.StatusSeeOther)
 		return
 	}
 

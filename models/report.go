@@ -11,18 +11,20 @@ type Report struct {
 	StartRange     time.Time
 	EndRange       time.Time
 	PayoutComplete bool
+	Corporation    *Corporation
 	Creator        *Player
 	Fleets         []*Fleet
 	Payouts        map[string]*ReportPayout
 }
 
-func NewReport(id int64, payout float64, start time.Time, end time.Time, complete bool, creator *Player, fleets []*Fleet) *Report {
+func NewReport(id int64, payout float64, start time.Time, end time.Time, complete bool, corp *Corporation, creator *Player, fleets []*Fleet) *Report {
 	report := &Report{
 		ID:             id,
 		TotalPayout:    payout,
 		StartRange:     start,
 		EndRange:       end,
 		PayoutComplete: complete,
+		Corporation:    corp,
 		Creator:        creator,
 		Fleets:         fleets,
 		Payouts:        make(map[string]*ReportPayout),

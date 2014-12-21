@@ -193,6 +193,28 @@ func (s *Session) GetCorporationName(r *http.Request) string {
 	return corporationName.(string)
 }
 
+func (s *Session) GetCorpID(r *http.Request) int64 {
+	session, _ := s.store.Get(r, "player")
+
+	corpID, ok := session.Values["corpID"]
+	if !ok {
+		return -1
+	}
+
+	return corpID.(int64)
+}
+
+func (s *Session) GetPlayerID(r *http.Request) int64 {
+	session, _ := s.store.Get(r, "player")
+
+	playerID, ok := session.Values["playerID"]
+	if !ok {
+		return -1
+	}
+
+	return playerID.(int64)
+}
+
 func (s *Session) SetLoginRedirect(w http.ResponseWriter, r *http.Request, redirect string) {
 	session, _ := s.store.Get(r, "login")
 
