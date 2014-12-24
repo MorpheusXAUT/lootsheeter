@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS `fleets` (
   `endtime` timestamp NULL DEFAULT NULL,
   `corporation_payout` double NOT NULL DEFAULT '0',
   `payout_complete` enum('Y','N') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'N',
+  `notes` text COLLATE utf8_unicode_ci NOT NULL,
   `report_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_fleets_report` (`report_id`),
