@@ -20,10 +20,11 @@ type Fleet struct {
 	SitesFinished     int
 	CorporationPayout float64
 	PayoutComplete    bool
+	Notes             string
 	ReportID          int64
 }
 
-func NewFleet(id int64, corp *Corporation, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time, payout float64, complete bool, report int64) *Fleet {
+func NewFleet(id int64, corp *Corporation, name string, system string, systemNick string, profit float64, losses float64, sites int, start time.Time, end time.Time, payout float64, complete bool, notes string, report int64) *Fleet {
 	fleet := &Fleet{
 		ID:                id,
 		Corporation:       corp,
@@ -38,6 +39,7 @@ func NewFleet(id int64, corp *Corporation, name string, system string, systemNic
 		EndTime:           end,
 		CorporationPayout: payout,
 		PayoutComplete:    complete,
+		Notes:             notes,
 		ReportID:          report,
 	}
 

@@ -127,6 +127,17 @@
 											</div>
                                         </td>
                                     </tr>
+                                    <tr>
+                                    	<th>Notes</th>
+                                        <td colspan="3">
+                                        	<div id="fleetDetailsNotes" fleet="{{ .Fleet.ID }}" class="fleet-details">
+                                            	<textarea class="form-control" rows="3" readonly="readonly">{{ .Fleet.Notes }}</textarea>
+                                            </div>
+                                            <div id="fleetDetailsNotesForm" fleet="{{ .Fleet.ID }}" style="display: none;" class="fleet-details">
+                                            	<textarea class="form-control" rows="3" id="fleetDetailsNotesEdit" name="fleetDetailsNotesEdit">{{ .Fleet.Notes }}</textarea>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 </form>
 							</tbody>
 						</table>

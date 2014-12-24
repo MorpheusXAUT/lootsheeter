@@ -259,7 +259,7 @@ func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fleet := models.NewFleet(-1, corporation, fleetName, fleetSystem, fleetSystemNickname, 0, 0, 0, time.Now(), time.Time{}, 0, false, -1)
+	fleet := models.NewFleet(-1, corporation, fleetName, fleetSystem, fleetSystemNickname, 0, 0, 0, time.Now(), time.Time{}, 0, false, "", -1)
 
 	player, err := database.LoadPlayer(fleetCommanderID)
 	if err != nil {
@@ -517,10 +517,13 @@ func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *
 		return
 	}
 
+	notes := r.FormValue("fleetDetailsNotesEdit")
+
 	fleet.StartTime = startTime
 	fleet.EndTime = endTime
 	fleet.SitesFinished = int(sitesFinished)
 	fleet.PayoutComplete = payoutComplete
+	fleet.Notes = notes
 
 	fleet, err = database.SaveFleet(fleet)
 	if err != nil {
