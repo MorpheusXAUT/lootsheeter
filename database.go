@@ -434,7 +434,7 @@ func (db *Database) SaveFleetMember(fleetID int64, member *models.FleetMember) (
 
 	_, err := db.LoadFleetMember(fleetID, member.ID)
 	if err != nil {
-		result, err := db.db.Exec("INSERT INTO fleetmembers(fleet_id, player_id, role, site_modifier, payment_modifier, payout, payout_complete, report_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", fleetID, member.Player.ID, member.Role, member.SiteModifier, member.PaymentModifier, member.Payout, fleetmemberPayoutCompleteEnum, fleetmemberReportID)
+		result, err := db.db.Exec("INSERT INTO fleetmembers(fleet_id, player_id, role, ship, site_modifier, payment_modifier, payout, payout_complete, report_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", fleetID, member.Player.ID, member.Role, member.Ship, member.SiteModifier, member.PaymentModifier, member.Payout, fleetmemberPayoutCompleteEnum, fleetmemberReportID)
 		if err != nil {
 			return member, err
 		}
@@ -446,7 +446,7 @@ func (db *Database) SaveFleetMember(fleetID int64, member *models.FleetMember) (
 
 		member.ID = id
 	} else {
-		_, err := db.db.Exec("UPDATE fleetmembers SET fleet_id=?, player_id=?, role=?, site_modifier=?, payment_modifier=?, payout=?, payout_complete=?, report_id=? WHERE id=?", fleetID, member.Player.ID, member.Role, member.SiteModifier, member.PaymentModifier, member.Payout, fleetmemberPayoutCompleteEnum, fleetmemberReportID, member.ID)
+		_, err := db.db.Exec("UPDATE fleetmembers SET fleet_id=?, player_id=?, role=?, ship=?, site_modifier=?, payment_modifier=?, payout=?, payout_complete=?, report_id=? WHERE id=?", fleetID, member.Player.ID, member.Role, member.Ship, member.SiteModifier, member.PaymentModifier, member.Payout, fleetmemberPayoutCompleteEnum, fleetmemberReportID, member.ID)
 		if err != nil {
 			return member, err
 		}
