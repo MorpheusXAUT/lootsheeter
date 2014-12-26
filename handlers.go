@@ -61,7 +61,7 @@ func LoginSSOHandler(w http.ResponseWriter, r *http.Request) {
 	if !strings.EqualFold(savedState, state) {
 		logger.Errorf("Failed to verify SSO state...")
 
-		http.Redirect(w, r, "/login?error=sso_state", http.StatusSeeOther)
+		http.Redirect(w, r, "/login?error=ssoState", http.StatusSeeOther)
 		return
 	}
 
@@ -114,7 +114,7 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func FleetListHandler(w http.ResponseWriter, r *http.Request) {
+func FleetListGetHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
@@ -123,62 +123,41 @@ func FleetListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err := r.ParseForm()
+	if err != nil {
+		logger.Errorf("Failed to parse form in FleetListGetHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	showAll := false
+	if len(r.FormValue("showAll")) > 0 {
+		showAll = true
+	}
+
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = "Active Fleets"
 	data["PageType"] = 3
 	data["LoggedIn"] = loggedIn
+	data["ShowAll"] = showAll
 
 	corporationID := session.GetCorpID(r)
 
 	fleets, err := database.LoadAllFleets(corporationID)
 	if err != nil {
-		logger.Errorf("Failed to load all fleets in FleetListHandler: [%v]", err)
+		logger.Errorf("Failed to load all fleets in FleetListGetHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	data["Fleets"] = fleets
-	data["ShowAll"] = false
 
 	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleets", data)
 	if err != nil {
-		logger.Errorf("Failed to execute template in FleetListHandler: [%v]", err)
-	}
-}
-
-func FleetListAllHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		session.SetLoginRedirect(w, r, "/fleets/all")
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
-	data := make(map[string]interface{})
-
-	data["PageTitle"] = "All Fleets"
-	data["PageType"] = 3
-	data["LoggedIn"] = loggedIn
-
-	corporationID := session.GetCorpID(r)
-
-	fleets, err := database.LoadAllFleets(corporationID)
-	if err != nil {
-		logger.Errorf("Failed to load all fleets in FleetListHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	data["Fleets"] = fleets
-	data["ShowAll"] = true
-
-	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleets", data)
-	if err != nil {
-		logger.Errorf("Failed to execute template in FleetListAllHandler: [%v]", err)
+		logger.Errorf("Failed to execute template in FleetListGetHandler: [%v]", err)
 	}
 }
 
@@ -292,11 +271,11 @@ func FleetCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleet.ID), http.StatusSeeOther)
 }
 
-func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
+func FleetGetHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	fleetID, err := strconv.ParseInt(vars["fleetid"], 10, 64)
 	if err != nil {
-		logger.Errorf("Failed to parse fleet ID %q in FleetDetailsHandler: [%v]", vars["fleetid"], err)
+		logger.Errorf("Failed to parse fleet ID %q in FleetGetHandler: [%v]", vars["fleetid"], err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -318,7 +297,7 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	fleet, err := database.LoadFleet(fleetID)
 	if err != nil {
-		logger.Errorf("Failed to load details for fleet #%d in FleetDetailsHandler: [%v]", fleetID, err)
+		logger.Errorf("Failed to load details for fleet #%d in FleetGetHandler: [%v]", fleetID, err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -335,7 +314,7 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	availablePlayers, err := database.LoadAvailablePlayers(fleetID, fleet.Corporation.ID)
 	if err != nil {
-		logger.Errorf("Failed to load available players for fleet #%d in FleetDetailsHandler: [%v]", fleetID, err)
+		logger.Errorf("Failed to load available players for fleet #%d in FleetGetHandler: [%v]", fleetID, err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -345,15 +324,15 @@ func FleetDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "fleetdetails", data)
 	if err != nil {
-		logger.Errorf("Failed to execute template in FleetDetailsHandler: [%v]", err)
+		logger.Errorf("Failed to execute template in FleetGetHandler: [%v]", err)
 	}
 }
 
-func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
+func FleetPutHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	fleetID, err := strconv.ParseInt(vars["fleetid"], 10, 64)
 	if err != nil {
-		logger.Errorf("Failed to parse fleet ID %q in FleetEditHandler: [%v]", vars["fleetid"], err)
+		logger.Errorf("Failed to parse fleet ID %q in FleetPutHandler: [%v]", vars["fleetid"], err)
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -367,16 +346,9 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/fleet/%d", fleetID)) {
-		logger.Warnf("Received request to FleetEditHandler without proper referrer: %q", r.Referer())
-
-		http.Redirect(w, r, fmt.Sprintf("/fleet/%d", fleetID), http.StatusBadRequest)
-		return
-	}
-
 	err = r.ParseForm()
 	if err != nil {
-		logger.Errorf("Failed to parse form in FleetEditHandler: [%v]", err)
+		logger.Errorf("Failed to parse form in FleetPutHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -384,7 +356,7 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 
 	command := r.FormValue("command")
 	if len(command) == 0 {
-		logger.Errorf("Received empty command int FleetEditHandler...")
+		logger.Errorf("Received empty command in FleetPutHandler...")
 
 		http.Error(w, "Received empty command", http.StatusBadRequest)
 		return
@@ -392,7 +364,7 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 
 	fleet, err := database.LoadFleet(fleetID)
 	if err != nil {
-		logger.Errorf("Failed to load fleet in FleetEditHandler: [%v]", err)
+		logger.Errorf("Failed to load fleet in FleetPutHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -406,32 +378,20 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch strings.ToLower(command) {
-	case "poll":
-		FleetEditPollHandler(w, r, fleet)
-		break
 	case "editdetails":
-		FleetEditEditDetailsHandler(w, r, fleet)
-		break
-	case "addmember":
-		FleetEditAddMemberHandler(w, r, fleet)
-		break
-	case "editmember":
-		FleetEditEditMemberHandler(w, r, fleet)
-		break
-	case "removemember":
-		FleetEditRemoveMemberHandler(w, r, fleet)
+		FleetPutEditDetailsHandler(w, r, fleet)
 		break
 	case "addprofit":
-		FleetEditAddProfitHandler(w, r, fleet)
+		FleetPutAddProfitHandler(w, r, fleet)
 		break
 	case "addloss":
-		FleetEditAddLossHandler(w, r, fleet)
+		FleetPutAddLossHandler(w, r, fleet)
 		break
-	case "calculate":
-		FleetEditCalculateHandler(w, r, fleet)
+	case "calculatepayouts":
+		FleetPutCalculatePayoutsHandler(w, r, fleet)
 		break
-	case "finish":
-		FleetEditFinishHandler(w, r, fleet)
+	case "finishfleet":
+		FleetPutFinishFleetHandler(w, r, fleet)
 		break
 	default:
 		response := make(map[string]interface{})
@@ -442,21 +402,11 @@ func FleetEditHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func FleetEditPollHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
-	response := make(map[string]interface{})
-
-	response["result"] = "success"
-	response["error"] = nil
-	response["fleet"] = fleet
-
-	SendJSONResponse(w, response)
-}
-
-func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
+func FleetPutEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
 	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
-		logger.Warnf("Received request to FleetEditEditDetailsHandler without proper access...")
+		logger.Warnf("Received request to FleetPutEditDetailsHandler without proper access...")
 
 		response["result"] = "error"
 		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
@@ -467,7 +417,7 @@ func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *
 
 	startTime, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", r.FormValue("fleetDetailsStartTimeEdit"))
 	if err != nil {
-		logger.Errorf("Failed to parse startTime in FleetEditEditDetailsHandler: [%v]", err)
+		logger.Errorf("Failed to parse startTime in FleetPutEditDetailsHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
@@ -483,7 +433,7 @@ func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *
 		!strings.EqualFold(r.FormValue("fleetDetailsEndTimeEdit"), "---") {
 		e, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", r.FormValue("fleetDetailsEndTimeEdit"))
 		if err != nil {
-			logger.Errorf("Failed to parse endTime in FleetEditEditDetailsHandler: [%v]", err)
+			logger.Errorf("Failed to parse endTime in FleetPutEditDetailsHandler: [%v]", err)
 
 			response["result"] = "error"
 			response["error"] = err.Error()
@@ -497,7 +447,7 @@ func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *
 
 	sitesFinished, err := strconv.ParseInt(r.FormValue("fleetDetailsSitesFinishedEdit"), 10, 64)
 	if err != nil {
-		logger.Errorf("Failed to parse sitesFinished in FleetEditEditDetailsHandler: [%v]", err)
+		logger.Errorf("Failed to parse sitesFinished in FleetPutEditDetailsHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
@@ -508,7 +458,7 @@ func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *
 
 	payoutComplete, err := strconv.ParseBool(r.FormValue("fleetDetailsPayoutCompleteEdit"))
 	if err != nil {
-		logger.Errorf("Failed to parse payoutComplete in FleetEditEditDetailsHandler: [%v]", err)
+		logger.Errorf("Failed to parse payoutComplete in FleetPutEditDetailsHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
@@ -527,7 +477,7 @@ func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *
 
 	fleet, err = database.SaveFleet(fleet)
 	if err != nil {
-		logger.Errorf("Failed to save fleet in FleetEditEditDetailsHandler: [%v]", err)
+		logger.Errorf("Failed to save fleet in FleetPutEditDetailsHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
@@ -541,6 +491,369 @@ func FleetEditEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *
 	response["fleet"] = fleet
 
 	SendJSONResponse(w, response)
+}
+
+func FleetPutAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
+	response := make(map[string]interface{})
+
+	if !IsFleetCommander(r, fleet) && !HasFleetRole(r, fleet, 8) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetPutAddProfitHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	rawProfit := r.FormValue("addProfitRaw")
+	if len(rawProfit) == 0 {
+		logger.Errorf("Content of rawProfit in FleetPutAddProfitHandler was empty...")
+
+		response["result"] = "error"
+		response["error"] = fmt.Sprintf("Content of rawProfit was empty")
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	var profit float64
+
+	profit = 0
+
+	if strings.Contains(strings.ToLower(rawProfit), "evepraisal") {
+		rowSplit := strings.Split(rawProfit, "\r\n")
+
+		for _, row := range rowSplit {
+			p, err := GetEvepraisalValue(row)
+			if err != nil {
+				logger.Errorf("Failed to parse evepraisal row in FleetPutAddProfitHandler: [%v]", err)
+
+				response["result"] = "error"
+				response["error"] = err.Error()
+
+				SendJSONResponse(w, response)
+				return
+			}
+
+			profit += p
+		}
+	} else {
+		p, err := GetPasteValue(rawProfit)
+		if err != nil {
+			logger.Errorf("Failed to parse paste in FleetPutAddProfitHandler: [%v]", err)
+
+			response["result"] = "error"
+			response["error"] = err.Error()
+
+			SendJSONResponse(w, response)
+			return
+		}
+
+		profit = p
+	}
+
+	player := session.GetPlayerFromRequest(r)
+	if player == nil {
+		logger.Errorf("Failed to get player from request in FleetPutAddProfitHandler...")
+
+		response["result"] = "error"
+		response["error"] = "Failed to load player, cannot submit loot paste"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	err := database.SaveLootPaste(fleet.ID, player.ID, rawProfit, profit, "P")
+	if err != nil {
+		logger.Errorf("Failed to save loot paste in FleetPutAddProfitHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	fleet.AddProfit(profit)
+
+	fleet, err = database.SaveFleet(fleet)
+	if err != nil {
+		logger.Errorf("Failed to save fleet in FleetPutAddProfitHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	response["result"] = "success"
+	response["error"] = nil
+	response["fleet"] = fleet
+
+	SendJSONResponse(w, response)
+}
+
+func FleetPutAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
+	response := make(map[string]interface{})
+
+	if !IsFleetCommander(r, fleet) && !HasFleetRole(r, fleet, 8) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetPutAddLossHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	rawLoss := r.FormValue("addLossRaw")
+	if len(rawLoss) == 0 {
+		logger.Errorf("Content of rawLoss in FleetPutAddLossHandler was empty...")
+
+		response["result"] = "error"
+		response["error"] = fmt.Sprintf("Content of rawLoss was empty")
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	var loss float64
+
+	loss = 0
+
+	if strings.Contains(strings.ToLower(rawLoss), "evepraisal") {
+		rowSplit := strings.Split(rawLoss, "\r\n")
+
+		for _, row := range rowSplit {
+			l, err := GetEvepraisalValue(row)
+			if err != nil {
+				logger.Errorf("Failed to parse evepraisal row in FleetPutAddLossHandler: [%v]", err)
+
+				response["result"] = "error"
+				response["error"] = err.Error()
+
+				SendJSONResponse(w, response)
+				return
+			}
+
+			loss += l
+		}
+	} else if strings.Contains(strings.ToLower(rawLoss), "zkillboard") {
+		rowSplit := strings.Split(rawLoss, "\r\n")
+
+		for _, row := range rowSplit {
+			l, err := GetZKillboardValue(row)
+			if err != nil {
+				logger.Errorf("Failed to parse zKillboard row in FleetPutAddLossHandler: [%v]", err)
+
+				response["result"] = "error"
+				response["error"] = err.Error()
+
+				SendJSONResponse(w, response)
+				return
+			}
+
+			loss += l
+		}
+	} else {
+		l, err := GetPasteValue(rawLoss)
+		if err != nil {
+			logger.Errorf("Failed to parse paste in FleetPutAddLossHandler: [%v]", err)
+
+			response["result"] = "error"
+			response["error"] = err.Error()
+
+			SendJSONResponse(w, response)
+			return
+		}
+
+		loss = l
+	}
+
+	player := session.GetPlayerFromRequest(r)
+	if player == nil {
+		logger.Errorf("Failed to get player from request in FleetPutAddLossHandler...")
+
+		response["result"] = "error"
+		response["error"] = "Failed to load player, cannot submit loot paste"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	err := database.SaveLootPaste(fleet.ID, player.ID, rawLoss, loss, "L")
+	if err != nil {
+		logger.Errorf("Failed to save loot paste in FleetPutAddLossHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	fleet.AddLoss(loss)
+
+	fleet, err = database.SaveFleet(fleet)
+	if err != nil {
+		logger.Errorf("Failed to save fleet in FleetPutAddLossHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	response["result"] = "success"
+	response["error"] = nil
+	response["fleet"] = fleet
+
+	SendJSONResponse(w, response)
+}
+
+func FleetPutCalculatePayoutsHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
+	response := make(map[string]interface{})
+
+	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetPutCalculatePayoutsHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	fleet.CalculatePayouts()
+
+	fleet, err := database.SaveFleet(fleet)
+	if err != nil {
+		logger.Errorf("Failed to save fleet in FleetPutCalculatePayoutsHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	response["result"] = "success"
+	response["error"] = nil
+	response["fleet"] = fleet
+
+	SendJSONResponse(w, response)
+}
+
+func FleetPutFinishFleetHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
+	response := make(map[string]interface{})
+
+	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetPutFinishFleetHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	fleet.FinishFleet()
+
+	fleet, err := database.SaveFleet(fleet)
+	if err != nil {
+		logger.Errorf("Failed to save fleet in FleetPutFinishFleetHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	response["result"] = "success"
+	response["error"] = nil
+	response["fleet"] = fleet
+
+	SendJSONResponse(w, response)
+}
+
+func FleetMembersGetHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	fleetID, err := strconv.ParseInt(vars["fleetid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse fleet ID %q in FleetMembersGetHandler: [%v]", vars["fleetid"], err)
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/fleet/%d", fleetID))
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+}
+
+func FleetMembersPostHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	fleetID, err := strconv.ParseInt(vars["fleetid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse fleet ID %q in FleetMembersPostHandler: [%v]", vars["fleetid"], err)
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/fleet/%d", fleetID))
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+}
+
+func FleetMembersPutHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	fleetID, err := strconv.ParseInt(vars["fleetid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse fleet ID %q in FleetMembersPutHandler: [%v]", vars["fleetid"], err)
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/fleet/%d", fleetID))
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+}
+
+func FleetMembersDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	fleetID, err := strconv.ParseInt(vars["fleetid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse fleet ID %q in FleetMembersDeleteHandler: [%v]", vars["fleetid"], err)
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/fleet/%d", fleetID))
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
 }
 
 func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
@@ -840,293 +1153,6 @@ func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet 
 	err = database.DeleteFleetMember(fleet.ID, memberID)
 	if err != nil {
 		logger.Errorf("Failed to remove fleet member in FleetEditRemoveMemberHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	response["result"] = "success"
-	response["error"] = nil
-	response["fleet"] = fleet
-
-	SendJSONResponse(w, response)
-}
-
-func FleetEditAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
-	response := make(map[string]interface{})
-
-	if !IsFleetCommander(r, fleet) && !HasFleetRole(r, fleet, 8) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
-		logger.Warnf("Received request to FleetEditAddProfitHandler without proper access...")
-
-		response["result"] = "error"
-		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	rawProfit := r.FormValue("addProfitRaw")
-	if len(rawProfit) == 0 {
-		logger.Errorf("Content of rawProfit in FleetEditAddProfitHandler was empty...")
-
-		response["result"] = "error"
-		response["error"] = fmt.Sprintf("Content of rawProfit was empty")
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	var profit float64
-
-	profit = 0
-
-	if strings.Contains(strings.ToLower(rawProfit), "evepraisal") {
-		rowSplit := strings.Split(rawProfit, "\r\n")
-
-		for _, row := range rowSplit {
-			p, err := GetEvepraisalValue(row)
-			if err != nil {
-				logger.Errorf("Failed to parse evepraisal row in FleetEditAddProfitHandler: [%v]", err)
-
-				response["result"] = "error"
-				response["error"] = err.Error()
-
-				SendJSONResponse(w, response)
-				return
-			}
-
-			profit += p
-		}
-	} else {
-		p, err := GetPasteValue(rawProfit)
-		if err != nil {
-			logger.Errorf("Failed to parse paste in FleetEditAddProfitHandler: [%v]", err)
-
-			response["result"] = "error"
-			response["error"] = err.Error()
-
-			SendJSONResponse(w, response)
-			return
-		}
-
-		profit = p
-	}
-
-	player := session.GetPlayerFromRequest(r)
-	if player == nil {
-		logger.Errorf("Failed to get player from request in FleetEditAddProfitHandler...")
-
-		response["result"] = "error"
-		response["error"] = "Failed to load player, cannot submit loot paste"
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	err := database.SaveLootPaste(fleet.ID, player.ID, rawProfit, profit, "P")
-	if err != nil {
-		logger.Errorf("Failed to save loot paste in FleetEditAddProfitHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	fleet.AddProfit(profit)
-
-	fleet, err = database.SaveFleet(fleet)
-	if err != nil {
-		logger.Errorf("Failed to save fleet in FleetEditAddProfitHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	response["result"] = "success"
-	response["error"] = nil
-	response["fleet"] = fleet
-
-	SendJSONResponse(w, response)
-}
-
-func FleetEditAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
-	response := make(map[string]interface{})
-
-	if !IsFleetCommander(r, fleet) && !HasFleetRole(r, fleet, 8) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
-		logger.Warnf("Received request to FleetEditAddLossHandler without proper access...")
-
-		response["result"] = "error"
-		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	rawLoss := r.FormValue("addLossRaw")
-	if len(rawLoss) == 0 {
-		logger.Errorf("Content of rawLoss in FleetEditAddLossHandler was empty...")
-
-		response["result"] = "error"
-		response["error"] = fmt.Sprintf("Content of rawLoss was empty")
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	var loss float64
-
-	loss = 0
-
-	if strings.Contains(strings.ToLower(rawLoss), "evepraisal") {
-		rowSplit := strings.Split(rawLoss, "\r\n")
-
-		for _, row := range rowSplit {
-			l, err := GetEvepraisalValue(row)
-			if err != nil {
-				logger.Errorf("Failed to parse evepraisal row in FleetEditAddLossHandler: [%v]", err)
-
-				response["result"] = "error"
-				response["error"] = err.Error()
-
-				SendJSONResponse(w, response)
-				return
-			}
-
-			loss += l
-		}
-	} else if strings.Contains(strings.ToLower(rawLoss), "zkillboard") {
-		rowSplit := strings.Split(rawLoss, "\r\n")
-
-		for _, row := range rowSplit {
-			l, err := GetZKillboardValue(row)
-			if err != nil {
-				logger.Errorf("Failed to parse zKillboard row in FleetEditAddLossHandler: [%v]", err)
-
-				response["result"] = "error"
-				response["error"] = err.Error()
-
-				SendJSONResponse(w, response)
-				return
-			}
-
-			loss += l
-		}
-	} else {
-		l, err := GetPasteValue(rawLoss)
-		if err != nil {
-			logger.Errorf("Failed to parse paste in FleetEditAddLossHandler: [%v]", err)
-
-			response["result"] = "error"
-			response["error"] = err.Error()
-
-			SendJSONResponse(w, response)
-			return
-		}
-
-		loss = l
-	}
-
-	player := session.GetPlayerFromRequest(r)
-	if player == nil {
-		logger.Errorf("Failed to get player from request in FleetEditAddLossHandler...")
-
-		response["result"] = "error"
-		response["error"] = "Failed to load player, cannot submit loot paste"
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	err := database.SaveLootPaste(fleet.ID, player.ID, rawLoss, loss, "L")
-	if err != nil {
-		logger.Errorf("Failed to save loot paste in FleetEditAddLossHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	fleet.AddLoss(loss)
-
-	fleet, err = database.SaveFleet(fleet)
-	if err != nil {
-		logger.Errorf("Failed to save fleet in FleetEditAddLossHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	response["result"] = "success"
-	response["error"] = nil
-	response["fleet"] = fleet
-
-	SendJSONResponse(w, response)
-}
-
-func FleetEditCalculateHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
-	response := make(map[string]interface{})
-
-	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
-		logger.Warnf("Received request to FleetEditCalculateHandler without proper access...")
-
-		response["result"] = "error"
-		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	fleet.CalculatePayouts()
-
-	fleet, err := database.SaveFleet(fleet)
-	if err != nil {
-		logger.Errorf("Failed to save fleet in FleetEditCalculateHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	response["result"] = "success"
-	response["error"] = nil
-	response["fleet"] = fleet
-
-	SendJSONResponse(w, response)
-}
-
-func FleetEditFinishHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
-	response := make(map[string]interface{})
-
-	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
-		logger.Warnf("Received request to FleetEditFinishHandler without proper access...")
-
-		response["result"] = "error"
-		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	fleet.FinishFleet()
-
-	fleet, err := database.SaveFleet(fleet)
-	if err != nil {
-		logger.Errorf("Failed to save fleet in FleetEditFinishHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()

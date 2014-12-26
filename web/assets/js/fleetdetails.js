@@ -12,32 +12,65 @@ $(document).ready(function(e) {
 	});
 	
 	$('a.fleet-details-save').click(function() {
-		$.getJSON('/fleet/'+$(this).attr('fleet')+'/edit?command=editdetails', $('#fleetDetailsForm').serialize(), function(data) {
-			if (data.result === "success" && data.error === null) {
-				location.reload(true);
-			} else {
-				displayError(data.error);
-			}
+		var formData = $('#fleetDetailsForm').serializeArray();
+		formData.push({ name: "command", value: "editDetails" });
+		
+		$.ajax({
+			accepts: "application/json",
+			cache: false,
+			data: formData,
+			dataType: "json",
+			error: displayAjaxError,
+			success: function(reply) {
+				if (reply.result === "success" && reply.error === null) {
+					location.reload(true);
+				} else {
+					displayError(reply.error);
+				}
+			},
+			timeout: 10000,
+			type: "PUT",
+			url: '/fleet/'+$(this).attr('fleet')
 		});
 	});
 	
 	$('a.fleet-details-calculate').click(function() {
-		$.getJSON('/fleet/'+$(this).attr('fleet')+'/edit?command=calculate', function(data) {
-			if (data.result === "success" && data.error === null) {
-				location.reload(true);
-			} else {
-				displayError(data.error);
-			}
+		$.ajax({
+			accepts: "application/json",
+			cache: false,
+			data: "command=calculatePayouts",
+			dataType: "json",
+			error: displayAjaxError,
+			success: function(reply) {
+				if (reply.result === "success" && reply.error === null) {
+					location.reload(true);
+				} else {
+					displayError(reply.error);
+				}
+			},
+			timeout: 10000,
+			type: "PUT",
+			url: '/fleet/'+$(this).attr('fleet')
 		});
 	});
 	
 	$('a.fleet-details-finish').click(function() {
-		$.getJSON('/fleet/'+$(this).attr('fleet')+'/edit?command=finish', function(data) {
-			if (data.result === "success" && data.error === null) {
-				location.reload(true);
-			} else {
-				displayError(data.error);
-			}
+		$.ajax({
+			accepts: "application/json",
+			cache: false,
+			data: "command=finishFleet",
+			dataType: "json",
+			error: displayAjaxError,
+			success: function(reply) {
+				if (reply.result === "success" && reply.error === null) {
+					location.reload(true);
+				} else {
+					displayError(reply.error);
+				}
+			},
+			timeout: 10000,
+			type: "PUT",
+			url: '/fleet/'+$(this).attr('fleet')
 		});
 	});
 	

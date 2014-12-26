@@ -3,6 +3,28 @@ function displayError(error) {
 	$('html, body').animate({ scrollTop: '0px' });
 }
 
+function displayAjaxError(jqXHR, textStatus, errorThrown) {
+	switch (textStatus) {
+		case null:
+			displayError('Received unknown error while performing AJAX request');
+			break;
+		case "timeout":
+			displayError('Received timeout while performing AJAX request');
+			break;
+		case "error":
+			displayError('Received error while performing AJAX request: ' + errorThrown);
+			break;
+		case "abort":
+			displayError('AJAX request was aborted');
+			break;
+		case "parsererror":
+			displayError('Failed to parse AJAX request');
+			break;
+		default:
+			displayError('Received unknown error while performing AJAX request');
+	}
+}
+
 jQuery.fn.filterByText = function(textbox, selectSingleMatch) {
 	return this.each(function() {
 		var select = this;
