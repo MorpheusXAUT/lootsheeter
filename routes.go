@@ -82,7 +82,7 @@ var routes = []Route{
 	Route{
 		Name:        "FleetMembersPut",
 		Methods:     []string{"PUT"},
-		Pattern:     "/fleet/{fleetid:[0-9]+}/members",
+		Pattern:     "/fleet/{fleetid:[0-9]+}/members/{memberid:[0-9]+}",
 		HandlerFunc: FleetMembersPutHandler,
 	},
 	Route{

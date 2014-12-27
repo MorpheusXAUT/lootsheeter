@@ -99,12 +99,22 @@ $(document).ready(function(e) {
 	});
 	
 	$('a.fleet-member-list-save').click(function() {
-		$.getJSON('/fleet/'+$(this).attr('fleet')+'/edit?command=editmember', $('form.fleet-member-list-form[member='+$(this).attr('member')+']').serialize(), function(data) {
-			if (data.result === "success" && data.error === null) {
-				location.reload(true);
-			} else {
-				displayError(data.error);
-			}
+		$.ajax({
+			accepts: "application/json",
+			cache: false,
+			data: $('form.fleet-member-list-form[member='+$(this).attr('member')+']').serialize(),
+			dataType: "json",
+			error: displayAjaxError,
+			success: function(reply) {
+				if (reply.result === "success" && reply.error === null) {
+					location.reload(true);
+				} else {
+					displayError(reply.error);
+				}
+			},
+			timeout: 10000,
+			type: "PUT",
+			url: '/fleet/'+$(this).attr('fleet') + '/members/'+$(this).attr('member')
 		});
 	});
 	

@@ -1015,6 +1015,17 @@ func FleetMembersPutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	memberID, err := strconv.ParseInt(vars["memberid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse member ID %q in FleetMembersPutHandler: [%v]", vars["fleetid"], err)
+
+		response["result"] = "error"
+		response["error"] = "Failed to parse member ID"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
 	loggedIn := session.IsLoggedIn(w, r)
 
 	if !loggedIn {
@@ -1022,6 +1033,136 @@ func FleetMembersPutHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
+
+	fleet, err := database.LoadFleet(fleetID)
+	if err != nil {
+		logger.Errorf("Failed to load fleet in FleetMembersPutHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	corporationID := session.GetCorpID(r)
+
+	if fleet.Corporation.ID != corporationID {
+		http.Redirect(w, r, "/fleets", http.StatusSeeOther)
+		return
+	}
+
+	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetMembersPutHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		logger.Errorf("Failed to parse form in FleetMembersPutHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	fleetRole, err := strconv.ParseInt(r.FormValue("fleetMemberRoleEdit"), 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse fleetRole in FleetMembersPutHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	siteModifier, err := strconv.ParseInt(r.FormValue("fleetMemberSiteModiferEdit"), 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse siteModifier in FleetMembersPutHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	paymentModifier, err := strconv.ParseFloat(r.FormValue("fleetMemberPaymentModifierEdit"), 64)
+	if err != nil {
+		logger.Errorf("Failed to parse paymentModifier in FleetMembersPutHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	payoutComplete, err := strconv.ParseBool(r.FormValue("fleetMemberPayoutCompleteEdit"))
+	if err != nil {
+		logger.Errorf("Failed to parse payoutComplete in FleetMembersPutHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	fleetMember, err := database.LoadFleetMember(fleet.ID, memberID)
+	if err != nil {
+		logger.Errorf("Failed to load fleet member in FleetMembersPutHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	fleetCommanders := fleet.FleetCommanders()
+
+	if fleetMember.Role == models.FleetRoleFleetCommander && models.FleetRole(fleetRole) != models.FleetRoleFleetCommander && len(fleetCommanders) <= 1 {
+		logger.Errorf("Tried to remove fleet commander without replacement in FleetMembersPutHandler...")
+
+		response["result"] = "error"
+		response["error"] = "Cannot remove the fleet commander without replacement from the member list!"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	fleetMember.Role = models.FleetRole(fleetRole)
+	fleetMember.SiteModifier = int(siteModifier)
+	fleetMember.PaymentModifier = paymentModifier
+	fleetMember.PayoutComplete = payoutComplete
+
+	fleet.Members[fleetMember.Name] = fleetMember
+
+	fleet, err = database.SaveFleet(fleet)
+	if err != nil {
+		logger.Errorf("Failed to save fleet in FleetMembersPutHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	response["result"] = "success"
+	response["error"] = nil
+	response["fleet"] = fleet
+
+	SendJSONResponse(w, response)
 }
 
 func FleetMembersDeleteHandler(w http.ResponseWriter, r *http.Request) {
@@ -1114,122 +1255,6 @@ func FleetMembersDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	err = database.DeleteFleetMember(fleet.ID, memberID)
 	if err != nil {
 		logger.Errorf("Failed to remove fleet member in FleetMembersDeleteHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	response["result"] = "success"
-	response["error"] = nil
-	response["fleet"] = fleet
-
-	SendJSONResponse(w, response)
-}
-
-func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
-	response := make(map[string]interface{})
-
-	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
-		logger.Warnf("Received request to FleetEditEditMemberHandler without proper access...")
-
-		response["result"] = "error"
-		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	memberID, err := strconv.ParseInt(r.FormValue("fleetMemberMemberID"), 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse memberID in FleetEditEditMemberHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	fleetRole, err := strconv.ParseInt(r.FormValue("fleetMemberRoleEdit"), 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse fleetRole in FleetEditEditMemberHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	siteModifier, err := strconv.ParseInt(r.FormValue("fleetMemberSiteModiferEdit"), 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse siteModifier in FleetEditEditMemberHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	paymentModifier, err := strconv.ParseFloat(r.FormValue("fleetMemberPaymentModifierEdit"), 64)
-	if err != nil {
-		logger.Errorf("Failed to parse paymentModifier in FleetEditEditMemberHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	payoutComplete, err := strconv.ParseBool(r.FormValue("fleetMemberPayoutCompleteEdit"))
-	if err != nil {
-		logger.Errorf("Failed to parse payoutComplete in FleetEditEditMemberHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	fleetMember, err := database.LoadFleetMember(fleet.ID, memberID)
-	if err != nil {
-		logger.Errorf("Failed to load fleet member in FleetEditEditMemberHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	fleetCommanders := fleet.FleetCommanders()
-
-	if fleetMember.Role == models.FleetRoleFleetCommander && models.FleetRole(fleetRole) != models.FleetRoleFleetCommander && len(fleetCommanders) <= 1 {
-		logger.Errorf("Tried to remove fleet commander without replacement in FleetEditEditMemberHandler...")
-
-		response["result"] = "error"
-		response["error"] = "Cannot remove the fleet commander without replacement from the member list!"
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	fleetMember.Role = models.FleetRole(fleetRole)
-	fleetMember.SiteModifier = int(siteModifier)
-	fleetMember.PaymentModifier = paymentModifier
-	fleetMember.PayoutComplete = payoutComplete
-
-	fleet.Members[fleetMember.Name] = fleetMember
-
-	fleet, err = database.SaveFleet(fleet)
-	if err != nil {
-		logger.Errorf("Failed to save fleet in FleetEditEditMemberHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
