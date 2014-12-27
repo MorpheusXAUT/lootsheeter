@@ -781,12 +781,17 @@ func FleetPutFinishFleetHandler(w http.ResponseWriter, r *http.Request, fleet *m
 }
 
 func FleetMembersGetHandler(w http.ResponseWriter, r *http.Request) {
+	response := make(map[string]interface{})
+
 	vars := mux.Vars(r)
 	fleetID, err := strconv.ParseInt(vars["fleetid"], 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse fleet ID %q in FleetMembersGetHandler: [%v]", vars["fleetid"], err)
 
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		response["result"] = "error"
+		response["error"] = "Failed to parse fleet ID"
+
+		SendJSONResponse(w, response)
 		return
 	}
 
@@ -797,15 +802,39 @@ func FleetMembersGetHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
+
+	fleetMembers, err := database.LoadAllFleetMembers(fleetID)
+	if err != nil {
+		logger.Errorf("Failed to load all fleet members for fleet #%d in FleetMembersGetHandler: [%v]", fleetID, err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	response["result"] = "success"
+	response["error"] = nil
+	response["fleetMembers"] = fleetMembers
+
+	SendJSONResponse(w, response)
+	return
 }
 
 func FleetMembersPostHandler(w http.ResponseWriter, r *http.Request) {
+	response := make(map[string]interface{})
+	var errors []string
+
 	vars := mux.Vars(r)
 	fleetID, err := strconv.ParseInt(vars["fleetid"], 10, 64)
 	if err != nil {
 		logger.Errorf("Failed to parse fleet ID %q in FleetMembersPostHandler: [%v]", vars["fleetid"], err)
 
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		response["result"] = "error"
+		response["error"] = "Failed to parse fleet ID"
+
+		SendJSONResponse(w, response)
 		return
 	}
 
@@ -816,52 +845,27 @@ func FleetMembersPostHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-}
 
-func FleetMembersPutHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	fleetID, err := strconv.ParseInt(vars["fleetid"], 10, 64)
+	fleet, err := database.LoadFleet(fleetID)
 	if err != nil {
-		logger.Errorf("Failed to parse fleet ID %q in FleetMembersPutHandler: [%v]", vars["fleetid"], err)
+		logger.Errorf("Failed to load fleet in FleetMembersPostHandler: [%v]", err)
 
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
 		return
 	}
 
-	loggedIn := session.IsLoggedIn(w, r)
+	corporationID := session.GetCorpID(r)
 
-	if !loggedIn {
-		session.SetLoginRedirect(w, r, fmt.Sprintf("/fleet/%d", fleetID))
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+	if fleet.Corporation.ID != corporationID {
+		http.Redirect(w, r, "/fleets", http.StatusSeeOther)
 		return
 	}
-}
-
-func FleetMembersDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	fleetID, err := strconv.ParseInt(vars["fleetid"], 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse fleet ID %q in FleetMembersDeleteHandler: [%v]", vars["fleetid"], err)
-
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		session.SetLoginRedirect(w, r, fmt.Sprintf("/fleet/%d", fleetID))
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-}
-
-func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
-	response := make(map[string]interface{})
-	var errors []string
 
 	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
-		logger.Warnf("Received request to FleetEditAddMemberHandler without proper access...")
+		logger.Warnf("Received request to FleetMembersPostHandler without proper access...")
 
 		response["result"] = "error"
 		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
@@ -872,13 +876,24 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 
 	fleetCommanders := fleet.FleetCommanders()
 
+	err = r.ParseForm()
+	if err != nil {
+		logger.Errorf("Failed to parse form in FleetPutHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
 	fleetComposition := r.FormValue("addMemberFleetComposition")
 	if len(fleetComposition) > 0 {
 		fleetCompositionRows := strings.Split(fleetComposition, "\r\n")
 
 		members, err := ParseFleetCompositionRows(fleet.ID, fleetCompositionRows)
 		if err != nil {
-			logger.Errorf("Failed to parse fleet composition rows in FleetEditAddMemberHandler: [%v]", err)
+			logger.Errorf("Failed to parse fleet composition rows in FleetMembersPostHandler: [%v]", err)
 
 			response["result"] = "error"
 			response["error"] = err.Error()
@@ -899,7 +914,7 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 				}
 
 				if secondCommander {
-					logger.Errorf("Tried to add second fleet commander to fleet in FleetEditAddMemberHandler...")
+					logger.Errorf("Tried to add second fleet commander to fleet in FleetMembersPostHandler...")
 
 					errors = append(errors, "Cannot add two fleet commanders to the same fleet!")
 					continue
@@ -911,7 +926,7 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 	} else {
 		memberID, err := strconv.ParseInt(r.FormValue("addMemberSelectMember"), 10, 64)
 		if err != nil {
-			logger.Errorf("Failed to parse memberID in FleetEditAddMemberHandler: [%v]", err)
+			logger.Errorf("Failed to parse memberID in FleetMembersPostHandler: [%v]", err)
 
 			response["result"] = "error"
 			response["error"] = err.Error()
@@ -922,7 +937,7 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 
 		fleetRole, err := strconv.ParseInt(r.FormValue("addMemberSelectRole"), 10, 64)
 		if err != nil {
-			logger.Errorf("Failed to parse fleetRole in FleetEditAddMemberHandler: [%v]", err)
+			logger.Errorf("Failed to parse fleetRole in FleetMembersPostHandler: [%v]", err)
 
 			response["result"] = "error"
 			response["error"] = err.Error()
@@ -932,7 +947,7 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 		}
 
 		if models.FleetRole(fleetRole) == models.FleetRoleFleetCommander && len(fleetCommanders) > 0 {
-			logger.Errorf("Tried to add second fleet commander to fleet in FleetEditAddMemberHandler...")
+			logger.Errorf("Tried to add second fleet commander to fleet in FleetMembersPostHandler...")
 
 			response["result"] = "error"
 			response["error"] = "Cannot add two fleet commanders to the same fleet!"
@@ -945,7 +960,7 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 
 		player, err := database.LoadPlayer(memberID)
 		if err != nil {
-			logger.Errorf("Failed to load player in FleetEditAddMemberHandler: [%v]", err)
+			logger.Errorf("Failed to load player in FleetMembersPostHandler: [%v]", err)
 
 			response["result"] = "error"
 			response["error"] = err.Error()
@@ -959,9 +974,9 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 		fleet.AddMember(fleetMember)
 	}
 
-	fleet, err := database.SaveFleet(fleet)
+	fleet, err = database.SaveFleet(fleet)
 	if err != nil {
-		logger.Errorf("Failed to save fleet in FleetEditAddMemberHandler: [%v]", err)
+		logger.Errorf("Failed to save fleet in FleetMembersPostHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
@@ -973,6 +988,135 @@ func FleetEditAddMemberHandler(w http.ResponseWriter, r *http.Request, fleet *mo
 	if len(errors) > 0 {
 		response["result"] = "error"
 		response["error"] = strings.Join(errors, ";")
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	response["result"] = "success"
+	response["error"] = nil
+	response["fleet"] = fleet
+
+	SendJSONResponse(w, response)
+}
+
+func FleetMembersPutHandler(w http.ResponseWriter, r *http.Request) {
+	response := make(map[string]interface{})
+
+	vars := mux.Vars(r)
+	fleetID, err := strconv.ParseInt(vars["fleetid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse fleet ID %q in FleetMembersPutHandler: [%v]", vars["fleetid"], err)
+
+		response["result"] = "error"
+		response["error"] = "Failed to parse fleet ID"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/fleet/%d", fleetID))
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+}
+
+func FleetMembersDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	response := make(map[string]interface{})
+
+	vars := mux.Vars(r)
+	fleetID, err := strconv.ParseInt(vars["fleetid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse fleet ID %q in FleetMembersDeleteHandler: [%v]", vars["fleetid"], err)
+
+		response["result"] = "error"
+		response["error"] = "Failed to parse fleet ID"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	memberID, err := strconv.ParseInt(vars["memberid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse member ID %q in FleetMembersDeleteHandler: [%v]", vars["fleetid"], err)
+
+		response["result"] = "error"
+		response["error"] = "Failed to parse member ID"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/fleet/%d", fleetID))
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	fleet, err := database.LoadFleet(fleetID)
+	if err != nil {
+		logger.Errorf("Failed to load fleet in FleetMembersDeleteHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	corporationID := session.GetCorpID(r)
+
+	if fleet.Corporation.ID != corporationID {
+		http.Redirect(w, r, "/fleets", http.StatusSeeOther)
+		return
+	}
+
+	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetMembersDeleteHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	member, err := database.LoadFleetMember(fleet.ID, memberID)
+	if err != nil {
+		logger.Errorf("Failed to load fleet member in FleetMembersDeleteHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	fleet.RemoveMember(member.Name)
+
+	fleetCommanders := fleet.FleetCommanders()
+
+	if len(fleetCommanders) == 0 {
+		logger.Errorf("Tried to remove fleet commander in FleetMembersDeleteHandler...")
+
+		response["result"] = "error"
+		response["error"] = "Cannot remove the fleet commander from the member list!"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	err = database.DeleteFleetMember(fleet.ID, memberID)
+	if err != nil {
+		logger.Errorf("Failed to remove fleet member in FleetMembersDeleteHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
 
 		SendJSONResponse(w, response)
 		return
@@ -1086,73 +1230,6 @@ func FleetEditEditMemberHandler(w http.ResponseWriter, r *http.Request, fleet *m
 	fleet, err = database.SaveFleet(fleet)
 	if err != nil {
 		logger.Errorf("Failed to save fleet in FleetEditEditMemberHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	response["result"] = "success"
-	response["error"] = nil
-	response["fleet"] = fleet
-
-	SendJSONResponse(w, response)
-}
-
-func FleetEditRemoveMemberHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
-	response := make(map[string]interface{})
-
-	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
-		logger.Warnf("Received request to FleetEditRemoveMemberHandler without proper access...")
-
-		response["result"] = "error"
-		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	memberID, err := strconv.ParseInt(r.FormValue("removeMemberID"), 10, 64)
-	if err != nil {
-		logger.Errorf("Failed to parse memberID in FleetEditRemoveMemberHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	member, err := database.LoadFleetMember(fleet.ID, memberID)
-	if err != nil {
-		logger.Errorf("Failed to load fleet member in FleetEditRemoveMemberHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	fleet.RemoveMember(member.Name)
-
-	fleetCommanders := fleet.FleetCommanders()
-
-	if len(fleetCommanders) == 0 {
-		logger.Errorf("Tried to remove fleet commander in FleetEditRemoveMemberHandler...")
-
-		response["result"] = "error"
-		response["error"] = "Cannot remove the fleet commander from the member list!"
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	err = database.DeleteFleetMember(fleet.ID, memberID)
-	if err != nil {
-		logger.Errorf("Failed to remove fleet member in FleetEditRemoveMemberHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
@@ -1603,7 +1680,7 @@ func ReportEditPlayerPaidHandler(w http.ResponseWriter, r *http.Request, report 
 		logger.Errorf("Failed to save report in ReportEditPlayerPaidHandler: [%v]", err)
 
 		response["result"] = "error"
-		response["error"] = err
+		response["error"] = err.Error()
 
 		SendJSONResponse(w, response)
 		return
@@ -1644,7 +1721,7 @@ func ReportEditFinishHandler(w http.ResponseWriter, r *http.Request, report *mod
 		logger.Errorf("Failed to save report in ReportEditFinishHandler: [%v]", err)
 
 		response["result"] = "error"
-		response["error"] = err
+		response["error"] = err.Error()
 
 		SendJSONResponse(w, response)
 		return

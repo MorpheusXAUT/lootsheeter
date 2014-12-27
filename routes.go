@@ -88,7 +88,7 @@ var routes = []Route{
 	Route{
 		Name:        "FleetMembersDelete",
 		Methods:     []string{"DELETE"},
-		Pattern:     "/fleet/{fleetid:[0-9]+}/members",
+		Pattern:     "/fleet/{fleetid:[0-9]+}/members/{memberid:[0-9]+}",
 		HandlerFunc: FleetMembersDeleteHandler,
 	},
 	Route{

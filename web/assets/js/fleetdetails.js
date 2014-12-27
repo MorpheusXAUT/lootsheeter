@@ -109,22 +109,41 @@ $(document).ready(function(e) {
 	});
 	
 	$('a.add-member-submit').click(function() {
-		$.getJSON('/fleet/'+$(this).attr('fleet')+'/edit?command=addmember', $('#addMemberForm').serialize(), function(data) {
-			if (data.result === "success" && data.error === null) {
-				location.reload(true);
-			} else {
-				displayError(data.error);
-			}
+		$.ajax({
+			accepts: "application/json",
+			cache: false,
+			data: $('#addMemberForm').serialize(),
+			dataType: "json",
+			error: displayAjaxError,
+			success: function(reply) {
+				if (reply.result === "success" && reply.error === null) {
+					location.reload(true);
+				} else {
+					displayError(reply.error);
+				}
+			},
+			timeout: 10000,
+			type: "POST",
+			url: '/fleet/'+$(this).attr('fleet') + '/members'
 		});
 	});
 	
-	$('a.fleet-member-list-remove').click(function() {
-		$.getJSON('/fleet/'+$(this).attr('fleet')+'/edit?command=removemember', 'removeMemberID='+$(this).attr('member')+'', function(data) {
-			if (data.result === "success" && data.error === null) {
-				location.reload(true);
-			} else {
-				displayError(data.error);
-			}
+	$('a.fleet-member-list-remove').click(function() {		
+		$.ajax({
+			accepts: "application/json",
+			cache: false,
+			dataType: "json",
+			error: displayAjaxError,
+			success: function(reply) {
+				if (reply.result === "success" && reply.error === null) {
+					location.reload(true);
+				} else {
+					displayError(reply.error);
+				}
+			},
+			timeout: 10000,
+			type: "DELETE",
+			url: '/fleet/'+$(this).attr('fleet')+'/members/'+$(this).attr('member')
 		});
 	});
 });
