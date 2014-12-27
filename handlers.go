@@ -517,6 +517,30 @@ func FleetPutAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mod
 		return
 	}
 
+	player := session.GetPlayerFromRequest(r)
+	if player == nil {
+		logger.Errorf("Failed to get player from request in FleetPutAddProfitHandler...")
+
+		response["result"] = "error"
+		response["error"] = "Failed to load player, cannot submit loot paste"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	lootPaste := models.NewLootPaste(-1, fleet.ID, player.ID, rawProfit, 0, models.LootPasteTypeProfit)
+
+	lootPaste, err := database.SaveLootPaste(lootPaste)
+	if err != nil {
+		logger.Errorf("Failed to save loot paste in FleetPutAddProfitHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
 	var profit float64
 
 	profit = 0
@@ -553,20 +577,11 @@ func FleetPutAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mod
 		profit = p
 	}
 
-	player := session.GetPlayerFromRequest(r)
-	if player == nil {
-		logger.Errorf("Failed to get player from request in FleetPutAddProfitHandler...")
+	lootPaste.Value = profit
 
-		response["result"] = "error"
-		response["error"] = "Failed to load player, cannot submit loot paste"
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	err := database.SaveLootPaste(fleet.ID, player.ID, rawProfit, profit, "P")
+	lootPaste, err = database.SaveLootPaste(lootPaste)
 	if err != nil {
-		logger.Errorf("Failed to save loot paste in FleetPutAddProfitHandler: [%v]", err)
+		logger.Errorf("Failed to update loot paste in FleetPutAddProfitHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
@@ -614,6 +629,30 @@ func FleetPutAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *model
 
 		response["result"] = "error"
 		response["error"] = fmt.Sprintf("Content of rawLoss was empty")
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	player := session.GetPlayerFromRequest(r)
+	if player == nil {
+		logger.Errorf("Failed to get player from request in FleetPutAddLossHandler...")
+
+		response["result"] = "error"
+		response["error"] = "Failed to load player, cannot submit loot paste"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	lootPaste := models.NewLootPaste(-1, fleet.ID, player.ID, rawLoss, 0, models.LootPasteTypeLoss)
+
+	lootPaste, err := database.SaveLootPaste(lootPaste)
+	if err != nil {
+		logger.Errorf("Failed to save loot paste in FleetPutAddLossHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
 
 		SendJSONResponse(w, response)
 		return
@@ -672,20 +711,11 @@ func FleetPutAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *model
 		loss = l
 	}
 
-	player := session.GetPlayerFromRequest(r)
-	if player == nil {
-		logger.Errorf("Failed to get player from request in FleetPutAddLossHandler...")
+	lootPaste.Value = loss
 
-		response["result"] = "error"
-		response["error"] = "Failed to load player, cannot submit loot paste"
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	err := database.SaveLootPaste(fleet.ID, player.ID, rawLoss, loss, "L")
+	lootPaste, err = database.SaveLootPaste(lootPaste)
 	if err != nil {
-		logger.Errorf("Failed to save loot paste in FleetPutAddLossHandler: [%v]", err)
+		logger.Errorf("Failed to update loot paste in FleetPutAddLossHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()
