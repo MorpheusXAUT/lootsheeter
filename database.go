@@ -994,15 +994,48 @@ func (db *Database) QueryShipRole(ship string) (models.FleetRole, error) {
 	return models.FleetRole(fleetMemberRole), nil
 }
 
-func (db *Database) SaveLootPaste(fleetID int64, playerID int64, rawPaste string, value float64, pasteType string) error {
-	logger.Tracef("Saving raw loot paste to database...")
+func (db *Database) LoadLootPaste(id int64) (*models.LootPaste, error) {
+	logger.Tracef("Querying database for loot paste with id = %d...", id)
 
-	_, err := db.db.Exec("INSERT INTO lootpastes(fleet_id, pasted_by, raw_paste, value, paste_type) VALUES(?, ?, ?, ?, ?)", fleetID, playerID, rawPaste, value, pasteType)
+	row := db.db.QueryRow("SELECT id, fleet_id, pasted_by, raw_paste, value, paste_type FROM lootpastes WHERE id = ?", id)
+
+	var lid, lootPasteFleetID, lootPastePastedBy int64
+	var lootPasteRawPaste string
+	var lootPasteValue float64
+	var lootPastePasteType int
+
+	err := row.Scan(&lid, &lootPasteFleetID, &lootPastePastedBy, &lootPasteRawPaste, &lootPasteValue, &lootPastePasteType)
 	if err != nil {
-		return err
+		return &models.LootPaste{}, err
 	}
 
-	return nil
+	return models.NewLootPaste(lid, lootPasteFleetID, lootPastePastedBy, lootPasteRawPaste, lootPasteValue, models.LootPasteType(lootPastePasteType)), nil
+}
+
+func (db *Database) SaveLootPaste(paste *models.LootPaste) (*models.LootPaste, error) {
+	logger.Tracef("Saving loot paste #%d to database...", paste.ID)
+
+	_, err := db.LoadLootPaste(paste.ID)
+	if err != nil {
+		result, err := db.db.Exec("INSERT INTO lootpastes(fleet_id, pasted_by, raw_paste, value, paste_type) VALUES(?, ?, ?, ?, ?)", paste.FleetID, paste.PastedBy, paste.RawPaste, paste.Value, paste.PasteType)
+		if err != nil {
+			return paste, err
+		}
+
+		id, err := result.LastInsertId()
+		if err != nil {
+			return paste, err
+		}
+
+		paste.ID = id
+	} else {
+		_, err := db.db.Exec("UPDATE lootpastes SET fleet_id=?, pasted_by=?, raw_paste=?, value=?, paste_type=? WHERE id=?", paste.FleetID, paste.PastedBy, paste.RawPaste, paste.Value, paste.PasteType, paste.ID)
+		if err != nil {
+			return paste, err
+		}
+	}
+
+	return paste, nil
 }
 
 func (db *Database) RemovePlayerFromCache(id int64) {
