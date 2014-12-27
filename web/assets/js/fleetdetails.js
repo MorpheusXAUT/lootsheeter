@@ -75,22 +75,48 @@ $(document).ready(function(e) {
 	});
 	
 	$('a.add-profit-submit').click(function() {
-		$.getJSON('/fleet/'+$(this).attr('fleet')+'/edit?command=addprofit', $('#addProfitForm').serialize(), function(data) {
-			if (data.result === "success" && data.error === null) {
-				location.reload(true);
-			} else {
-				displayError(data.error);
-			}
+		var formData = $('#addProfitForm').serializeArray();
+		formData.push({ name: "command", value: "addProfit" });
+		
+		$.ajax({
+			accepts: "application/json",
+			cache: false,
+			data: formData,
+			dataType: "json",
+			error: displayAjaxError,
+			success: function(reply) {
+				if (reply.result === "success" && reply.error === null) {
+					location.reload(true);
+				} else {
+					displayError(reply.error);
+				}
+			},
+			timeout: 10000,
+			type: "PUT",
+			url: '/fleet/'+$(this).attr('fleet')
 		});
 	});
 	
 	$('a.add-loss-submit').click(function() {
-		$.getJSON('/fleet/'+$(this).attr('fleet')+'/edit?command=addloss', $('#addLossForm').serialize(), function(data) {
-			if (data.result === "success" && data.error === null) {
-				location.reload(true);
-			} else {
-				displayError(data.error);
-			}
+		var formData = $('#addLossForm').serializeArray();
+		formData.push({ name: "command", value: "addLoss" });
+		
+		$.ajax({
+			accepts: "application/json",
+			cache: false,
+			data: formData,
+			dataType: "json",
+			error: displayAjaxError,
+			success: function(reply) {
+				if (reply.result === "success" && reply.error === null) {
+					location.reload(true);
+				} else {
+					displayError(reply.error);
+				}
+			},
+			timeout: 10000,
+			type: "PUT",
+			url: '/fleet/'+$(this).attr('fleet')
 		});
 	});
 	
