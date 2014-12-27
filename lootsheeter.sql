@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS `lootpastes` (
   `pasted_by` bigint(20) NOT NULL,
   `raw_paste` text NOT NULL,
   `value` double NOT NULL DEFAULT '0',
-  `paste_type` enum('P','L') NOT NULL DEFAULT 'P',
+  `paste_type` int(10) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_loot_fleet` (`fleet_id`),
   KEY `fk_loot_pasted` (`pasted_by`),
