@@ -144,6 +144,7 @@
 						<p align="center">
 							<div id="fleetMemberActions" fleet="{{ .Fleet.ID }}" align="center" class="fleet-details">
 								{{ if $FleetAdmin }}
+                                <a class="btn btn-default fleet-details-tick-sites" fleet="{{ .Fleet.ID }}">Tick Sites Finished</a>
                                 <a class="btn btn-primary fleet-details-toggle" fleet="{{ .Fleet.ID }}">Edit</a>
 								{{ end }}
                                 {{ if not $FleetFinished }}

@@ -7,6 +7,26 @@ $(document).ready(function(e) {
 		$(this).toggleClass('active');
 	});
 	
+	$('a.fleet-details-tick-sites').click(function() {
+		$.ajax({
+			accepts: "application/json",
+			cache: false,
+			data: "command=tickSitesFinished",
+			dataType: "json",
+			error: displayAjaxError,
+			success: function(reply) {
+				if (reply.result === "success" && reply.error === null) {
+					location.reload(true);
+				} else {
+					displayError(reply.error);
+				}
+			},
+			timeout: 10000,
+			type: "PUT",
+			url: '/fleet/'+$(this).attr('fleet')
+		});
+	});
+	
 	$('a.fleet-details-toggle').click(function() {
 		$('div.fleet-details').toggle();
 	});

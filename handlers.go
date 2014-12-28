@@ -117,12 +117,6 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 func FleetListGetHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
-	if !loggedIn {
-		session.SetLoginRedirect(w, r, "/fleets")
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
 	err := r.ParseForm()
 	if err != nil {
 		logger.Errorf("Failed to parse form in FleetListGetHandler: [%v]", err)
@@ -134,6 +128,16 @@ func FleetListGetHandler(w http.ResponseWriter, r *http.Request) {
 	showAll := false
 	if len(r.FormValue("showAll")) > 0 {
 		showAll = true
+	}
+
+	if !loggedIn {
+		if showAll {
+			session.SetLoginRedirect(w, r, "/fleets?showAll=true")
+		} else {
+			session.SetLoginRedirect(w, r, "/fleets")
+		}
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
 	}
 
 	data := make(map[string]interface{})
@@ -378,6 +382,9 @@ func FleetPutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch strings.ToLower(command) {
+	case "ticksitesfinished":
+		FleetPutTickSitesFinishedHandler(w, r, fleet)
+		break
 	case "editdetails":
 		FleetPutEditDetailsHandler(w, r, fleet)
 		break
@@ -400,6 +407,39 @@ func FleetPutHandler(w http.ResponseWriter, r *http.Request) {
 
 		SendJSONResponse(w, response)
 	}
+}
+
+func FleetPutTickSitesFinishedHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
+	response := make(map[string]interface{})
+
+	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+		logger.Warnf("Received request to FleetPutTickSitesFinishedHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask or fleet role"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	fleet.SitesFinished++
+
+	fleet, err := database.SaveFleet(fleet)
+	if err != nil {
+		logger.Errorf("Failed to save fleet in FleetPutTickSitesFinishedHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	response["result"] = "success"
+	response["error"] = nil
+	response["fleet"] = fleet
+
+	SendJSONResponse(w, response)
 }
 
 func FleetPutEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
