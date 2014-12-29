@@ -3,7 +3,7 @@
 	{{ template "navigation" . }}
 
 	{{ $FleetID := .Fleet.ID}}
-	{{ $FleetAdmin := or (IsFleetCommander .Fleet) (HasAccessMask 256) }}
+	{{ $FleetAdmin := or (IsFleetCommander .Fleet) (HasHigherAccessMask 128) }}
     {{ $FleetFinished := .Fleet.IsFleetFinished }}
 	
 	<div class="container" role="main">

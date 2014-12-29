@@ -20,6 +20,12 @@ var routes = []Route{
 		HandlerFunc: IndexHandler,
 	},
 	Route{
+		Name:        "Legal",
+		Methods:     []string{"GET"},
+		Pattern:     "/legal",
+		HandlerFunc: LegalHandler,
+	},
+	Route{
 		Name:        "Login",
 		Methods:     []string{"GET"},
 		Pattern:     "/login",

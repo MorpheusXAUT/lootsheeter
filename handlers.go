@@ -22,6 +22,16 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	templates.ExecuteTemplate(w, "index", data)
 }
 
+func LegalHandler(w http.ResponseWriter, r *http.Request) {
+	data := make(map[string]interface{})
+
+	data["PageTitle"] = "Legal"
+	data["PageType"] = 1
+	data["LoggedIn"] = session.IsLoggedIn(w, r)
+
+	templates.ExecuteTemplate(w, "legal", data)
+}
+
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 	if loggedIn {
@@ -412,7 +422,7 @@ func FleetPutHandler(w http.ResponseWriter, r *http.Request) {
 func FleetPutTickSitesFinishedHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
-	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+	if !IsFleetCommander(r, fleet) && !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
 		logger.Warnf("Received request to FleetPutTickSitesFinishedHandler without proper access...")
 
 		response["result"] = "error"
@@ -445,7 +455,7 @@ func FleetPutTickSitesFinishedHandler(w http.ResponseWriter, r *http.Request, fl
 func FleetPutEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
-	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+	if !IsFleetCommander(r, fleet) && !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
 		logger.Warnf("Received request to FleetPutEditDetailsHandler without proper access...")
 
 		response["result"] = "error"
@@ -536,7 +546,7 @@ func FleetPutEditDetailsHandler(w http.ResponseWriter, r *http.Request, fleet *m
 func FleetPutAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
-	if !IsFleetCommander(r, fleet) && !HasFleetRole(r, fleet, 8) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+	if !IsFleetCommander(r, fleet) && !HasFleetRole(r, fleet, 8) && !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
 		logger.Warnf("Received request to FleetPutAddProfitHandler without proper access...")
 
 		response["result"] = "error"
@@ -653,7 +663,7 @@ func FleetPutAddProfitHandler(w http.ResponseWriter, r *http.Request, fleet *mod
 func FleetPutAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
-	if !IsFleetCommander(r, fleet) && !HasFleetRole(r, fleet, 8) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+	if !IsFleetCommander(r, fleet) && !HasFleetRole(r, fleet, 8) && !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
 		logger.Warnf("Received request to FleetPutAddLossHandler without proper access...")
 
 		response["result"] = "error"
@@ -787,7 +797,7 @@ func FleetPutAddLossHandler(w http.ResponseWriter, r *http.Request, fleet *model
 func FleetPutCalculatePayoutsHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
-	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+	if !IsFleetCommander(r, fleet) && !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
 		logger.Warnf("Received request to FleetPutCalculatePayoutsHandler without proper access...")
 
 		response["result"] = "error"
@@ -820,7 +830,7 @@ func FleetPutCalculatePayoutsHandler(w http.ResponseWriter, r *http.Request, fle
 func FleetPutFinishFleetHandler(w http.ResponseWriter, r *http.Request, fleet *models.Fleet) {
 	response := make(map[string]interface{})
 
-	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+	if !IsFleetCommander(r, fleet) && !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
 		logger.Warnf("Received request to FleetPutFinishFleetHandler without proper access...")
 
 		response["result"] = "error"
@@ -934,7 +944,7 @@ func FleetMembersPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+	if !IsFleetCommander(r, fleet) && !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
 		logger.Warnf("Received request to FleetMembersPostHandler without proper access...")
 
 		response["result"] = "error"
@@ -1122,7 +1132,7 @@ func FleetMembersPutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+	if !IsFleetCommander(r, fleet) && !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
 		logger.Warnf("Received request to FleetMembersPutHandler without proper access...")
 
 		response["result"] = "error"
@@ -1287,7 +1297,7 @@ func FleetMembersDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !IsFleetCommander(r, fleet) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+	if !IsFleetCommander(r, fleet) && !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
 		logger.Warnf("Received request to FleetMembersDeleteHandler without proper access...")
 
 		response["result"] = "error"
@@ -1730,7 +1740,7 @@ func ReportEditRemoveFleetHandler(w http.ResponseWriter, r *http.Request, report
 func ReportEditPlayerPaidHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
 	response := make(map[string]interface{})
 
-	if !IsReportCreator(r, report) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+	if !IsReportCreator(r, report) && !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
 		logger.Warnf("Received request to ReportEditPlayerPaidHandler without proper access...")
 
 		response["result"] = "error"
@@ -1791,7 +1801,7 @@ func ReportEditPlayerPaidHandler(w http.ResponseWriter, r *http.Request, report 
 func ReportEditFinishHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
 	response := make(map[string]interface{})
 
-	if !IsReportCreator(r, report) && !HasAccessMask(r, int(models.AccessMaskAdmin)) {
+	if !IsReportCreator(r, report) && !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
 		logger.Warnf("Received request to ReportEditFinishHandler without proper access...")
 
 		response["result"] = "error"
