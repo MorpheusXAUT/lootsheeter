@@ -14,6 +14,7 @@ const (
 	AccessMaskJuniorFleetCommander
 	AccessMaskSeniorFleetCommander
 	AccessMaskOfficer
+	AccessMaskPayoutOfficer
 	AccessMaskDirector
 	AccessMaskCEO
 	AccessMaskAdmin
@@ -36,6 +37,9 @@ func (mask AccessMask) String() string {
 	}
 	if mask&AccessMaskOfficer == AccessMaskOfficer {
 		str += "Officer|"
+	}
+	if mask&AccessMaskPayoutOfficer == AccessMaskPayoutOfficer {
+		str += "Payout Officer|"
 	}
 	if mask&AccessMaskDirector == AccessMaskDirector {
 		str += "Director|"
