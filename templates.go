@@ -26,7 +26,8 @@ func TemplateFunctions(r *http.Request) template.FuncMap {
 		"IsFleetCommander":            func(fleet *models.Fleet) bool { return IsFleetCommander(r, fleet) },
 		"IsReportCreator":             func(report *models.Report) bool { return IsReportCreator(r, report) },
 		"IsPlayerName":                func(name string) bool { return IsPlayerName(r, name) },
-		"HasAccessMask":               func(access int) bool { return HasAccessMask(r, access) },
+		"HasAccessMask":               func(accessMask models.AccessMask) bool { return HasAccessMask(r, accessMask) },
+		"HasHigherAccessMask":         func(accessMask models.AccessMask) bool { return HasHigherAccessMask(r, accessMask) },
 		"GetFleetRolePaymentModifier": func(role *models.FleetRole) float64 { return GetFleetRolePaymentModifier(role) },
 	}
 }
@@ -132,22 +133,22 @@ func IsPlayerName(r *http.Request, name string) bool {
 	return false
 }
 
-func HasAccessMask(r *http.Request, access int) bool {
+func HasAccessMask(r *http.Request, accessMask models.AccessMask) bool {
 	player := session.GetPlayerFromRequest(r)
 	if player == nil {
 		return false
 	}
 
-	return player.AccessMask == models.AccessMask(access)
+	return (player.AccessMask&accessMask == accessMask)
 }
 
-func HasHigherAccessMask(r *http.Request, access int) bool {
+func HasHigherAccessMask(r *http.Request, accessMask models.AccessMask) bool {
 	player := session.GetPlayerFromRequest(r)
 	if player == nil {
 		return false
 	}
 
-	return player.AccessMask >= models.AccessMask(access)
+	return player.AccessMask >= accessMask
 }
 
 func GetFleetRolePaymentModifier(role *models.FleetRole) float64 {
