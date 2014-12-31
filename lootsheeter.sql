@@ -130,6 +130,23 @@ CREATE TABLE IF NOT EXISTS `players` (
 -- Data exporting was unselected.
 
 
+-- Dumping structure for table lootsheeter.reportpayouts
+CREATE TABLE IF NOT EXISTS `reportpayouts` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `report_id` bigint(20) NOT NULL,
+  `player_id` bigint(20) NOT NULL,
+  `payout` double NOT NULL,
+  `payout_complete` enum('Y','N') NOT NULL DEFAULT 'N',
+  PRIMARY KEY (`id`),
+  KEY `fk_reportpayouts_report` (`report_id`),
+  KEY `fk_reportpayouts_player` (`player_id`),
+  CONSTRAINT `fk_reportpayouts_report` FOREIGN KEY (`report_id`) REFERENCES `reports` (`id`),
+  CONSTRAINT `fk_reportpayouts_player` FOREIGN KEY (`player_id`) REFERENCES `players` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Data exporting was unselected.
+
+
 -- Dumping structure for table lootsheeter.reports
 CREATE TABLE IF NOT EXISTS `reports` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
