@@ -42,12 +42,13 @@ func (report *Report) CalculatePayouts() {
 		for _, member := range fleet.Members {
 			_, ok := report.Payouts[member.Name]
 			if !ok {
-				report.Payouts[member.Name] = NewReportPayout(member.Player, false)
+				report.Payouts[member.Name] = NewReportPayout(-1, report.ID, member.Player, 0, false)
 			}
 
-			report.Payouts[member.Name].AddPayout(NewFleetMemberPayout(fleet.ID, member.Player.ID, member.Payout, member.PayoutComplete))
-
-			report.TotalPayout += member.Payout
+			if !member.PayoutComplete {
+				report.Payouts[member.Name].Payout += member.Payout
+				report.TotalPayout += member.Payout
+			}
 		}
 	}
 
@@ -62,7 +63,7 @@ func (report *Report) AllPayoutsComplete() bool {
 	report.PayoutComplete = true
 
 	for _, payout := range report.Payouts {
-		if !payout.AllPayoutsComplete() {
+		if !payout.PayoutComplete {
 			report.PayoutComplete = false
 		}
 	}

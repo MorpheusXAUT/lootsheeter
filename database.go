@@ -21,6 +21,9 @@ type Database struct {
 	db           *sql.DB
 	corporations map[int64]*models.Corporation
 	players      map[int64]*models.Player
+	fleetMembers map[int64]*models.FleetMember
+	fleets       map[int64]*models.Fleet
+	reports      map[int64]*models.Report
 }
 
 func NewDatabase(d *sql.DB) *Database {
@@ -28,6 +31,9 @@ func NewDatabase(d *sql.DB) *Database {
 		db:           d,
 		corporations: make(map[int64]*models.Corporation),
 		players:      make(map[int64]*models.Player),
+		fleetMembers: make(map[int64]*models.FleetMember),
+		fleets:       make(map[int64]*models.Fleet),
+		reports:      make(map[int64]*models.Report),
 	}
 
 	return database
@@ -334,6 +340,12 @@ func (db *Database) SavePlayer(player *models.Player) (*models.Player, error) {
 func (db *Database) LoadFleetMember(fleetID int64, id int64) (*models.FleetMember, error) {
 	logger.Tracef("Querying database for fleet member with fid = %d and pid = %d...", fleetID, id)
 
+	fleetMember, ok := db.fleetMembers[id]
+	if ok {
+		logger.Tracef("FleetMember with fid = %d and pid = %d found in cache, returning...", fleetID, id)
+		return fleetMember, nil
+	}
+
 	row := db.db.QueryRow("SELECT id, fleet_id, player_id, role, ship, site_modifier, payment_modifier, payout, payout_complete, report_id FROM fleetmembers WHERE fleet_id = ? AND id = ?", fleetID, id)
 
 	var fmid, fid, pid, rid int64
@@ -365,7 +377,11 @@ func (db *Database) LoadFleetMember(fleetID int64, id int64) (*models.FleetMembe
 		return &models.FleetMember{}, err
 	}
 
-	return models.NewFleetMember(fmid, fid, player, models.FleetRole(fleetmemberRole), fleetMemberShip, fleetmemberSiteModifier, fleetmemberPaymentModifier, fleetmemberPayout, fleetmemberPayoutComplete, rid), nil
+	fleetMember = models.NewFleetMember(fmid, fid, player, models.FleetRole(fleetmemberRole), fleetMemberShip, fleetmemberSiteModifier, fleetmemberPaymentModifier, fleetmemberPayout, fleetmemberPayoutComplete, rid)
+
+	db.fleetMembers[fleetMember.ID] = fleetMember
+
+	return fleetMember, nil
 }
 
 func (db *Database) LoadAllFleetMembers(fleetID int64) ([]*models.FleetMember, error) {
@@ -408,7 +424,11 @@ func (db *Database) LoadAllFleetMembers(fleetID int64) ([]*models.FleetMember, e
 			return fleetMembers, err
 		}
 
-		fleetMembers = append(fleetMembers, models.NewFleetMember(fmid, fid, player, models.FleetRole(fleetmemberRole), fleetMemberShip, fleetmemberSiteModifier, fleetmemberPaymentModifier, fleetmemberPayout, fleetmemberPayoutComplete, rid))
+		fleetMember := models.NewFleetMember(fmid, fid, player, models.FleetRole(fleetmemberRole), fleetMemberShip, fleetmemberSiteModifier, fleetmemberPaymentModifier, fleetmemberPayout, fleetmemberPayoutComplete, rid)
+
+		db.fleetMembers[fleetMember.ID] = fleetMember
+
+		fleetMembers = append(fleetMembers, fleetMember)
 	}
 
 	return fleetMembers, nil
@@ -452,6 +472,8 @@ func (db *Database) SaveFleetMember(fleetID int64, member *models.FleetMember) (
 		}
 	}
 
+	db.fleetMembers[member.ID] = member
+
 	return member, nil
 }
 
@@ -463,11 +485,19 @@ func (db *Database) DeleteFleetMember(fleetID int64, memberID int64) error {
 		return err
 	}
 
+	delete(db.fleetMembers, memberID)
+
 	return nil
 }
 
 func (db *Database) LoadFleet(id int64) (*models.Fleet, error) {
 	logger.Tracef("Querying database for fleet with fid = %d...", id)
+
+	fleet, ok := db.fleets[id]
+	if ok {
+		logger.Tracef("Fleet with fid = %d found in cache, returning...", id)
+		return fleet, nil
+	}
 
 	row := db.db.QueryRow("SELECT id, corporation_id, name, system, system_nickname, profit, losses, sites_finished, starttime, endtime, corporation_payout, payout_complete, notes, report_id FROM fleets WHERE id = ?", id)
 
@@ -510,7 +540,7 @@ func (db *Database) LoadFleet(id int64) (*models.Fleet, error) {
 		return &models.Fleet{}, err
 	}
 
-	fleet := models.NewFleet(fid, corporation, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, fleetNotes, rid)
+	fleet = models.NewFleet(fid, corporation, fleetName, fleetSystem, fleetSystemNickname, fleetProfit, fleetLosses, fleetSitesFinished, *fleetStart, *fleetEnd, fleetCorporationPayout, fleetPayoutComplete, fleetNotes, rid)
 
 	for _, member := range fleetMembers {
 		err = fleet.AddMember(member)
@@ -518,6 +548,8 @@ func (db *Database) LoadFleet(id int64) (*models.Fleet, error) {
 			return &models.Fleet{}, err
 		}
 	}
+
+	db.fleets[fleet.ID] = fleet
 
 	return fleet, nil
 }
@@ -580,6 +612,8 @@ func (db *Database) LoadAllFleets(corporationID int64) ([]*models.Fleet, error) 
 				return fleets, err
 			}
 		}
+
+		db.fleets[fleet.ID] = fleet
 
 		fleets = append(fleets, fleet)
 	}
@@ -646,6 +680,8 @@ func (db *Database) LoadAllFleetsForReport(reportID int64) ([]*models.Fleet, err
 			}
 		}
 
+		db.fleets[fleet.ID] = fleet
+
 		fleets = append(fleets, fleet)
 	}
 
@@ -711,6 +747,8 @@ func (db *Database) LoadAllFleetsWithoutReports(corporationID int64) ([]*models.
 			}
 		}
 
+		db.fleets[fleet.ID] = fleet
+
 		fleets = append(fleets, fleet)
 	}
 
@@ -771,11 +809,129 @@ func (db *Database) SaveFleet(fleet *models.Fleet) (*models.Fleet, error) {
 		member = m
 	}
 
+	db.fleets[fleet.ID] = fleet
+
 	return fleet, nil
+}
+
+func (db *Database) LoadReportPayout(reportPayoutID int64) (*models.ReportPayout, error) {
+	logger.Tracef("Querying database for report payout with rpid = %d...", reportPayoutID)
+
+	row := db.db.QueryRow("SELECT id, report_id, player_id, payout, payout_complete FROM reportpayouts WHERE id = ?", reportPayoutID)
+
+	var rpid, rid, pid int64
+	var recordPayoutPayout float64
+	var recordPayoutPayoutCompleteEnumString string
+	var recordPayoutPayoutComplete bool
+
+	err := row.Scan(&rpid, &rid, &pid, &recordPayoutPayout, &recordPayoutPayoutCompleteEnumString)
+	if err != nil {
+		return &models.ReportPayout{}, fmt.Errorf("Received error while scanning report payout row: [%v]", err)
+	}
+
+	if strings.EqualFold(recordPayoutPayoutCompleteEnumString, "y") {
+		recordPayoutPayoutComplete = true
+	} else {
+		recordPayoutPayoutComplete = false
+	}
+
+	player, err := database.LoadPlayer(pid)
+	if err != nil {
+		return &models.ReportPayout{}, err
+	}
+
+	reportPayout := models.NewReportPayout(rpid, rid, player, recordPayoutPayout, recordPayoutPayoutComplete)
+
+	return reportPayout, nil
+}
+
+func (db *Database) LoadAllReportPayouts(reportID int64) ([]*models.ReportPayout, error) {
+	logger.Tracef("Querying database for all report payouts with rid = %d...", reportID)
+
+	var reportPayouts []*models.ReportPayout
+
+	rows, err := db.db.Query("SELECT id, report_id, player_id, payout, payout_complete FROM reportpayouts WHERE report_id = ?", reportID)
+	if err != nil {
+		return reportPayouts, fmt.Errorf("Received error while querying for all report payouts: [%v]", err)
+	}
+
+	for rows.Next() {
+		var rpid, rid, pid int64
+		var recordPayoutPayout float64
+		var recordPayoutPayoutCompleteEnumString string
+		var recordPayoutPayoutComplete bool
+
+		err := rows.Scan(&rpid, &rid, &pid, &recordPayoutPayout, &recordPayoutPayoutCompleteEnumString)
+		if err != nil {
+			return reportPayouts, fmt.Errorf("Received error while scanning report payouts row: [%v]", err)
+		}
+
+		if strings.EqualFold(recordPayoutPayoutCompleteEnumString, "y") {
+			recordPayoutPayoutComplete = true
+		} else {
+			recordPayoutPayoutComplete = false
+		}
+
+		player, err := database.LoadPlayer(pid)
+		if err != nil {
+			return reportPayouts, err
+		}
+
+		reportPayout := models.NewReportPayout(rpid, rid, player, recordPayoutPayout, recordPayoutPayoutComplete)
+
+		reportPayouts = append(reportPayouts, reportPayout)
+	}
+
+	return reportPayouts, nil
+}
+
+func (db *Database) SaveReportPayout(reportPayout *models.ReportPayout) (*models.ReportPayout, error) {
+	logger.Tracef("Saving report payout #%d to database...", reportPayout.ID)
+
+	var recordPayoutCompleteEnumString string
+
+	if reportPayout.PayoutComplete {
+		recordPayoutCompleteEnumString = "Y"
+	} else {
+		recordPayoutCompleteEnumString = "N"
+	}
+
+	_, err := db.LoadReportPayout(reportPayout.ID)
+	if err != nil {
+		result, err := db.db.Exec("INSERT INTO reportpayouts(report_id, player_id, payout, payout_complete) VALUES (?, ?, ?, ?)", reportPayout.ReportID, reportPayout.Player.ID, reportPayout.Payout, recordPayoutCompleteEnumString)
+		if err != nil {
+			return reportPayout, err
+		}
+
+		id, err := result.LastInsertId()
+		if err != nil {
+			return reportPayout, err
+		}
+
+		reportPayout.ID = id
+	} else {
+		_, err := db.db.Exec("UPDATE reportpayouts SET payout = ?, payout_complete = ? WHERE id = ?", reportPayout.Payout, recordPayoutCompleteEnumString, reportPayout.ID)
+		if err != nil {
+			return reportPayout, err
+		}
+
+		_, err = db.db.Exec("UPDATE fleetmembers SET payout_complete = ? WHERE player_id = ? AND report_id = ?", recordPayoutCompleteEnumString, reportPayout.Player.ID, reportPayout.ReportID)
+		if err != nil {
+			return reportPayout, err
+		}
+	}
+
+	return reportPayout, nil
 }
 
 func (db *Database) LoadReport(id int64) (*models.Report, error) {
 	logger.Tracef("Querying database for report with rid = %d...", id)
+
+	report, ok := db.reports[id]
+	if ok {
+		logger.Tracef("Report with rid = %d found in cache, returning...", id)
+		return report, nil
+	}
 
 	row := db.db.QueryRow("SELECT id, corporation_id, creator, total_payout, starttime, endtime, payout_complete FROM reports WHERE id=?", id)
 
@@ -811,7 +967,18 @@ func (db *Database) LoadReport(id int64) (*models.Report, error) {
 		return &models.Report{}, err
 	}
 
-	report := models.NewReport(rid, recordTotalPayout, recordStartTime, recordEndTime, recordPayoutComplete, corporation, player, fleets)
+	reportPayouts, err := db.LoadAllReportPayouts(rid)
+	if err != nil {
+		return &models.Report{}, err
+	}
+
+	report = models.NewReport(rid, recordTotalPayout, recordStartTime, recordEndTime, recordPayoutComplete, corporation, player, fleets)
+
+	for _, payout := range reportPayouts {
+		report.Payouts[payout.Player.Name] = payout
+	}
+
+	db.reports[report.ID] = report
 
 	return report, nil
 }
@@ -859,7 +1026,18 @@ func (db *Database) LoadAllReports(corporationID int64) ([]*models.Report, error
 			return reports, err
 		}
 
+		reportPayouts, err := db.LoadAllReportPayouts(rid)
+		if err != nil {
+			return reports, err
+		}
+
 		report := models.NewReport(rid, recordTotalPayout, recordStartTime, recordEndTime, recordPayoutComplete, corporation, player, fleets)
+
+		for _, payout := range reportPayouts {
+			report.Payouts[payout.Player.Name] = payout
+		}
+
+		db.reports[report.ID] = report
 
 		reports = append(reports, report)
 	}
@@ -927,54 +1105,15 @@ func (db *Database) SaveReport(report *models.Report) (*models.Report, error) {
 			}
 		}
 
-		fleetPayoutsComplete := make(map[int64][]bool)
-
 		for _, reportPayout := range report.Payouts {
-			for _, payout := range reportPayout.Payouts {
-				if _, ok := fleetPayoutsComplete[payout.FleetID]; !ok {
-					fleetPayoutsComplete[payout.FleetID] = make([]bool, 0)
-				}
-
-				fleetPayoutsComplete[payout.FleetID] = append(fleetPayoutsComplete[payout.FleetID], payout.PayoutComplete)
-
-				var payoutCompleteEnum string
-
-				if payout.PayoutComplete {
-					payoutCompleteEnum = "Y"
-				} else {
-					payoutCompleteEnum = "N"
-				}
-
-				_, err := db.db.Exec("UPDATE fleetmembers SET payout_complete = ? WHERE fleet_id = ? AND player_id = ? AND report_id = ?", payoutCompleteEnum, payout.FleetID, payout.PlayerID, report.ID)
-				if err != nil {
-					return report, err
-				}
-			}
-		}
-
-		for fleetID, payoutsComplete := range fleetPayoutsComplete {
-			payoutComplete := true
-
-			for _, complete := range payoutsComplete {
-				if !complete {
-					payoutComplete = false
-				}
-			}
-
-			var payoutCompleteEnum string
-
-			if payoutComplete {
-				payoutCompleteEnum = "Y"
-			} else {
-				payoutCompleteEnum = "N"
-			}
-
-			_, err := db.db.Exec("UPDATE fleets SET payout_complete = ? WHERE id = ? AND report_id = ?", payoutCompleteEnum, fleetID, report.ID)
+			reportPayout, err = db.SaveReportPayout(reportPayout)
 			if err != nil {
 				return report, err
 			}
 		}
 	}
+
+	db.reports[report.ID] = report
 
 	return report, nil
 }

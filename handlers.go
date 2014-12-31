@@ -324,6 +324,29 @@ func FleetGetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !fleet.PayoutComplete {
+		payoutComplete := true
+
+		for _, member := range fleet.Members {
+			if !member.PayoutComplete {
+				payoutComplete = false
+				break
+			}
+		}
+
+		if payoutComplete {
+			fleet.PayoutComplete = true
+
+			fleet, err = database.SaveFleet(fleet)
+			if err != nil {
+				logger.Errorf("Failed to update fleet #%d in FleetGetHandler: [%v]", fleetID, err)
+
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+	}
+
 	data["Fleet"] = fleet
 
 	availablePlayers, err := database.LoadAvailablePlayers(fleetID, fleet.Corporation.ID)
@@ -1522,9 +1545,23 @@ func ReportCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 
 	report := models.NewReport(-1, 0, startTime, endTime, false, corporation, player, fleets)
 
+	report.CalculatePayouts()
+
 	report, err = database.SaveReport(report)
 	if err != nil {
 		logger.Errorf("Failed to save report in ReportCreateFormHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	for _, reportPayout := range report.Payouts {
+		reportPayout.ReportID = report.ID
+	}
+
+	report, err = database.SaveReport(report)
+	if err != nil {
+		logger.Errorf("Failed to update report in ReportCreateFormHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1569,16 +1606,6 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	if report.Corporation.ID != corporationID {
 		http.Redirect(w, r, "/reports", http.StatusSeeOther)
-		return
-	}
-
-	report.CalculatePayouts()
-
-	report, err = database.SaveReport(report)
-	if err != nil {
-		logger.Errorf("Failed to save report #%d in ReportDetailsHandler: [%v]", reportID, err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -1643,16 +1670,6 @@ func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 
 	if report.Corporation.ID != corporationID {
 		http.Redirect(w, r, "/reports", http.StatusSeeOther)
-		return
-	}
-
-	report.CalculatePayouts()
-
-	report, err = database.SaveReport(report)
-	if err != nil {
-		logger.Errorf("Failed to save report #%d in ReportEditHandler: [%v]", reportID, err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -1774,10 +1791,6 @@ func ReportEditPlayerPaidHandler(w http.ResponseWriter, r *http.Request, report 
 
 	reportPayout.PayoutComplete = true
 
-	for _, payout := range reportPayout.Payouts {
-		payout.PayoutComplete = true
-	}
-
 	report.Payouts[playerName] = reportPayout
 
 	report, err := database.SaveReport(report)
@@ -1813,10 +1826,6 @@ func ReportEditFinishHandler(w http.ResponseWriter, r *http.Request, report *mod
 
 	for _, reportPayout := range report.Payouts {
 		reportPayout.PayoutComplete = true
-
-		for _, payout := range reportPayout.Payouts {
-			payout.PayoutComplete = true
-		}
 	}
 
 	report.PayoutComplete = true

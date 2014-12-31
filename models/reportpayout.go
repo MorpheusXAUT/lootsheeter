@@ -2,43 +2,21 @@
 package models
 
 type ReportPayout struct {
+	ID             int64
+	ReportID       int64
 	Player         *Player
-	Payouts        []*FleetMemberPayout
-	TotalPayout    float64
+	Payout         float64
 	PayoutComplete bool
 }
 
-func NewReportPayout(player *Player, complete bool) *ReportPayout {
+func NewReportPayout(id int64, report int64, player *Player, total float64, complete bool) *ReportPayout {
 	payout := &ReportPayout{
+		ID:             id,
+		ReportID:       report,
 		Player:         player,
-		Payouts:        make([]*FleetMemberPayout, 0),
-		TotalPayout:    0,
+		Payout:         total,
 		PayoutComplete: complete,
 	}
 
 	return payout
-}
-
-func (pay *ReportPayout) AddPayout(payout *FleetMemberPayout) {
-	pay.Payouts = append(pay.Payouts, payout)
-	pay.TotalPayout += payout.Payout
-	if pay.PayoutComplete && !payout.PayoutComplete {
-		pay.PayoutComplete = false
-	}
-}
-
-func (pay *ReportPayout) AllPayoutsComplete() bool {
-	if pay.PayoutComplete {
-		return true
-	}
-
-	pay.PayoutComplete = true
-
-	for _, payout := range pay.Payouts {
-		if !payout.PayoutComplete {
-			pay.PayoutComplete = false
-		}
-	}
-
-	return pay.PayoutComplete
 }

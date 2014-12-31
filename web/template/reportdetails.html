@@ -93,7 +93,7 @@
 								{{ range $name, $payout := .Report.Payouts }}
 								<tr>
 									<td>{{ $name }}</td>
-									<td>{{ FormatFloat $payout.TotalPayout }} ISK</td>
+									<td>{{ FormatFloat $payout.Payout }} ISK</td>
                                     <td class="{{ if or $payout.PayoutComplete $ReportPayoutComplete }} success {{ else }} danger {{ end }}">{{ if or $payout.PayoutComplete $ReportPayoutComplete }} Done {{ else }} Outstanding {{ end }}</td>
                                     {{ if and $ReportAdmin (not $ReportPayoutComplete) }}
                                     <td><a class="btn btn-success report-player-paid" player="{{ $name }}" report="{{ $ReportID }}">Mark as paid</a></td>
