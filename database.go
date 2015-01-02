@@ -380,6 +380,9 @@ func (db *Database) LoadFleetMember(fleetID int64, id int64) (*models.FleetMembe
 	fleetMember = models.NewFleetMember(fmid, fid, player, models.FleetRole(fleetmemberRole), fleetMemberShip, fleetmemberSiteModifier, fleetmemberPaymentModifier, fleetmemberPayout, fleetmemberPayoutComplete, rid)
 
 	db.fleetMembers[fleetMember.ID] = fleetMember
+	if _, ok := db.fleets[fleetMember.FleetID]; ok {
+		db.fleets[fleetMember.FleetID].UpdateMember(fleetMember)
+	}
 
 	return fleetMember, nil
 }
@@ -427,6 +430,9 @@ func (db *Database) LoadAllFleetMembers(fleetID int64) ([]*models.FleetMember, e
 		fleetMember := models.NewFleetMember(fmid, fid, player, models.FleetRole(fleetmemberRole), fleetMemberShip, fleetmemberSiteModifier, fleetmemberPaymentModifier, fleetmemberPayout, fleetmemberPayoutComplete, rid)
 
 		db.fleetMembers[fleetMember.ID] = fleetMember
+		if _, ok := db.fleets[fleetMember.FleetID]; ok {
+			db.fleets[fleetMember.FleetID].UpdateMember(fleetMember)
+		}
 
 		fleetMembers = append(fleetMembers, fleetMember)
 	}
@@ -473,6 +479,9 @@ func (db *Database) SaveFleetMember(fleetID int64, member *models.FleetMember) (
 	}
 
 	db.fleetMembers[member.ID] = member
+	if _, ok := db.fleets[member.FleetID]; ok {
+		db.fleets[member.FleetID].UpdateMember(member)
+	}
 
 	return member, nil
 }
@@ -1088,21 +1097,6 @@ func (db *Database) SaveReport(report *models.Report) (*models.Report, error) {
 		_, err := db.db.Exec("UPDATE reports SET corporation_id=?, creator=?, total_payout=?, starttime=?, endtime=?, payout_complete=? WHERE id = ?", report.Corporation.ID, report.Creator.ID, report.TotalPayout, report.StartRange, report.EndRange, reportPayoutCompleteEnum, report.ID)
 		if err != nil {
 			return report, err
-		}
-
-		for _, fleet := range report.Fleets {
-			var payoutCompleteEnum string
-
-			if fleet.PayoutComplete {
-				payoutCompleteEnum = "Y"
-			} else {
-				payoutCompleteEnum = "N"
-			}
-
-			_, err := db.db.Exec("UPDATE fleets SET payout_complete = ? WHERE id = ? AND report_id = ?", payoutCompleteEnum, fleet.ID, report.ID)
-			if err != nil {
-				return report, err
-			}
 		}
 
 		for _, reportPayout := range report.Payouts {

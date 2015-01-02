@@ -90,7 +90,7 @@ func (fleet *Fleet) AddMember(member *FleetMember) error {
 		return fmt.Errorf("Member %q already exists in fleet, cannot add twice", member.Player.Name)
 	}
 
-	fleet.Members[member.Name] = member
+	fleet.Members[member.Player.Name] = member
 
 	return nil
 }
@@ -103,6 +103,10 @@ func (fleet *Fleet) RemoveMember(player string) error {
 	delete(fleet.Members, player)
 
 	return nil
+}
+
+func (fleet *Fleet) UpdateMember(member *FleetMember) {
+	fleet.Members[member.Player.Name] = member
 }
 
 func (fleet *Fleet) GetMemberRole(player string) (FleetRole, error) {
