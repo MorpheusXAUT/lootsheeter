@@ -1124,8 +1124,6 @@ func (db *Database) SaveReport(report *models.Report) (*models.Report, error) {
 	}
 
 	_, err := db.LoadReport(report.ID)
-	logger.Errorf("%#+v", err)
-	logger.Errorf("%#+v", sql.ErrNoRows)
 	if err == sql.ErrNoRows {
 		result, err := db.db.Exec("INSERT INTO reports(corporation_id, creator, total_payout, starttime, endtime, payout_complete) VALUES (?, ?, ?, ?, ?, ?)", report.Corporation.ID, report.Creator.ID, report.TotalPayout, report.StartRange, report.EndRange, reportPayoutCompleteEnum)
 		if err != nil {
