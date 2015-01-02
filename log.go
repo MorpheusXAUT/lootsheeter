@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/kdar/factorlog"
@@ -28,8 +29,15 @@ func WebLogger(inner http.Handler, name string) http.Handler {
 
 		inner.ServeHTTP(w, r)
 
-		if len(r.Header.Get("X-Forwarded-For")) > 0 {
-			r.RemoteAddr = r.Header.Get("X-Forwarded-For")
+		remoteAddr := r.Header.Get("X-Forwarded-For")
+
+		if len(remoteAddr) > 0 {
+			remoteAddrs := strings.Split(remoteAddr, ", ")
+			if len(remoteAddrs) > 1 {
+				r.RemoteAddr = remoteAddrs[0]
+			} else {
+				r.RemoteAddr = remoteAddr
+			}
 		}
 
 		logger.Debugf("WebLogger: [%s] %s %q {%s} - %s ", r.Method, r.RemoteAddr, r.RequestURI, name, time.Since(start))
