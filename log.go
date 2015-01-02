@@ -28,6 +28,10 @@ func WebLogger(inner http.Handler, name string) http.Handler {
 
 		inner.ServeHTTP(w, r)
 
+		if len(r.Header.Get("X-Forwarded-For")) > 0 {
+			r.RemoteAddr = r.Header.Get("X-Forwarded-For")
+		}
+
 		logger.Debugf("WebLogger: [%s] %s %q {%s} - %s ", r.Method, r.RemoteAddr, r.RequestURI, name, time.Since(start))
 	})
 }
