@@ -440,6 +440,59 @@ func (db *Database) LoadAllFleetMembers(fleetID int64) ([]*models.FleetMember, e
 	return fleetMembers, nil
 }
 
+func (db *Database) LoadAllFleetMembersForReportPlayer(reportID int64, playerID int64) ([]*models.FleetMember, error) {
+	logger.Tracef("Querying database for fleet members with rid = %d and pid = %d...", reportID, playerID)
+
+	var fleetMembers []*models.FleetMember
+
+	rows, err := db.db.Query("SELECT f.id, fleet_id, f.player_id, role, ship, site_modifier, payment_modifier, payout, payout_complete, report_id FROM fleetmembers AS f INNER JOIN players AS p ON f.player_id = p.id WHERE report_id = ? AND p.id = ? ORDER BY p.Name", reportID, playerID)
+	if err != nil {
+		return fleetMembers, err
+	}
+
+	for rows.Next() {
+		var fmid, fid, pid, rid int64
+		var sqlRid sql.NullInt64
+		var fleetmemberRole, fleetmemberSiteModifier int
+		var fleetmemberPaymentModifier, fleetmemberPayout float64
+		var fleetmemberPayoutCompleteEnum, fleetMemberShip string
+		var fleetmemberPayoutComplete bool
+
+		err = rows.Scan(&fmid, &fid, &pid, &fleetmemberRole, &fleetMemberShip, &fleetmemberSiteModifier, &fleetmemberPaymentModifier, &fleetmemberPayout, &fleetmemberPayoutCompleteEnum, &sqlRid)
+		if err != nil {
+			return fleetMembers, fmt.Errorf("Received error while scanning fleet member report player rows: [%v]", err)
+		}
+
+		if strings.EqualFold(fleetmemberPayoutCompleteEnum, "Y") {
+			fleetmemberPayoutComplete = true
+		} else {
+			fleetmemberPayoutComplete = false
+		}
+
+		if sqlRid.Valid {
+			rid = sqlRid.Int64
+		} else {
+			rid = -1
+		}
+
+		player, err := db.LoadPlayer(pid)
+		if err != nil {
+			return fleetMembers, err
+		}
+
+		fleetMember := models.NewFleetMember(fmid, fid, player, models.FleetRole(fleetmemberRole), fleetMemberShip, fleetmemberSiteModifier, fleetmemberPaymentModifier, fleetmemberPayout, fleetmemberPayoutComplete, rid)
+
+		db.fleetMembers[fleetMember.ID] = fleetMember
+		if _, ok := db.fleets[fleetMember.FleetID]; ok {
+			db.fleets[fleetMember.FleetID].UpdateMember(fleetMember)
+		}
+
+		fleetMembers = append(fleetMembers, fleetMember)
+	}
+
+	return fleetMembers, nil
+}
+
 func (db *Database) SaveFleetMember(fleetID int64, member *models.FleetMember) (*models.FleetMember, error) {
 	logger.Tracef("Saving fleet member #%d to database...", member.ID)
 
@@ -923,11 +976,6 @@ func (db *Database) SaveReportPayout(reportPayout *models.ReportPayout) (*models
 		if err != nil {
 			return reportPayout, err
 		}
-
-		_, err = db.db.Exec("UPDATE fleetmembers SET payout_complete = ? WHERE player_id = ? AND report_id = ?", recordPayoutCompleteEnumString, reportPayout.Player.ID, reportPayout.ReportID)
-		if err != nil {
-			return reportPayout, err
-		}
 	}
 
 	return reportPayout, nil
@@ -1104,6 +1152,25 @@ func (db *Database) SaveReport(report *models.Report) (*models.Report, error) {
 			if err != nil {
 				return report, err
 			}
+		}
+
+		if report.PayoutComplete {
+			for _, reportPayout := range report.Payouts {
+				fleetMembers, err := db.LoadAllFleetMembersForReportPlayer(reportPayout.ReportID, reportPayout.Player.ID)
+				if err != nil {
+					return report, err
+				}
+
+				for _, member := range fleetMembers {
+					member.PayoutComplete = true
+
+					_, err := db.SaveFleetMember(member.FleetID, member)
+					if err != nil {
+						return report, err
+					}
+				}
+			}
+
 		}
 	}
 
