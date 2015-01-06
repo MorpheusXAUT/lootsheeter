@@ -98,16 +98,10 @@ var routes = []Route{
 		HandlerFunc: FleetMembersDeleteHandler,
 	},
 	Route{
-		Name:        "ReportList",
+		Name:        "ReportListGet",
 		Methods:     []string{"GET"},
 		Pattern:     "/reports",
-		HandlerFunc: ReportListHandler,
-	},
-	Route{
-		Name:        "ReportListAll",
-		Methods:     []string{"GET"},
-		Pattern:     "/reports/all",
-		HandlerFunc: ReportListAllHandler,
+		HandlerFunc: ReportListGetHandler,
 	},
 	Route{
 		Name:        "ReportCreate",
@@ -122,15 +116,21 @@ var routes = []Route{
 		HandlerFunc: ReportCreateFormHandler,
 	},
 	Route{
-		Name:        "ReportDetails",
+		Name:        "ReportGet",
 		Methods:     []string{"GET"},
 		Pattern:     "/report/{reportid:[0-9]+}",
-		HandlerFunc: ReportDetailsHandler,
+		HandlerFunc: ReportGetHandler,
 	},
 	Route{
-		Name:        "ReportEdit",
-		Methods:     []string{"GET"},
-		Pattern:     "/report/{reportid:[0-9]+}/edit",
-		HandlerFunc: ReportEditHandler,
+		Name:        "ReportPut",
+		Methods:     []string{"PUT"},
+		Pattern:     "/report/{reportid:[0-9]+}",
+		HandlerFunc: ReportPutHandler,
+	},
+	Route{
+		Name:        "ReportPlayersPut",
+		Methods:     []string{"PUT"},
+		Pattern:     "/report/{reportid:[0-9]+}/players",
+		HandlerFunc: ReportPlayersPutHandler,
 	},
 }

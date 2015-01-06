@@ -1373,11 +1373,28 @@ func FleetMembersDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	SendJSONResponse(w, response)
 }
 
-func ReportListHandler(w http.ResponseWriter, r *http.Request) {
+func ReportListGetHandler(w http.ResponseWriter, r *http.Request) {
 	loggedIn := session.IsLoggedIn(w, r)
 
+	err := r.ParseForm()
+	if err != nil {
+		logger.Errorf("Failed to parse form in ReportListGetHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	showAll := false
+	if len(r.FormValue("showAll")) > 0 {
+		showAll = true
+	}
+
 	if !loggedIn {
-		session.SetLoginRedirect(w, r, "/reports")
+		if showAll {
+			session.SetLoginRedirect(w, r, "/reports?showAll=true")
+		} else {
+			session.SetLoginRedirect(w, r, "/reports")
+		}
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -1387,7 +1404,7 @@ func ReportListHandler(w http.ResponseWriter, r *http.Request) {
 	data["PageTitle"] = "Reports"
 	data["PageType"] = 4
 	data["LoggedIn"] = loggedIn
-	data["ShowAll"] = false
+	data["ShowAll"] = showAll
 
 	corporationID := session.GetCorpID(r)
 
@@ -1404,40 +1421,6 @@ func ReportListHandler(w http.ResponseWriter, r *http.Request) {
 	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "reports", data)
 	if err != nil {
 		logger.Errorf("Failed to execute template in ReportListHandler: [%v]", err)
-	}
-}
-
-func ReportListAllHandler(w http.ResponseWriter, r *http.Request) {
-	loggedIn := session.IsLoggedIn(w, r)
-
-	if !loggedIn {
-		session.SetLoginRedirect(w, r, "/reports/all")
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
-	data := make(map[string]interface{})
-
-	data["PageTitle"] = "Reports"
-	data["PageType"] = 4
-	data["LoggedIn"] = loggedIn
-	data["ShowAll"] = true
-
-	corporationID := session.GetCorpID(r)
-
-	reports, err := database.LoadAllReports(corporationID)
-	if err != nil {
-		logger.Errorf("Failed to load all reports in ReportListAllHandler: [%v]", err)
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	data["Reports"] = reports
-
-	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "reports", data)
-	if err != nil {
-		logger.Errorf("Failed to execute template in ReportListAllHandler: [%v]", err)
 	}
 }
 
@@ -1570,11 +1553,11 @@ func ReportCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/report/%d", report.ID), http.StatusSeeOther)
 }
 
-func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
+func ReportGetHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	reportID, err := strconv.ParseInt(vars["reportid"], 10, 64)
 	if err != nil {
-		logger.Errorf("Failed to parse report ID %q in ReportDetailsHandler: [%v]", vars["reportid"], err)
+		logger.Errorf("Failed to parse report ID %q in ReportGetHandler: [%v]", vars["reportid"], err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1596,7 +1579,7 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	report, err := database.LoadReport(reportID)
 	if err != nil {
-		logger.Errorf("Failed to load details for report #%d in ReportDetailsHandler: [%v]", reportID, err)
+		logger.Errorf("Failed to load details for report #%d in ReportGetHandler: [%v]", reportID, err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1613,15 +1596,15 @@ func ReportDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "reportdetails", data)
 	if err != nil {
-		logger.Errorf("Failed to execute template in ReportDetailsHandler: [%v]", err)
+		logger.Errorf("Failed to execute template in ReportGetHandler: [%v]", err)
 	}
 }
 
-func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
+func ReportPutHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	reportID, err := strconv.ParseInt(vars["reportid"], 10, 64)
 	if err != nil {
-		logger.Errorf("Failed to parse report ID %q in ReportEditHandler: [%v]", vars["reportID"], err)
+		logger.Errorf("Failed to parse report ID %q in ReportPutHandler: [%v]", vars["reportID"], err)
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -1635,16 +1618,9 @@ func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !strings.Contains(strings.ToLower(r.Referer()), fmt.Sprintf("/report/%d", reportID)) {
-		logger.Warnf("Received request to ReportEditHandler without proper referrer: %q", r.Referer())
-
-		http.Redirect(w, r, fmt.Sprintf("/report/%d", reportID), http.StatusBadRequest)
-		return
-	}
-
 	err = r.ParseForm()
 	if err != nil {
-		logger.Errorf("Failed to parse form in ReportEditHandler: [%v]", err)
+		logger.Errorf("Failed to parse form in ReportPutHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1652,7 +1628,7 @@ func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 
 	command := r.FormValue("command")
 	if len(command) == 0 {
-		logger.Errorf("Received empty command int ReportEditHandler...")
+		logger.Errorf("Received empty command in ReportPutHandler...")
 
 		http.Error(w, "Received empty command", http.StatusBadRequest)
 		return
@@ -1660,7 +1636,7 @@ func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 
 	report, err := database.LoadReport(reportID)
 	if err != nil {
-		logger.Errorf("Failed to load report in ReportEditHandler: [%v]", err)
+		logger.Errorf("Failed to load report in ReportPutHandler: [%v]", err)
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1674,26 +1650,8 @@ func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch strings.ToLower(command) {
-	case "poll":
-		ReportEditPollHandler(w, r, report)
-		break
-	case "editdetails":
-		ReportEditDetailsHandler(w, r, report)
-		break
-	case "addfleet":
-		ReportEditAddFleetHandler(w, r, report)
-		break
-	case "editfleet":
-		ReportEditEditFleetHandler(w, r, report)
-		break
-	case "removefleet":
-		ReportEditRemoveFleetHandler(w, r, report)
-		break
-	case "playerpaid":
-		ReportEditPlayerPaidHandler(w, r, report)
-		break
-	case "finish":
-		ReportEditFinishHandler(w, r, report)
+	case "finishreport":
+		ReportPutFinishReportHandler(w, r, report)
 		break
 	default:
 		response := make(map[string]interface{})
@@ -1704,118 +1662,11 @@ func ReportEditHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func ReportEditPollHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
-	response := make(map[string]interface{})
-
-	response["result"] = "success"
-	response["error"] = nil
-	response["report"] = report
-
-	SendJSONResponse(w, response)
-}
-
-func ReportEditDetailsHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
-	response := make(map[string]interface{})
-
-	response["result"] = "success"
-	response["error"] = nil
-	response["report"] = report
-
-	SendJSONResponse(w, response)
-}
-
-func ReportEditAddFleetHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
-	response := make(map[string]interface{})
-
-	response["result"] = "success"
-	response["error"] = nil
-	response["report"] = report
-
-	SendJSONResponse(w, response)
-}
-
-func ReportEditEditFleetHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
-	response := make(map[string]interface{})
-
-	response["result"] = "success"
-	response["error"] = nil
-	response["report"] = report
-
-	SendJSONResponse(w, response)
-}
-
-func ReportEditRemoveFleetHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
-	response := make(map[string]interface{})
-
-	response["result"] = "success"
-	response["error"] = nil
-	response["report"] = report
-
-	SendJSONResponse(w, response)
-}
-
-func ReportEditPlayerPaidHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+func ReportPutFinishReportHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
 	response := make(map[string]interface{})
 
 	if !IsReportCreator(r, report) && !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
-		logger.Warnf("Received request to ReportEditPlayerPaidHandler without proper access...")
-
-		response["result"] = "error"
-		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask"
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	playerName := r.FormValue("playerName")
-	if len(playerName) == 0 {
-		logger.Errorf("Content of playerName in ReportEditPlayerPaidHandler was empty...")
-
-		response["result"] = "error"
-		response["error"] = fmt.Sprintf("Content of playerName was empty")
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	reportPayout, ok := report.Payouts[playerName]
-	if !ok {
-		logger.Errorf("Failed to find ReportPayout for player %q in ReportEditPlayerPaidHandler...", playerName)
-
-		response["result"] = "error"
-		response["error"] = fmt.Sprintf("Failed to find report payout for player")
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	reportPayout.PayoutComplete = true
-
-	report.Payouts[playerName] = reportPayout
-
-	report, err := database.SaveReport(report)
-	if err != nil {
-		logger.Errorf("Failed to save report in ReportEditPlayerPaidHandler: [%v]", err)
-
-		response["result"] = "error"
-		response["error"] = err.Error()
-
-		SendJSONResponse(w, response)
-		return
-	}
-
-	response["result"] = "success"
-	response["error"] = nil
-	response["report"] = report
-
-	SendJSONResponse(w, response)
-}
-
-func ReportEditFinishHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
-	response := make(map[string]interface{})
-
-	if !IsReportCreator(r, report) && !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
-		logger.Warnf("Received request to ReportEditFinishHandler without proper access...")
+		logger.Warnf("Received request to ReportPutFinishReportHandler without proper access...")
 
 		response["result"] = "error"
 		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask"
@@ -1832,7 +1683,126 @@ func ReportEditFinishHandler(w http.ResponseWriter, r *http.Request, report *mod
 
 	report, err := database.SaveReport(report)
 	if err != nil {
-		logger.Errorf("Failed to save report in ReportEditFinishHandler: [%v]", err)
+		logger.Errorf("Failed to save report in ReportPutFinishReportHandler: [%v]", err)
+
+		response["result"] = "error"
+		response["error"] = err.Error()
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	response["result"] = "success"
+	response["error"] = nil
+	response["report"] = report
+
+	SendJSONResponse(w, response)
+}
+
+func ReportPlayersPutHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	reportID, err := strconv.ParseInt(vars["reportid"], 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse report ID %q in ReportPlayersPutHandler: [%v]", vars["reportID"], err)
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	loggedIn := session.IsLoggedIn(w, r)
+
+	if !loggedIn {
+		session.SetLoginRedirect(w, r, fmt.Sprintf("/report/%d", reportID))
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	err = r.ParseForm()
+	if err != nil {
+		logger.Errorf("Failed to parse form in ReportPlayersPutHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	command := r.FormValue("command")
+	if len(command) == 0 {
+		logger.Errorf("Received empty command in ReportPlayersPutHandler...")
+
+		http.Error(w, "Received empty command", http.StatusBadRequest)
+		return
+	}
+
+	report, err := database.LoadReport(reportID)
+	if err != nil {
+		logger.Errorf("Failed to load report in ReportPlayersPutHandler: [%v]", err)
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	corporationID := session.GetCorpID(r)
+
+	if report.Corporation.ID != corporationID {
+		http.Redirect(w, r, "/reports", http.StatusSeeOther)
+		return
+	}
+
+	switch strings.ToLower(command) {
+	case "playerpaid":
+		ReportPlayersPutPlayerPaidHandler(w, r, report)
+		break
+	default:
+		response := make(map[string]interface{})
+		response["result"] = "error"
+		response["error"] = "Invalid command"
+
+		SendJSONResponse(w, response)
+	}
+}
+
+func ReportPlayersPutPlayerPaidHandler(w http.ResponseWriter, r *http.Request, report *models.Report) {
+	response := make(map[string]interface{})
+
+	if !IsReportCreator(r, report) && !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
+		logger.Warnf("Received request to ReportPlayersPutPlayerPaidHandler without proper access...")
+
+		response["result"] = "error"
+		response["error"] = "Unauthorised access: cannot perform this operation with your current access mask"
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	playerName := r.FormValue("playerName")
+	if len(playerName) == 0 {
+		logger.Errorf("Content of playerName in ReportPlayersPutPlayerPaidHandler was empty...")
+
+		response["result"] = "error"
+		response["error"] = fmt.Sprintf("Content of playerName was empty")
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	reportPayout, ok := report.Payouts[playerName]
+	if !ok {
+		logger.Errorf("Failed to find ReportPayout for player %q in ReportPlayersPutPlayerPaidHandler...", playerName)
+
+		response["result"] = "error"
+		response["error"] = fmt.Sprintf("Failed to find report payout for player")
+
+		SendJSONResponse(w, response)
+		return
+	}
+
+	reportPayout.PayoutComplete = true
+
+	report.Payouts[playerName] = reportPayout
+
+	report, err := database.SaveReport(report)
+	if err != nil {
+		logger.Errorf("Failed to save report in ReportPlayersPutPlayerPaidHandler: [%v]", err)
 
 		response["result"] = "error"
 		response["error"] = err.Error()

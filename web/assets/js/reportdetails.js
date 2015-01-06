@@ -1,21 +1,41 @@
 $(document).ready(function(e) {
 	$('a.report-details-finish').click(function() {
-		$.getJSON('/report/'+$(this).attr('report')+'/edit?command=finish', function(data) {
-			if (data.result === "success" && data.error === null) {
-				location.reload(true);
-			} else {
-				displayError(data.error);
-			}
+		$.ajax({
+			accepts: "application/json",
+			cache: false,
+			data: "command=finishReport",
+			dataType: "json",
+			error: displayAjaxError,
+			success: function(reply) {
+				if (reply.result === "success" && reply.error === null) {
+					location.reload(true);
+				} else {
+					displayError(reply.error);
+				}
+			},
+			timeout: 10000,
+			type: "PUT",
+			url: '/report/'+$(this).attr('report')
 		});
 	});
 	
 	$('a.report-player-paid').click(function() {
-		$.getJSON('/report/'+$(this).attr('report')+'/edit?command=playerpaid', 'playerName='+$(this).attr('player')+'', function(data) {
-			if (data.result === "success" && data.error === null) {
-				location.reload(true);
-			} else {
-				displayError(data.error);
-			}
+		$.ajax({
+			accepts: "application/json",
+			cache: false,
+			data: "command=playerPaid&playerName="+$(this).attr('player'),
+			dataType: "json",
+			error: displayAjaxError,
+			success: function(reply) {
+				if (reply.result === "success" && reply.error === null) {
+					location.reload(true);
+				} else {
+					displayError(reply.error);
+				}
+			},
+			timeout: 10000,
+			type: "PUT",
+			url: '/report/'+$(this).attr('report')+'/players'
 		});
 	});
 });
