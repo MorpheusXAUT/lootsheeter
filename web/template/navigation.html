@@ -20,8 +20,10 @@
 						<ul class="dropdown-menu" role="menu">
 							<li><a href="/fleets">Active Fleets</a></li>
 							<li><a href="/fleets?showAll=true">All Fleets</a></li>
+                            {{ if .LoggedIn }}
 							<li class="divider"></li>
 							<li><a href="/fleets/create">Create Fleet</a></li>
+                            {{ end }}
 						</ul>
 					</li>
 					<li class="dropdown {{ if eq .PageType 4 }} active {{ end }}">
@@ -29,10 +31,12 @@
 						<ul class="dropdown-menu" role="menu">
 							<li><a href="/reports">Open Reports</a></li>
 							<li><a href="/reports?showAll=true">All Reports</a></li>
+                            {{ if HasHigherAccessMask 64 }}
 							<li class="divider"></li>
 							<li><a href="/reports/create">Create Report</a></li>
+                            {{ end }}
 							</ul>
-						</li>
+					</li>
 					{{ if not .LoggedIn }}<li {{ if eq .PageType 2 }} class="active" {{ end }}><a href="/login">Login</a></li>{{ else }}<li><a href="/logout">Logout</a></li>{{ end }}
           		</ul>
         	</div><!--/.nav-collapse -->
