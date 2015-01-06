@@ -75,6 +75,9 @@ func (s *Session) DestroySession(w http.ResponseWriter, r *http.Request) {
 
 func (s *Session) GetPlayerFromRequest(r *http.Request) *models.Player {
 	session, _ := s.store.Get(r, "player")
+	if session.IsNew {
+		return nil
+	}
 
 	playerIDInterface, ok := session.Values["playerID"]
 	if !ok {
@@ -184,6 +187,9 @@ func (s *Session) SetIdentity(w http.ResponseWriter, r *http.Request, a models.C
 
 func (s *Session) GetCorporationName(r *http.Request) string {
 	session, _ := s.store.Get(r, "player")
+	if session.IsNew {
+		return ""
+	}
 
 	corporationName, ok := session.Values["corporationName"]
 	if !ok {
@@ -195,6 +201,9 @@ func (s *Session) GetCorporationName(r *http.Request) string {
 
 func (s *Session) GetCorpID(r *http.Request) int64 {
 	session, _ := s.store.Get(r, "player")
+	if session.IsNew {
+		return -1
+	}
 
 	corpID, ok := session.Values["corpID"]
 	if !ok {
@@ -206,6 +215,9 @@ func (s *Session) GetCorpID(r *http.Request) int64 {
 
 func (s *Session) GetPlayerID(r *http.Request) int64 {
 	session, _ := s.store.Get(r, "player")
+	if session.IsNew {
+		return -1
+	}
 
 	playerID, ok := session.Values["playerID"]
 	if !ok {
