@@ -19,7 +19,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	data["PageType"] = 1
 	data["LoggedIn"] = session.IsLoggedIn(w, r)
 
-	templates.ExecuteTemplate(w, "index", data)
+	templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "index", data)
 }
 
 func LegalHandler(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +29,7 @@ func LegalHandler(w http.ResponseWriter, r *http.Request) {
 	data["PageType"] = 1
 	data["LoggedIn"] = session.IsLoggedIn(w, r)
 
-	templates.ExecuteTemplate(w, "legal", data)
+	templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "legal", data)
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +53,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	data["SSOClientID"] = config.SSOClientID
 	data["SSOCallbackURL"] = config.SSOCallbackURL
 
-	templates.ExecuteTemplate(w, "login", data)
+	templates.Funcs(TemplateFunctions(r)).ExecuteTemplate(w, "login", data)
 }
 
 func LoginSSOHandler(w http.ResponseWriter, r *http.Request) {
@@ -1433,6 +1433,11 @@ func ReportCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
+		http.Redirect(w, r, "/reports", http.StatusSeeOther)
+		return
+	}
+
 	data := make(map[string]interface{})
 
 	data["PageTitle"] = "Create Report"
@@ -1463,6 +1468,11 @@ func ReportCreateFormHandler(w http.ResponseWriter, r *http.Request) {
 	if !loggedIn {
 		session.SetLoginRedirect(w, r, "/reports/create")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	if !HasHigherAccessMask(r, models.AccessMaskPayoutOfficer) {
+		http.Redirect(w, r, "/reports", http.StatusSeeOther)
 		return
 	}
 
