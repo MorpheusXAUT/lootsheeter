@@ -27,8 +27,6 @@ func WebLogger(inner http.Handler, name string) http.Handler {
 			templates = template.Must(template.New("").Funcs(TemplateFunctions(nil)).ParseGlob("web/template/*"))
 		}
 
-		inner.ServeHTTP(w, r)
-
 		remoteAddr := r.Header.Get("X-Forwarded-For")
 
 		if len(remoteAddr) > 0 {
@@ -39,6 +37,8 @@ func WebLogger(inner http.Handler, name string) http.Handler {
 				r.RemoteAddr = remoteAddr
 			}
 		}
+
+		inner.ServeHTTP(w, r)
 
 		logger.Debugf("WebLogger: [%s] %s %q {%s} - %s ", r.Method, r.RemoteAddr, r.RequestURI, name, time.Since(start))
 	})
