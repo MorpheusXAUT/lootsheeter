@@ -3,7 +3,6 @@ package models
 
 import (
 	"encoding/xml"
-	"time"
 )
 
 type SSOToken struct {
@@ -16,7 +15,7 @@ type SSOToken struct {
 type SSOVerification struct {
 	CharacterID        int64     `json:"CharacterID"`
 	CharacterName      string    `json:"CharacterName"`
-	ExpiresOn          time.Time `json:"ExpiresOn"`
+	ExpiresOn          string `json:"ExpiresOn"`
 	Scopes             string    `json:"Scopes"`
 	TokenType          string    `json:"TokenType"`
 	CharacterOwnerHash string    `json:"CharacterOwnerHash"`
